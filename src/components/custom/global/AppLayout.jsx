@@ -2,7 +2,7 @@ import { useState } from 'react'
 import AppSidebar from './AppSidebar'
 import AppTopbar from './AppTopbar'
 
-function AppLayout({ children }) {
+function AppLayout({ children, role = 'user' }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
@@ -10,7 +10,8 @@ function AppLayout({ children }) {
       {/* Sidebar */}
       <AppSidebar 
         isOpen={sidebarOpen} 
-        onClose={() => setSidebarOpen(false)} 
+        onClose={() => setSidebarOpen(false)}
+        role={role}
       />
 
       {/* Main Content Area */}

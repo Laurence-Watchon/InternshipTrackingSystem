@@ -1,19 +1,27 @@
 import AppLayout from '../../components/custom/global/AppLayout'
 
+const scrollbarStyle = `
+  .custom-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scroll::-webkit-scrollbar-thumb {
+    background-color: #86efac;
+    border-radius: 999px;
+  }
+  .custom-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: #4ade80;
+  }
+  .custom-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #86efac transparent;
+  }
+`
+
 function UserHome() {
-  // Sample data - replace with actual data from API
   const stats = [
-    {
-      title: 'Total Hours',
-      value: '120 / 500',
-      icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      color: 'bg-blue-500',
-      percentage: '24%'
-    },
     {
       title: 'Requirements',
       value: '3 / 8',
@@ -26,7 +34,7 @@ function UserHome() {
       percentage: '38%'
     },
     {
-      title: 'Endorsement',
+      title: 'Endorsement Letter',
       value: 'In Process',
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -35,6 +43,17 @@ function UserHome() {
       ),
       color: 'bg-yellow-500',
       status: 'pending'
+    },
+    {
+      title: 'Total Hours',
+      value: '120 / 500',
+      icon: (
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+      color: 'bg-blue-500',
+      percentage: '24%'
     },
     {
       title: 'Journal Entries',
@@ -69,8 +88,57 @@ function UserHome() {
       time: '1 day ago',
       icon: '📝',
       color: 'bg-purple-100 text-purple-600'
+    },
+    {
+      title: 'Requirement uploaded',
+      description: 'Medical certificate submitted for review',
+      time: '2 days ago',
+      icon: '📄',
+      color: 'bg-yellow-100 text-yellow-600'
+    },
+    {
+      title: 'Hours milestone',
+      description: 'You reached 100 hours!',
+      time: '3 days ago',
+      icon: '🏆',
+      color: 'bg-orange-100 text-orange-600'
+    },
+    {
+      title: 'Supervisor comment',
+      description: 'Your supervisor left a comment on your journal',
+      time: '4 days ago',
+      icon: '💬',
+      color: 'bg-blue-100 text-blue-600'
+    },
+    {
+      title: 'Document rejected',
+      description: 'Please re-upload your barangay clearance',
+      time: '4 days ago',
+      icon: '❌',
+      color: 'bg-red-100 text-red-600'
+    },
+    {
+      title: 'Journal submitted',
+      description: 'Daily journal for Feb 12 submitted',
+      time: '5 days ago',
+      icon: '📝',
+      color: 'bg-purple-100 text-purple-600'
+    },
+    {
+      title: 'Time logged',
+      description: 'You logged 7.5 hours',
+      time: '5 days ago',
+      icon: '⏰',
+      color: 'bg-blue-100 text-blue-600'
+    },
+    {
+      title: 'Account verified',
+      description: 'Your student account has been verified',
+      time: '6 days ago',
+      icon: '🎉',
+      color: 'bg-green-100 text-green-600'
     }
-  ]
+  ].slice(0, 10)
 
   const upcomingTasks = [
     {
@@ -87,18 +155,34 @@ function UserHome() {
       task: 'Upload daily journal',
       deadline: 'Today',
       priority: 'high'
+    },
+    {
+      task: 'Get supervisor signature',
+      deadline: 'Feb 25, 2026',
+      priority: 'high'
+    },
+    {
+      task: 'Submit weekly report',
+      deadline: 'Feb 22, 2026',
+      priority: 'medium'
+    },
+    {
+      task: 'Update endorsement letter',
+      deadline: 'Mar 1, 2026',
+      priority: 'medium'
     }
-  ]
+  ].slice(0, 6)
 
   return (
     <AppLayout>
+      <style>{scrollbarStyle}</style>
       {/* Welcome Section */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Welcome back, John! 👋</h1>
         <p className="text-gray-600 mt-1">Here's what's happening with your internship today.</p>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards — Order: Requirements, Endorsement Letter, Total Hours, Journal Entries */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         {stats.map((stat, index) => (
           <div key={index} className="bg-white rounded-lg shadow p-6">
@@ -112,7 +196,7 @@ function UserHome() {
             {stat.percentage && (
               <div className="mt-2">
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
+                  <div
                     className={`${stat.color} h-2 rounded-full`}
                     style={{ width: stat.percentage }}
                   ></div>
@@ -123,13 +207,14 @@ function UserHome() {
         ))}
       </div>
 
+      {/* Recent Activities + Upcoming Tasks */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Activities */}
         <div className="lg:col-span-2 bg-white rounded-lg shadow">
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Recent Activities</h2>
           </div>
-          <div className="p-6">
+          <div className="p-6 overflow-y-auto custom-scroll" style={{ maxHeight: '340px' }}>
             <div className="space-y-4">
               {recentActivities.map((activity, index) => (
                 <div key={index} className="flex items-start space-x-4">
@@ -147,12 +232,13 @@ function UserHome() {
           </div>
         </div>
 
-        {/* Upcoming Tasks */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6 border-b border-gray-200">
+        {/* Upcoming Tasks — scrollable */}
+        <div className="bg-white rounded-lg shadow flex flex-col">
+          <div className="p-6 border-b border-gray-200 flex-shrink-0">
             <h2 className="text-lg font-semibold text-gray-900">Upcoming Tasks</h2>
           </div>
-          <div className="p-6">
+          {/* Fixed height with overflow scroll */}
+          <div className="p-6 overflow-y-auto custom-scroll" style={{ maxHeight: '340px' }}>
             <div className="space-y-4">
               {upcomingTasks.map((task, index) => (
                 <div key={index} className="border-l-4 border-green-500 pl-4 py-2">
@@ -162,7 +248,7 @@ function UserHome() {
                       <p className="text-xs text-gray-500 mt-1">{task.deadline}</p>
                     </div>
                     <span className={`
-                      text-xs px-2 py-1 rounded-full font-medium
+                      text-xs px-2 py-1 rounded-full font-medium ml-2 flex-shrink-0
                       ${task.priority === 'high' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-600'}
                     `}>
                       {task.priority}

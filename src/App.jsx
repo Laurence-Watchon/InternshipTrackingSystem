@@ -4,6 +4,9 @@ import LoginPage from './pages/global/LoginPage'
 import SignupPage from './pages/global/SignupPage'
 import VerificationPage from './pages/global/VerificationPage'
 import UserHome from './pages/user/Home'
+import UserRequirements from './pages/user/Requirements'
+import UserEndorsement from './pages/user/EndorsementLetter'
+import UserTimeTracking from './pages/user/TimeTracking'
 import './App.css'
 
 function App() {
@@ -18,6 +21,9 @@ function App() {
 
         {/* User Dashboard Routes */}
         <Route path="/user/home" element={<UserHome />} />
+        <Route path="/user/requirements" element={<UserRequirements />} />
+        <Route path="/user/endorsement" element={<UserEndorsement />} />
+        <Route path="/user/time-tracking" element={<UserTimeTracking />} />
       </Routes>
     </Router>
   )
