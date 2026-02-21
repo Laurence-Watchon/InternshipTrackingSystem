@@ -3,11 +3,35 @@ import Dialog from '../../ui/Dialog'
 
 const todayStr = new Date().toISOString().split('T')[0]
 
+const MINUTES = ['00', '15', '30', '45']
+
+// Shift hour ranges (24h, inclusive)
+const SHIFT_HOURS = {
+  morning:   [7, 8, 9, 10, 11, 12],          // 7 AM – 12 PM
+  afternoon: [12, 13, 14, 15, 16, 17, 18, 19], // 12 PM – 7 PM
+}
+
 const emptyForm = {
   date: '',
-  timeIn: '',
-  timeOut: '',
+  shift: '',
+  inH: '', inM: '00',
+  outH: '', outM: '00',
   description: '',
+}
+
+// Display a 24h hour as 12h label e.g. 13 → "1 PM"
+function hourLabel(h24) {
+  const h = parseInt(h24)
+  const period = h >= 12 ? 'PM' : 'AM'
+  let display = h % 12
+  if (display === 0) display = 12
+  return `${display}:00 ${period}`
+}
+
+// Build "HH:MM" 24h string from parts
+function buildTime(h, m) {
+  if (h === '' || m === '') return ''
+  return `${String(parseInt(h)).padStart(2, '0')}:${m}`
 }
 
 function to12Display(timeStr) {
@@ -21,17 +45,20 @@ function to12Display(timeStr) {
   return `${String(h).padStart(2, '0')}:${m} ${period}`
 }
 
-// Converts "08:30 AM" / "01:00 PM" back to "HH:MM" 24h for the input
-function to24Input(displayStr) {
-  if (!displayStr) return ''
+function to24Parts(displayStr) {
+  if (!displayStr) return { h: '', m: '00' }
   const match = displayStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i)
-  if (!match) return displayStr // already HH:MM
+  if (!match) {
+    // already HH:MM
+    const [hh, mm] = displayStr.split(':')
+    return { h: parseInt(hh).toString(), m: mm || '00' }
+  }
   let h = parseInt(match[1])
   const m = match[2]
   const period = match[3].toUpperCase()
   if (period === 'AM' && h === 12) h = 0
   if (period === 'PM' && h !== 12) h += 12
-  return `${String(h).padStart(2, '0')}:${m}`
+  return { h: h.toString(), m }
 }
 
 function calcHours(timeIn, timeOut) {
@@ -42,21 +69,53 @@ function calcHours(timeIn, timeOut) {
   return diff > 0 ? parseFloat((diff / 60).toFixed(2)) : 0
 }
 
-function detectShift(timeIn) {
-  if (!timeIn) return 'morning'
-  const h = parseInt(timeIn.split(':')[0])
-  return h < 12 ? 'morning' : 'afternoon'
+// Reusable time picker row: hour dropdown + colon + minute dropdown
+function TimePicker({ label, hour, minute, onHourChange, onMinuteChange, hours, error, required }) {
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-gray-600 mb-1">
+        {label} {required && <span className="text-red-400">*</span>}
+      </label>
+      <div className="flex items-center gap-1">
+        {/* Hour */}
+        <select
+          value={hour}
+          onChange={e => onHourChange(e.target.value)}
+          className={`flex-1 border rounded-lg px-2 py-2 text-sm outline-none focus:border-green-400 transition bg-gray-50
+            ${error ? 'border-red-400' : 'border-gray-200'}`}
+        >
+          <option value="">HH</option>
+          {hours.map(h => (
+            <option key={h} value={h}>{hourLabel(h)}</option>
+          ))}
+        </select>
+
+        <span className="text-gray-400 font-bold text-sm">:</span>
+
+        {/* Minute */}
+        <select
+          value={minute}
+          onChange={e => onMinuteChange(e.target.value)}
+          className={`w-20 border rounded-lg px-2 py-2 text-sm outline-none focus:border-green-400 transition bg-gray-50
+            ${error ? 'border-red-400' : 'border-gray-200'}`}
+        >
+          {MINUTES.map(m => (
+            <option key={m} value={m}>{m}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* 12h preview */}
+      {hour !== '' && (
+        <p className="text-xs text-green-600 font-semibold mt-1">
+          {to12Display(buildTime(hour, minute))}
+        </p>
+      )}
+      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+    </div>
+  )
 }
 
-/**
- * LogTimeDialog
- *
- * Props:
- *   isOpen    – boolean
- *   onClose   – () => void
- *   onConfirm – (logEntry) => void
- *   editLog   – log object | null  — when provided, dialog is in edit mode
- */
 export default function LogTimeDialog({ isOpen, onClose, onConfirm, editLog = null }) {
   const [form, setForm]               = useState(emptyForm)
   const [errors, setErrors]           = useState({})
@@ -67,12 +126,16 @@ export default function LogTimeDialog({ isOpen, onClose, onConfirm, editLog = nu
   useEffect(() => {
     if (isOpen) {
       if (editLog) {
-        // Pre-fill form with existing log values
+        const inParts  = to24Parts(editLog.timeIn)
+        const outParts = to24Parts(editLog.timeOut)
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setForm({
           date:        editLog.date,
-          timeIn:      to24Input(editLog.timeIn),
-          timeOut:     to24Input(editLog.timeOut),
+          shift:       editLog.shift || '',
+          inH:         inParts.h,
+          inM:         inParts.m,
+          outH:        outParts.h,
+          outM:        outParts.m,
           description: editLog.description === '—' ? '' : editLog.description,
         })
       } else {
@@ -89,15 +152,24 @@ export default function LogTimeDialog({ isOpen, onClose, onConfirm, editLog = nu
     setErrors(prev => ({ ...prev, [key]: '' }))
   }
 
+  function handleShiftChange(shift) {
+    // Reset times when shift changes
+    setForm(prev => ({ ...prev, shift, inH: '', inM: '00', outH: '', outM: '00' }))
+    setErrors(prev => ({ ...prev, shift: '', timeIn: '', timeOut: '' }))
+  }
+
   function validate() {
     const e = {}
     if (!form.date)               e.date        = 'Please select a date.'
-    if (!form.timeIn)             e.timeIn      = 'Please select a time in.'
-    if (!form.timeOut)            e.timeOut     = 'Please select a time out.'
+    if (!form.shift)              e.shift       = 'Please select a shift.'
+    if (form.inH === '')          e.timeIn      = 'Please select a time in.'
+    if (form.outH === '')         e.timeOut     = 'Please select a time out.'
     if (!form.description.trim()) e.description = 'Short description is required.'
-    const hours = calcHours(form.timeIn, form.timeOut)
-    if (form.timeIn && form.timeOut && hours <= 0) e.timeOut = 'Time Out must be after Time In.'
-    if (form.timeIn && form.timeOut && hours > 12) e.timeOut = 'Cannot log more than 12 hours per entry.'
+    const timeIn  = buildTime(form.inH, form.inM)
+    const timeOut = buildTime(form.outH, form.outM)
+    const hours   = calcHours(timeIn, timeOut)
+    if (form.inH !== '' && form.outH !== '' && hours <= 0)
+      e.timeOut = 'Time Out must be after Time In.'
     return e
   }
 
@@ -109,16 +181,16 @@ export default function LogTimeDialog({ isOpen, onClose, onConfirm, editLog = nu
   }
 
   function handleFinalConfirm() {
-    const hours = calcHours(form.timeIn, form.timeOut)
-    const shift = detectShift(form.timeIn)
+    const timeIn  = buildTime(form.inH, form.inM)
+    const timeOut = buildTime(form.outH, form.outM)
+    const hours   = calcHours(timeIn, timeOut)
     onConfirm({
-      // Keep original id if editing, generate new one if adding
       id:          isEditMode ? editLog.id : Date.now(),
       date:        form.date,
-      timeIn:      to12Display(form.timeIn),
-      timeOut:     to12Display(form.timeOut),
+      shift:       form.shift,
+      timeIn:      to12Display(timeIn),
+      timeOut:     to12Display(timeOut),
       hours,
-      shift,
       description: form.description.trim(),
       status:      isEditMode ? editLog.status : 'pending',
     })
@@ -128,13 +200,13 @@ export default function LogTimeDialog({ isOpen, onClose, onConfirm, editLog = nu
     onClose()
   }
 
-  const previewHours = calcHours(form.timeIn, form.timeOut)
+  const shiftHours   = form.shift ? SHIFT_HOURS[form.shift] : []
+  const previewHours = calcHours(buildTime(form.inH, form.inM), buildTime(form.outH, form.outM))
 
   if (!isOpen) return null
 
   return (
     <>
-      {/* ── Main form — fades when confirmation dialog is open ── */}
       <div
         className="fixed inset-0 z-40 flex items-center justify-center"
         style={{ backgroundColor: confirmOpen ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.4)' }}
@@ -196,45 +268,81 @@ export default function LogTimeDialog({ isOpen, onClose, onConfirm, editLog = nu
               {errors.date && <p className="text-xs text-red-500 mt-1">{errors.date}</p>}
             </div>
 
-            {/* Time In & Time Out side by side */}
-            <div className="grid grid-cols-2 gap-4">
-
-              {/* Time In */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">
-                  Time In <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="time"
-                  value={form.timeIn}
-                  onChange={e => setField('timeIn', e.target.value)}
-                  className={`w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-green-400 transition bg-gray-50
-                    ${errors.timeIn ? 'border-red-400' : 'border-gray-200'}`}
-                />
-                {form.timeIn && (
-                  <p className="text-xs text-green-600 font-semibold mt-1">{to12Display(form.timeIn)}</p>
-                )}
-                {errors.timeIn && <p className="text-xs text-red-500 mt-1">{errors.timeIn}</p>}
+            {/* Shift */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-2">
+                Shift <span className="text-red-400">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleShiftChange('morning')}
+                  className={`flex items-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-semibold transition focus:outline-none
+                    ${form.shift === 'morning'
+                      ? 'border-yellow-400 bg-yellow-50 text-yellow-700'
+                      : errors.shift ? 'border-red-300 bg-red-50 text-gray-500'
+                      : 'border-gray-200 bg-gray-50 text-gray-500'}`}
+                >
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 7a5 5 0 100 10A5 5 0 0012 7z" />
+                  </svg>
+                  <div className="text-left">
+                    <p className="leading-none">Morning</p>
+                    <p className="text-xs font-normal opacity-70 mt-0.5">7:00 AM – 12:00 PM</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleShiftChange('afternoon')}
+                  className={`flex items-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-semibold transition focus:outline-none
+                    ${form.shift === 'afternoon'
+                      ? 'border-blue-400 bg-blue-50 text-blue-700'
+                      : errors.shift ? 'border-red-300 bg-red-50 text-gray-500'
+                      : 'border-gray-200 bg-gray-50 text-gray-500'}`}
+                >
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  </svg>
+                  <div className="text-left">
+                    <p className="leading-none">Afternoon</p>
+                    <p className="text-xs font-normal opacity-70 mt-0.5">12:00 PM – 7:00 PM</p>
+                  </div>
+                </button>
               </div>
-
-              {/* Time Out */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">
-                  Time Out <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="time"
-                  value={form.timeOut}
-                  onChange={e => setField('timeOut', e.target.value)}
-                  className={`w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-green-400 transition bg-gray-50
-                    ${errors.timeOut ? 'border-red-400' : 'border-gray-200'}`}
-                />
-                {form.timeOut && (
-                  <p className="text-xs text-green-600 font-semibold mt-1">{to12Display(form.timeOut)}</p>
-                )}
-                {errors.timeOut && <p className="text-xs text-red-500 mt-1">{errors.timeOut}</p>}
-              </div>
+              {errors.shift && <p className="text-xs text-red-500 mt-1">{errors.shift}</p>}
             </div>
+
+            {/* Time In & Time Out — dropdowns */}
+            {form.shift ? (
+              <div className="grid grid-cols-2 gap-4">
+                <TimePicker
+                  label="Time In"
+                  required
+                  hour={form.inH}
+                  minute={form.inM}
+                  hours={shiftHours}
+                  onHourChange={v => setField('inH', v)}
+                  onMinuteChange={v => setField('inM', v)}
+                  error={errors.timeIn}
+                />
+                <TimePicker
+                  label="Time Out"
+                  required
+                  hour={form.outH}
+                  minute={form.outM}
+                  hours={shiftHours}
+                  onHourChange={v => setField('outH', v)}
+                  onMinuteChange={v => setField('outM', v)}
+                  error={errors.timeOut}
+                />
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400 text-center py-2">
+                Select a shift above to set your time in and time out.
+              </p>
+            )}
 
             {/* Computed hours preview */}
             {previewHours > 0 && (
@@ -293,7 +401,7 @@ export default function LogTimeDialog({ isOpen, onClose, onConfirm, editLog = nu
         </div>
       </div>
 
-      {/* ── Confirmation dialog ── */}
+      {/* Confirmation dialog */}
       <Dialog
         isOpen={confirmOpen}
         onClose={() => setConfirmOpen(false)}

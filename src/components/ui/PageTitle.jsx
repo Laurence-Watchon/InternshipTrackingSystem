@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 const PAGE_TITLES = {
   '/user/home':         'Dashboard',
   '/user/requirements': 'Requirements',
-  '/user/journal':      'Journal',
+  '/user/journal':      'Daily Journal',
   '/user/time-tracking':'Time Tracking',
   '/user/endorsement':  'Endorsement Letter',
   '/user/profile':      'Profile',

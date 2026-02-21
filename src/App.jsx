@@ -7,6 +7,8 @@ import UserHome from './pages/user/Home'
 import UserRequirements from './pages/user/Requirements'
 import UserEndorsement from './pages/user/EndorsementLetter'
 import UserTimeTracking from './pages/user/TimeTracking'
+import UserJournal from './pages/user/DailyJournal'
+import Profile from './pages/user/UserProfile'
 import './App.css'
 
 function App() {
@@ -24,6 +26,8 @@ function App() {
         <Route path="/user/requirements" element={<UserRequirements />} />
         <Route path="/user/endorsement" element={<UserEndorsement />} />
         <Route path="/user/time-tracking" element={<UserTimeTracking />} />
+        <Route path="/user/journal" element={<UserJournal />} />
+        <Route path="/user/profile" element={<Profile />} />
       </Routes>
     </Router>
   )
