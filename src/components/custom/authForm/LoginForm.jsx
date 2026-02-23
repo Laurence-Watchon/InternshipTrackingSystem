@@ -69,7 +69,11 @@ function LoginForm() {
     
     // Handle login logic here
     console.log('Login data:', formData)
-    navigate('/user/home')
+    if (formData.email === 'admin@gmail.com') {
+      navigate('/admin/home')
+    } else {
+      navigate('/user/home')
+    }
   }
 
   return (

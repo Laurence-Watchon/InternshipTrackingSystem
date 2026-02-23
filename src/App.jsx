@@ -9,6 +9,8 @@ import UserEndorsement from './pages/user/EndorsementLetter'
 import UserTimeTracking from './pages/user/TimeTracking'
 import UserJournal from './pages/user/DailyJournal'
 import Profile from './pages/user/UserProfile'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminPendingApprovals from './pages/admin/AdminPendingApprovals'
 import './App.css'
 
 function App() {
@@ -28,6 +30,10 @@ function App() {
         <Route path="/user/time-tracking" element={<UserTimeTracking />} />
         <Route path="/user/journal" element={<UserJournal />} />
         <Route path="/user/profile" element={<Profile />} />
+
+        {/* Admin Dashboard Routes */}
+        <Route path="/admin/home" element={<AdminDashboard />} />
+        <Route path="/admin/approvals" element={<AdminPendingApprovals />} />
       </Routes>
     </Router>
   )

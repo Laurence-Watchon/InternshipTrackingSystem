@@ -7,6 +7,8 @@ const PAGE_TITLES = {
   '/user/time-tracking':'Time Tracking',
   '/user/endorsement':  'Endorsement Letter',
   '/user/profile':      'Profile',
+  '/admin/home':       'Admin Dashboard',
+  '/admin/approvals':  'Pending Approvals'
 }
 
 export default function PageTitle() {
