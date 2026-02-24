@@ -11,6 +11,8 @@ import UserJournal from './pages/user/DailyJournal'
 import Profile from './pages/user/UserProfile'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminPendingApprovals from './pages/admin/AdminPendingApprovals'
+import RequirementsManagement from './pages/admin/AdminRequirements'
+import StudentManagement from './pages/admin/AdminStudents'
 import './App.css'
 
 function App() {
@@ -34,6 +36,8 @@ function App() {
         {/* Admin Dashboard Routes */}
         <Route path="/admin/home" element={<AdminDashboard />} />
         <Route path="/admin/approvals" element={<AdminPendingApprovals />} />
+        <Route path="/admin/requirements" element={<RequirementsManagement />} />
+        <Route path="/admin/students" element={<StudentManagement />} />
       </Routes>
     </Router>
   )
