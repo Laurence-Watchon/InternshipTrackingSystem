@@ -20,7 +20,7 @@ function UserEndorsement() {
   // Replace with real API data — all 9 requirements
   const requirements = [
     { name: 'Copy of Registration Form',                             status: 'approved' },
-    { name: 'Attendance / Pre-Deployment Orientation',               status: 'rejected' },
+    { name: 'Attendance / Pre-Deployment Orientation',               status: 'approved' },
     { name: 'Scanned Copy of Application Letter',                    status: 'approved' },
     { name: 'Curriculum Vitae (LU Format)',                          status: 'approved' },
     { name: 'AVP Self Introduction',                                 status: 'approved' },
@@ -54,7 +54,7 @@ function UserEndorsement() {
     <AppLayout role="user">
       {/* Page header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Endorsement Letter</h1>
+        <h1 className="text-2xl font-bold text-gray-900">College of Computing Studies- BSCS-DS</h1>
         <p className="text-gray-600 mt-1">Request and download your internship endorsement letter.</p>
       </div>
 

@@ -8,7 +8,9 @@ const PAGE_TITLES = {
   '/user/endorsement':  'Endorsement Letter',
   '/user/profile':      'Profile',
   '/admin/home':       'Admin Dashboard',
-  '/admin/approvals':  'Pending Approvals'
+  '/admin/approvals':  'Pending Approvals',
+  '/admin/requirements':  'Requirements Management',
+  '/admin/students':  'Student Management'
 }
 
 export default function PageTitle() {
