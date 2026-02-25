@@ -324,7 +324,11 @@ function StudentManagement() {
   const filteredStudents = filteredByCourse.filter(student =>
     student.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     student.studentNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    student.email.toLowerCase().includes(searchQuery.toLowerCase())
+    student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    student.course.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    student.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    student.companyAddress.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    student.supervisor.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   // Pagination calculations

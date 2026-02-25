@@ -17,7 +17,6 @@ export default function EndorsementCard({
   dateApproved = null,
   allApproved = false,
   onRequest,
-  onDownload,
 }) {
   const [form, setForm]       = useState({ companyName: '', address: '', supervisorName: '' })
   const [errors, setErrors]   = useState({})
@@ -82,8 +81,7 @@ export default function EndorsementCard({
         </svg>
       ),
       badge: 'bg-green-100 text-green-700',
-      title: 'Ready for Download',
-      description: 'Your endorsement letter has been approved and is ready to download. Present this letter to your internship company on or before your first day.',
+      title: 'Ready for Pickup',
     },
   }
 
@@ -236,20 +234,45 @@ export default function EndorsementCard({
 
       {/* ── READY ── */}
       {status === 'ready' && (
-        <div className="space-y-3">
-          <button
-            onClick={onDownload}
-            className="w-full bg-green-500 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 focus:outline-none"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            Download Endorsement Letter
-          </button>
+        <div className="space-y-4">
+          {/* Main Message Box */}
+          <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6">
+            <div className="flex items-start gap-3">
+              <svg className="w-6 h-6 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="flex-1">
+                <h4 className="text-base font-bold text-green-900 mb-2">
+                  Endorsement Letter Ready for Pickup
+                </h4>
+                <p className="text-sm text-green-800 leading-relaxed">
+                  Your endorsement letter is now ready! Please visit your <span className="font-semibold">OJT Coordinator</span> to claim the file with the official wet signature. Remember to bring a valid ID when claiming your document.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Date Approved */}
           {dateApproved && (
-            <p className="text-center text-sm text-gray-500">Approved on {fmt(dateApproved)}</p>
+            <div className="text-center">
+              <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Ready Since</p>
+              <p className="text-sm font-semibold text-gray-700">{fmt(dateApproved)}</p>
+            </div>
           )}
+
+          {/* Important Reminder */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-start gap-2">
+              <svg className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <p className="text-xs text-yellow-800">
+                <span className="font-semibold">Note:</span> The physical document must be presented to your internship company. Digital copies are not accepted.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
@@ -267,7 +290,7 @@ export default function EndorsementCard({
               <li><span className="font-semibold">Step 2:</span> Wait for the coordinator to review and approve each document. This may take a few days.</li>
               <li><span className="font-semibold">Step 3:</span> Once all approved, fill in your company details and submit the request.</li>
               <li><span className="font-semibold">Step 4:</span> Processing takes <span className="font-semibold">3–5 business days</span>.</li>
-              <li><span className="font-semibold">Step 5:</span> Once ready, come back here to download your endorsement letter.</li>
+              <li><span className="font-semibold">Step 5:</span> Once ready, visit the OJT Coordinator's office to pick up your endorsement letter with wet signature.</li>
               <li className="text-blue-600 text-xs pt-1">⚠ The endorsement letter is valid for the current academic year only.</li>
             </ul>
           </div>
