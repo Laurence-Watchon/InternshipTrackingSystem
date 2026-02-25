@@ -10,7 +10,8 @@ const PAGE_TITLES = {
   '/admin/home':       'Admin Dashboard',
   '/admin/approvals':  'Pending Approvals',
   '/admin/requirements':  'Requirements Management',
-  '/admin/students':  'Student Management'
+  '/admin/students':  'Student Management',
+  '/admin/endorsements': 'Endorsement Management',
 }
 
 export default function PageTitle() {

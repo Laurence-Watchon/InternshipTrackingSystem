@@ -3,6 +3,7 @@ import AppLayout from '../../components/custom/global/AppLayout'
 import AlertDialog from '../../components/ui/AlertDialog'
 import Dialog from '../../components/ui/Dialog'
 import AdminRequirementsModal from '../../components/custom/dialog/AdminRequirementsModal'
+import RequiredHoursCard from '../../components/ui/RequiredHoursCard'
 
 function RequirementsManagement() {
   const [requirements, setRequirements] = useState([
@@ -64,12 +65,21 @@ function RequirementsManagement() {
     }
   ])
 
+  const [requiredHours, setRequiredHours] = useState({
+    'BSCS-DS': '',
+    'BSIT-BA': '',
+    'BSIT-SD': ''
+  })
+
   const [showModal, setShowModal] = useState(false)
   const [modalMode, setModalMode] = useState('add') // 'add' or 'edit'
   const [currentRequirement, setCurrentRequirement] = useState(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showDeleteSuccessDialog, setShowDeleteSuccessDialog] = useState(false)
   const [showSaveSuccessDialog, setShowSaveSuccessDialog] = useState(false)
+  const [showHoursConfirmDialog, setShowHoursConfirmDialog] = useState(false)
+  const [showHoursSuccessDialog, setShowHoursSuccessDialog] = useState(false)
+  const [pendingHours, setPendingHours] = useState(null)
   const [successMessage, setSuccessMessage] = useState({ title: '', description: '' })
 
   const fileTypeOptions = [
@@ -137,6 +147,19 @@ function RequirementsManagement() {
     setShowDeleteSuccessDialog(true)
   }
 
+  const handleHoursSave = (hours) => {
+    setPendingHours(hours)
+    setShowHoursConfirmDialog(true)
+  }
+
+  const handleHoursConfirm = () => {
+    setRequiredHours(pendingHours)
+    setShowHoursConfirmDialog(false)
+    setShowHoursSuccessDialog(true)
+    // TODO: API call to save required hours
+    console.log('Saving required hours:', pendingHours)
+  }
+
   const getFileTypeBadge = (type) => {
     const option = fileTypeOptions.find(opt => opt.value === type)
     return option ? { label: option.label, color: option.color } : { label: type.toUpperCase(), color: 'bg-gray-100 text-gray-700' }
@@ -163,6 +186,14 @@ function RequirementsManagement() {
             <span>Add Requirement</span>
           </button>
         </div>
+      </div>
+
+      {/* Required Hours Card */}
+      <div className="mb-6">
+        <RequiredHoursCard
+          initialHours={requiredHours}
+          onSave={handleHoursSave}
+        />
       </div>
 
       {/* Requirements List */}
@@ -249,9 +280,9 @@ function RequirementsManagement() {
         onClose={() => setShowDeleteDialog(false)}
         onConfirm={handleDelete}
         title="Delete Requirement"
-        description={`Are you sure you want to delete "${currentRequirement?.title}"? This action cannot be undone.`}
-        confirmText="Delete"
-        cancelText="Cancel"
+        message={`Are you sure you want to delete "${currentRequirement?.title}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
       />
 
       {/* Delete Success Dialog */}
@@ -270,6 +301,26 @@ function RequirementsManagement() {
         type="success"
         title={successMessage.title}
         description={successMessage.description}
+      />
+
+      {/* Hours Confirmation Dialog */}
+      <Dialog
+        isOpen={showHoursConfirmDialog}
+        onClose={() => setShowHoursConfirmDialog(false)}
+        onConfirm={handleHoursConfirm}
+        title="Confirm Required Hours"
+        message={`Are you sure you want to set the required hours as:\n\nBSCS-DS: ${pendingHours?.['BSCS-DS']} hours\nBSIT-BA: ${pendingHours?.['BSIT-BA']} hours\nBSIT-SD: ${pendingHours?.['BSIT-SD']} hours`}
+        confirmLabel="Confirm"
+        cancelLabel="Cancel"
+      />
+
+      {/* Hours Success Dialog */}
+      <AlertDialog
+        isOpen={showHoursSuccessDialog}
+        onClose={() => setShowHoursSuccessDialog(false)}
+        type="success"
+        title="Hours Saved Successfully"
+        description="The required hours for all courses have been updated successfully."
       />
     </AppLayout>
   )

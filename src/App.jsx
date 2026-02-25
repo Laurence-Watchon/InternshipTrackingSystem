@@ -13,6 +13,7 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminPendingApprovals from './pages/admin/AdminPendingApprovals'
 import RequirementsManagement from './pages/admin/AdminRequirements'
 import StudentManagement from './pages/admin/AdminStudents'
+import AdminEndorsements from './pages/admin/AdminEndorsement'
 import './App.css'
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
         <Route path="/admin/approvals" element={<AdminPendingApprovals />} />
         <Route path="/admin/requirements" element={<RequirementsManagement />} />
         <Route path="/admin/students" element={<StudentManagement />} />
+        <Route path="/admin/endorsements" element={<AdminEndorsements />} />
       </Routes>
     </Router>
   )

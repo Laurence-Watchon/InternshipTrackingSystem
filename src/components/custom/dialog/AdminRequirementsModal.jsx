@@ -2,7 +2,7 @@ import { useState } from 'react'
 import AlertDialog from '../../ui/AlertDialog'
 import Dialog from '../../ui/Dialog'
 
-function AdminRequirementsModal({ isOpen, onClose, onSave, requirement, mode }) {
+function AdminRequirementsModalContent({ onClose, onSave, requirement, mode }) {
   // Initialize form data based on mode and requirement
   const getInitialFormData = () => {
     if (mode === 'edit' && requirement) {
@@ -145,17 +145,37 @@ function AdminRequirementsModal({ isOpen, onClose, onSave, requirement, mode }) 
     onClose()
   }
 
-  if (!isOpen) return null
-
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50" onClick={handleClose} />
+      {/* Backdrop - clicking does nothing */}
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-50" />
+      
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="p-6 border-b border-gray-200">
+        <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative">
+          {/* Header with X button */}
+          <div className="p-6 border-b border-gray-200 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">
               {mode === 'add' ? 'Add New Requirement' : 'Edit Requirement'}
             </h3>
+            <button
+              onClick={handleClose}
+              className="text-gray-400 hover:text-gray-600 transition focus:outline-none"
+              aria-label="Close modal"
+            >
+              <svg 
+                className="w-6 h-6" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M6 18L18 6M6 6l12 12" 
+                />
+              </svg>
+            </button>
           </div>
           
           <div className="p-6 space-y-4">
@@ -272,6 +292,25 @@ function AdminRequirementsModal({ isOpen, onClose, onSave, requirement, mode }) 
         cancelText="Cancel"
       />
     </>
+  )
+}
+
+// Wrapper component that handles remounting
+function AdminRequirementsModal({ isOpen, onClose, onSave, requirement, mode }) {
+  if (!isOpen) return null
+
+  // Use a key that changes when modal opens to force remount and reset state
+  // eslint-disable-next-line react-hooks/purity
+  const modalKey = `${mode}-${requirement?.id || 'new'}-${Date.now()}`
+
+  return (
+    <AdminRequirementsModalContent
+      key={modalKey}
+      onClose={onClose}
+      onSave={onSave}
+      requirement={requirement}
+      mode={mode}
+    />
   )
 }
 

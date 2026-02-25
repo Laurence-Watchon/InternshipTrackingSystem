@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import AppSidebar from './AppSidebar'
+import AppSidebar from './AppSideBar'
 import AppTopbar from './AppTopbar'
 
 function AppLayout({ children, role = 'user' }) {
