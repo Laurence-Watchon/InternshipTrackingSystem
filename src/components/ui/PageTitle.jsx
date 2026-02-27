@@ -12,11 +12,16 @@ const PAGE_TITLES = {
   '/admin/requirements':  'Requirements Management',
   '/admin/students':  'Student Management',
   '/admin/endorsements': 'Endorsement Management',
+  '/admin/students-requirements': 'Student Requirements',
 }
 
 export default function PageTitle() {
   const { pathname } = useLocation()
-  const title = PAGE_TITLES[pathname] || 'Dashboard'
+  let title = PAGE_TITLES[pathname]
+
+  if (!title && pathname.startsWith('/admin/students-requirements/')) {
+    title = 'Student Requirement Details'
+  }
 
   return (
     <h1 className="text-xl font-semibold text-gray-900 hidden sm:block">

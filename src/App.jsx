@@ -14,6 +14,8 @@ import AdminPendingApprovals from './pages/admin/AdminPendingApprovals'
 import RequirementsManagement from './pages/admin/AdminRequirements'
 import StudentManagement from './pages/admin/AdminStudents'
 import AdminEndorsements from './pages/admin/AdminEndorsement'
+import AdminStudentRequirements from './pages/admin/AdminStudentRequirements'
+import AdminStudentRequirementsDetail from './pages/admin/AdminStudentRequirementsDetails'
 import './App.css'
 
 function App() {
@@ -40,6 +42,8 @@ function App() {
         <Route path="/admin/requirements" element={<RequirementsManagement />} />
         <Route path="/admin/students" element={<StudentManagement />} />
         <Route path="/admin/endorsements" element={<AdminEndorsements />} />
+        <Route path="/admin/students-requirements" element={<AdminStudentRequirements />} />
+        <Route path="/admin/students-requirements/:studentId" element={<AdminStudentRequirementsDetail />} />
       </Routes>
     </Router>
   )

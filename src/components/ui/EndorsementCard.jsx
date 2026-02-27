@@ -7,15 +7,14 @@ import { useState } from 'react'
  *   status          – 'unavailable' | 'in_process' | 'ready'
  *   dateRequested   – string | null  (ISO date)
  *   dateApproved    – string | null  (ISO date)
- *   allApproved     – boolean
+ *   allSubmitted    – boolean (changed from allApproved - now checks if all docs are submitted)
  *   onRequest       – (companyInfo: { companyName, address, supervisorName }) => Promise<void>
- *   onDownload      – () => void
  */
 export default function EndorsementCard({
   status = 'unavailable',
   dateRequested = null,
   dateApproved = null,
-  allApproved = false,
+  allSubmitted = false,
   onRequest,
 }) {
   const [form, setForm]       = useState({ companyName: '', address: '', supervisorName: '' })
@@ -47,8 +46,8 @@ export default function EndorsementCard({
     setLoading(false)
   }
 
-  // Show form when all requirements done but letter not yet requested
-  const showForm = allApproved && status === 'unavailable'
+  // Show form when all requirements submitted but letter not yet requested
+  const showForm = allSubmitted && status === 'unavailable'
 
   const config = {
     unavailable: {
@@ -60,7 +59,7 @@ export default function EndorsementCard({
       ),
       badge: 'bg-gray-100 text-gray-600',
       title: 'Not Available',
-      description: 'You have not yet completed all the required documents. Please submit and get all requirements approved before you can request your endorsement letter.',
+      description: 'You have not yet submitted all the required documents. Please submit all requirements before you can request your endorsement letter.',
     },
     in_process: {
       icon: (
@@ -105,7 +104,7 @@ export default function EndorsementCard({
         </h2>
         <p className="text-gray-500 text-sm leading-relaxed max-w-md mx-auto">
           {showForm
-            ? 'All your requirements have been approved! Fill in your company details below to request your endorsement letter.'
+            ? 'All your requirements have been submitted! Fill in your company details below to request your endorsement letter.'
             : current.description}
         </p>
       </div>
@@ -124,11 +123,11 @@ export default function EndorsementCard({
           disabled
           className="w-full py-3 rounded-lg font-semibold bg-gray-200 text-gray-400 cursor-not-allowed focus:outline-none"
         >
-          Complete All Requirements First
+          Submit All Requirements First
         </button>
       )}
 
-      {/* ── FORM (all approved, not yet requested) ── */}
+      {/* ── FORM (all submitted, not yet requested) ── */}
       {showForm && (
         <div className="border-t border-gray-100 pt-5 space-y-4">
           <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
@@ -287,10 +286,9 @@ export default function EndorsementCard({
             <h4 className="text-sm font-bold text-blue-900 mb-2">Important Information</h4>
             <ul className="text-sm text-blue-800 space-y-1.5">
               <li><span className="font-semibold">Step 1:</span> Submit all 9 required documents under the Requirements page.</li>
-              <li><span className="font-semibold">Step 2:</span> Wait for the coordinator to review and approve each document. This may take a few days.</li>
-              <li><span className="font-semibold">Step 3:</span> Once all approved, fill in your company details and submit the request.</li>
-              <li><span className="font-semibold">Step 4:</span> Processing takes <span className="font-semibold">3–5 business days</span>.</li>
-              <li><span className="font-semibold">Step 5:</span> Once ready, visit the OJT Coordinator's office to pick up your endorsement letter with wet signature.</li>
+              <li><span className="font-semibold">Step 2:</span> Once all documents are submitted, fill in your company details and submit the endorsement request.</li>
+              <li><span className="font-semibold">Step 3:</span> Processing takes <span className="font-semibold">3–5 business days</span>.</li>
+              <li><span className="font-semibold">Step 4:</span> Once ready, visit the OJT Coordinator's office to pick up your endorsement letter with wet signature.</li>
               <li className="text-blue-600 text-xs pt-1">⚠ The endorsement letter is valid for the current academic year only.</li>
             </ul>
           </div>
