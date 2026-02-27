@@ -208,18 +208,19 @@ function RequirementsManagement() {
         <div className="divide-y divide-gray-200">
           {requirements.map((req, index) => (
             <div key={req.id} className="p-6 hover:bg-gray-50 transition">
-              <div className="flex items-start space-x-4">
-                {/* Order Number */}
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-orange-100">
-                  <span className="font-bold text-orange-600">
-                    {index + 1}
-                  </span>
-                </div>
+              <div className="flex items-start justify-between space-x-4">
+                {/* Left Side - Order Number and Content */}
+                <div className="flex items-start space-x-4 flex-1 min-w-0">
+                  {/* Order Number */}
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-orange-100">
+                    <span className="font-bold text-orange-600">
+                      {index + 1}
+                    </span>
+                  </div>
 
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1 min-w-0">
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="mb-2">
                       <h4 className="font-semibold text-gray-900">
                         {req.title}
                       </h4>
@@ -227,36 +228,49 @@ function RequirementsManagement() {
                         {req.description}
                       </p>
                     </div>
-                  </div>
 
-                  {/* File Types */}
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <span className="text-xs text-gray-500">Accepted files:</span>
-                    {req.acceptedFileTypes.map(type => {
-                      const badge = getFileTypeBadge(type)
-                      return (
-                        <span key={type} className={`text-xs px-2 py-1 rounded font-medium ${badge.color}`}>
-                          {badge.label}
-                        </span>
-                      )
-                    })}
+                    {/* File Types */}
+                    <div className="flex flex-wrap gap-2">
+                      <span className="text-xs text-gray-500">Accepted files:</span>
+                      {req.acceptedFileTypes.map(type => {
+                        const badge = getFileTypeBadge(type)
+                        return (
+                          <span key={type} className={`text-xs px-2 py-1 rounded font-medium ${badge.color}`}>
+                            {badge.label}
+                          </span>
+                        )
+                      })}
+                    </div>
                   </div>
+                </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center space-x-4">
-                    <button
-                      onClick={() => handleOpenEdit(req)}
-                      className="text-sm text-blue-600 hover:text-blue-700 font-medium focus:outline-none"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleOpenDelete(req)}
-                      className="text-sm text-red-600 hover:text-red-700 font-medium focus:outline-none"
-                    >
-                      Delete
-                    </button>
-                  </div>
+                {/* Right Side - Action Buttons */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {/* Edit Button */}
+                  <button
+                    onClick={() => handleOpenEdit(req)}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition focus:outline-none"
+                    title="Edit this requirement"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit
+                  </button>
+
+                  {/* Delete Button */}
+                  <button
+                    onClick={() => handleOpenDelete(req)}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition focus:outline-none"
+                    title="Delete this requirement"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete
+                  </button>
                 </div>
               </div>
             </div>

@@ -19,18 +19,18 @@ function UserEndorsement() {
 
   // Replace with real API data — all 9 requirements
   const requirements = [
-    { name: 'Copy of Registration Form',                             status: 'approved' },
-    { name: 'Attendance / Pre-Deployment Orientation',               status: 'approved' },
-    { name: 'Scanned Copy of Application Letter',                    status: 'approved' },
-    { name: 'Curriculum Vitae (LU Format)',                          status: 'approved' },
-    { name: 'AVP Self Introduction',                                 status: 'approved' },
-    { name: 'Notarized Student Internship Consent Form (LU Format)', status: 'approved' },
-    { name: 'Medical Clearance',                                     status: 'approved' },
-    { name: 'Scanned Copy of MOA',                                   status: 'approved' },
-    { name: 'Company Profile',                                       status: 'approved' },
+    { name: 'Copy of Registration Form',                             status: 'submitted' },
+    { name: 'Attendance / Pre-Deployment Orientation',               status: 'submitted' },
+    { name: 'Scanned Copy of Application Letter',                    status: 'submitted' },
+    { name: 'Curriculum Vitae (LU Format)',                          status: 'submitted' },
+    { name: 'AVP Self Introduction',                                 status: 'submitted' },
+    { name: 'Notarized Student Internship Consent Form (LU Format)', status: 'submitted' },
+    { name: 'Medical Clearance',                                     status: 'submitted' },
+    { name: 'Scanned Copy of MOA',                                   status: 'submitted' },
+    { name: 'Company Profile',                                       status: 'submitted' },
   ]
 
-  const allApproved = requirements.every(r => r.status === 'approved')
+  const allSubmitted = requirements.every(r => r.status === 'submitted')
 
   // Called by EndorsementCard with company details — 1.5s simulated API delay
   async function handleRequest(companyInfo) {
@@ -67,7 +67,7 @@ function UserEndorsement() {
             dateRequested={endorsement.dateRequested}
             dateApproved={endorsement.dateApproved}
             downloadUrl={endorsement.downloadUrl}
-            allApproved={allApproved}
+            allSubmitted={allSubmitted}
             onRequest={handleRequest}
             onDownload={handleDownload}
           />

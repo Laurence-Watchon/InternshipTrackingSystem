@@ -7,6 +7,11 @@ function RequiredHoursCard({ initialHours, onSave }) {
     'BSIT-BA': '',
     'BSIT-SD': ''
   })
+  const [errors, setErrors] = useState({
+    'BSCS-DS': '',
+    'BSIT-BA': '',
+    'BSIT-SD': ''
+  })
 
   const hasAllHours = Object.values(hours).every(h => h !== '' && parseInt(h) > 0)
 
@@ -17,13 +22,42 @@ function RequiredHoursCard({ initialHours, onSave }) {
       ...prev,
       [course]: numValue
     }))
+    // Clear error when typing
+    if (errors[course]) {
+      setErrors(prev => ({
+        ...prev,
+        [course]: ''
+      }))
+    }
   }
 
   const handleConfirm = () => {
-    if (!hasAllHours) {
-      alert('Please fill in all required hours')
+    // Validate all fields
+    const newErrors = {
+      'BSCS-DS': '',
+      'BSIT-BA': '',
+      'BSIT-SD': ''
+    }
+    let hasError = false
+
+    if (!hours['BSCS-DS'] || parseInt(hours['BSCS-DS']) <= 0) {
+      newErrors['BSCS-DS'] = 'BSCS-DS Required Hours is required'
+      hasError = true
+    }
+    if (!hours['BSIT-BA'] || parseInt(hours['BSIT-BA']) <= 0) {
+      newErrors['BSIT-BA'] = 'BSIT-BA Required Hours is required'
+      hasError = true
+    }
+    if (!hours['BSIT-SD'] || parseInt(hours['BSIT-SD']) <= 0) {
+      newErrors['BSIT-SD'] = 'BSIT-SD Required Hours is required'
+      hasError = true
+    }
+
+    if (hasError) {
+      setErrors(newErrors)
       return
     }
+
     onSave(hours)
     // Collapse the card after confirming
     setIsExpanded(false)
@@ -31,7 +65,7 @@ function RequiredHoursCard({ initialHours, onSave }) {
 
   return (
     <div className={`rounded-lg border-2 transition-all ${
-      hasAllHours ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+      hasAllHours ? 'bg-green-50 border-green-200' : 'bg-white border-red-200'
     }`}>
       {/* Header - Clickable */}
       <button
@@ -40,7 +74,7 @@ function RequiredHoursCard({ initialHours, onSave }) {
       >
         <div className="flex items-center space-x-3">
           <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-            hasAllHours ? 'bg-green-100' : 'bg-red-100'
+            hasAllHours ? 'bg-green-100' : 'bg-white'
           }`}>
             {hasAllHours ? (
               <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,9 +122,16 @@ function RequiredHoursCard({ initialHours, onSave }) {
                 type="text"
                 value={hours['BSCS-DS']}
                 onChange={(e) => handleChange('BSCS-DS', e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                className={`w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 ${
+                  errors['BSCS-DS']
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-green-500'
+                }`}
                 placeholder="Enter hours (e.g., 500)"
               />
+              {errors['BSCS-DS'] && (
+                <p className="text-red-500 text-sm mt-1">{errors['BSCS-DS']}</p>
+              )}
             </div>
 
             {/* BSIT-BA */}
@@ -102,9 +143,16 @@ function RequiredHoursCard({ initialHours, onSave }) {
                 type="text"
                 value={hours['BSIT-BA']}
                 onChange={(e) => handleChange('BSIT-BA', e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                className={`w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 ${
+                  errors['BSIT-BA']
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-green-500'
+                }`}
                 placeholder="Enter hours (e.g., 500)"
               />
+              {errors['BSIT-BA'] && (
+                <p className="text-red-500 text-sm mt-1">{errors['BSIT-BA']}</p>
+              )}
             </div>
 
             {/* BSIT-SD */}
@@ -116,9 +164,16 @@ function RequiredHoursCard({ initialHours, onSave }) {
                 type="text"
                 value={hours['BSIT-SD']}
                 onChange={(e) => handleChange('BSIT-SD', e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                className={`w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 ${
+                  errors['BSIT-SD']
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-green-500'
+                }`}
                 placeholder="Enter hours (e.g., 500)"
               />
+              {errors['BSIT-SD'] && (
+                <p className="text-red-500 text-sm mt-1">{errors['BSIT-SD']}</p>
+              )}
             </div>
 
             {/* Confirm Button */}

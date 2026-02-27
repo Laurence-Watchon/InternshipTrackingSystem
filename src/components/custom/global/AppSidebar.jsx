@@ -90,6 +90,15 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
         )
       },
       {
+        title: 'Student Requirements',
+        path: '/admin/students-requirements',
+        icon: (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        )
+      },
+      {
         title: 'Student Management',
         path: '/admin/students',
         icon: (
@@ -140,7 +149,9 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
   // Get menu items based on role
   const currentMenuItems = menuItems[role] || menuItems.user
 
-  const isActive = (path) => location.pathname === path
+  const isActive = (path) =>
+  location.pathname === path ||
+  location.pathname.startsWith(path + '/')
 
   return (
     <>
@@ -198,7 +209,19 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
                       : 'text-gray-700 hover:bg-gray-50'
                     }
                   `}
-                  onClick={() => {
+                  onClick={(e) => {
+                    const currentPath = location.pathname
+                    const targetPath = item.path
+
+                    // If already inside students-requirements details, prevent navigation
+                    if (
+                      targetPath === '/admin/students-requirements' &&
+                      currentPath.startsWith('/admin/students-requirements/')
+                    ) {
+                      e.preventDefault()
+                      return
+                    }
+
                     if (window.innerWidth < 1024) onClose()
                   }}
                 >
