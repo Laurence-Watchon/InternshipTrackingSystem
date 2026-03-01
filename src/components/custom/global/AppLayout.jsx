@@ -11,6 +11,11 @@ function AppLayout({ children, role = 'user' }) {
     window.scrollTo({ top: 0, behavior: 'instant' })
   }, [pathname])
 
+  // Close sidebar when route changes on mobile
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [pathname])
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Sidebar */}
@@ -21,13 +26,13 @@ function AppLayout({ children, role = 'user' }) {
       />
 
       {/* Main Content Area */}
-      <div className="lg:ml-64">
+      <div className="lg:ml-64 transition-all duration-300">
         {/* Topbar */}
         <AppTopbar onMenuClick={() => setSidebarOpen(true)} />
 
         {/* Page Content */}
         <main className="pt-16 min-h-screen">
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {children}
           </div>
         </main>
