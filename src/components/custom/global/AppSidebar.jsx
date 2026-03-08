@@ -10,43 +10,43 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
       {
         title: 'Dashboard',
         path: '/user/home',
-        icon: ( 
-          <House size={20}/>
+        icon: (
+          <House size={20} />
         )
       },
       {
         title: 'Requirements',
         path: '/user/requirements',
         icon: (
-          <NotebookText size={20}/>
+          <NotebookText size={20} />
         )
       },
       {
         title: 'Endorsement Letter',
         path: '/user/endorsement',
         icon: (
-          <CircleCheckBig size={20}/>
+          <CircleCheckBig size={20} />
         )
       },
       {
         title: 'Time Tracking',
         path: '/user/time-tracking',
         icon: (
-          <Clock size={20}/>
+          <Clock size={20} />
         )
       },
       {
         title: 'Daily Journal',
         path: '/user/journal',
         icon: (
-          <BookOpen size={20}/>
+          <BookOpen size={20} />
         )
       },
       {
         title: 'Profile',
         path: '/user/profile',
         icon: (
-          <User size={20}/>
+          <User size={20} />
         )
       },
     ],
@@ -55,42 +55,42 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
         title: 'Dashboard',
         path: '/admin/home',
         icon: (
-          <House size={20}/>
+          <House size={20} />
         )
       },
       {
         title: 'Student Management',
         path: '/admin/students',
         icon: (
-          <Users size={20}/>
+          <Users size={20} />
         )
       },
       {
         title: 'Requirements',
         path: '/admin/requirements',
         icon: (
-          <NotebookText size={20}/>
+          <NotebookText size={20} />
         )
       },
       {
         title: 'Student Requirements',
         path: '/admin/students-requirements',
         icon: (
-          <File size={20}/>
+          <File size={20} />
         )
       },
       {
         title: 'Endorsements Letter',
         path: '/admin/endorsements',
         icon: (
-          <CircleCheckBig size={20}/>
+          <CircleCheckBig size={20} />
         )
       },
       {
         title: 'Pending Approvals',
         path: '/admin/approvals',
         icon: (
-          <UserRoundPlus size={20}/>
+          <UserRoundPlus size={20} />
         )
       }
     ]
@@ -106,7 +106,7 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
     <>
       {/* Mobile overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={onClose}
         />
@@ -124,9 +124,9 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
         {/* Logo Section */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
           <div className="flex items-center space-x-3">
-            <img 
-              src={SchoolLogo} 
-              alt="Laguna University" 
+            <img
+              src={SchoolLogo}
+              alt="Laguna University"
               className="w-8 h-8"
             />
             <span className="font-bold text-sm sm:text-base text-gray-900">LU Internship</span>
@@ -180,7 +180,7 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
               </li>
             ))}
           </ul>
-        </nav> 
+        </nav>
       </aside>
     </>
   )
