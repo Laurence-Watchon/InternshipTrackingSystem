@@ -93,7 +93,7 @@ function SignupForm() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
-    
+
     let processedValue = value
 
     // Name validation - only letters and spaces
@@ -118,7 +118,7 @@ function SignupForm() {
     if (name === 'email') {
       processedValue = value.replace(/\s/g, '')
     }
-    
+
     // Update password strength when password changes
     if (name === 'password') {
       if (processedValue) {
@@ -127,7 +127,7 @@ function SignupForm() {
         setPasswordStrength('')
       }
     }
-    
+
     if (name === 'college') {
       setFormData(prev => ({
         ...prev,
@@ -145,7 +145,7 @@ function SignupForm() {
         [name]: processedValue
       }))
     }
-    
+
     // Live password match validation
     if (name === 'confirmPassword') {
       if (processedValue && formData.password !== processedValue) {
@@ -171,7 +171,7 @@ function SignupForm() {
         }
       }
     }
-    
+
     // Clear error when user types (except for live password validation)
     if (errors[name] && name !== 'confirmPassword') {
       setErrors(prev => {
@@ -269,26 +269,62 @@ function SignupForm() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
       return
     }
-    
+
     // Capitalize names before sending
     const finalData = {
       ...formData,
       firstName: capitalizeName(formData.firstName),
       lastName: capitalizeName(formData.lastName)
     }
-    
-    console.log('Signup data:', finalData)
-    
-    // Navigate to verification page with email
-    navigate('/verification', { 
-      state: { email: finalData.email } 
-    })
+
+    setIsLoading(true)
+    try {
+      const res = await fetch('http://localhost:3001/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: finalData.firstName,
+          lastName: finalData.lastName,
+          studentNumber: finalData.studentNumber,
+          phoneNumber: finalData.phoneNumber,
+          email: finalData.email,
+          college: finalData.college,
+          course: finalData.course,
+          password: finalData.password,
+        })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        // Surface server-side errors (e.g. email already taken)
+        if (data.error?.toLowerCase().includes('email')) {
+          setErrors(prev => ({ ...prev, email: data.error }))
+        } else if (data.error?.toLowerCase().includes('student number')) {
+          setErrors(prev => ({ ...prev, studentNumber: data.error }))
+        } else {
+          setErrors(prev => ({ ...prev, general: data.error || 'Something went wrong. Please try again.' }))
+        }
+        return
+      }
+
+      // OTP sent successfully — navigate to verification page
+      navigate('/verification', {
+        state: { email: finalData.email }
+      })
+    } catch {
+      setErrors(prev => ({ ...prev, general: 'Cannot connect to server. Please try again later.' }))
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const getStrengthColor = () => {
@@ -323,9 +359,9 @@ function SignupForm() {
       <div className="p-6 md:p-8 overflow-y-auto signup-form-scroll">
         {/* Logo and Title */}
         <div className="flex flex-col items-center mb-6">
-          <img 
-            src={SchoolLogo} 
-            alt="Laguna University Logo" 
+          <img
+            src={SchoolLogo}
+            alt="Laguna University Logo"
             className="w-12 h-12 mb-3"
           />
           <h2 className="text-2xl font-bold text-gray-900 text-center">
@@ -350,11 +386,10 @@ function SignupForm() {
                 type="text"
                 value={formData.firstName}
                 onChange={handleChange}
-                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
-                  errors.firstName 
-                    ? 'border-red-500 focus:ring-red-500' 
+                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${errors.firstName
+                    ? 'border-red-500 focus:ring-red-500'
                     : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
-                }`}
+                  }`}
                 placeholder="First name"
               />
               {errors.firstName && (
@@ -371,11 +406,10 @@ function SignupForm() {
                 type="text"
                 value={formData.lastName}
                 onChange={handleChange}
-                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
-                  errors.lastName 
-                    ? 'border-red-500 focus:ring-red-500' 
+                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${errors.lastName
+                    ? 'border-red-500 focus:ring-red-500'
                     : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
-                }`}
+                  }`}
                 placeholder="Last name"
               />
               {errors.lastName && (
@@ -395,11 +429,10 @@ function SignupForm() {
               type="text"
               value={formData.studentNumber}
               onChange={handleChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
-                errors.studentNumber 
-                  ? 'border-red-500 focus:ring-red-500' 
+              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${errors.studentNumber
+                  ? 'border-red-500 focus:ring-red-500'
                   : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
-              }`}
+                }`}
               placeholder="Enter your student number"
             />
             {errors.studentNumber && (
@@ -418,11 +451,10 @@ function SignupForm() {
               type="tel"
               value={formData.phoneNumber}
               onChange={handleChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
-                errors.phoneNumber 
-                  ? 'border-red-500 focus:ring-red-500' 
+              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${errors.phoneNumber
+                  ? 'border-red-500 focus:ring-red-500'
                   : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
-              }`}
+                }`}
               placeholder="09XXXXXXXXX"
             />
             {errors.phoneNumber && (
@@ -441,11 +473,10 @@ function SignupForm() {
               type="email"
               value={formData.email}
               onChange={handleChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
-                errors.email 
-                  ? 'border-red-500 focus:ring-red-500' 
+              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${errors.email
+                  ? 'border-red-500 focus:ring-red-500'
                   : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
-              }`}
+                }`}
               placeholder="your.email@gmail.com"
             />
             {errors.email && (
@@ -503,11 +534,10 @@ function SignupForm() {
               type="password"
               value={formData.password}
               onChange={handleChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
-                errors.password 
-                  ? 'border-red-500 focus:ring-red-500' 
+              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${errors.password
+                  ? 'border-red-500 focus:ring-red-500'
                   : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
-              }`}
+                }`}
               placeholder="Create a password"
             />
             {/* Password Strength Indicator */}
@@ -520,7 +550,7 @@ function SignupForm() {
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-1.5">
-                  <div 
+                  <div
                     className={`h-1.5 rounded-full transition-all ${getStrengthBarColor()}`}
                     style={{ width: getStrengthWidth() }}
                   ></div>
@@ -546,11 +576,10 @@ function SignupForm() {
               type="password"
               value={formData.confirmPassword}
               onChange={handleChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
-                errors.confirmPassword 
-                  ? 'border-red-500 focus:ring-red-500' 
+              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${errors.confirmPassword
+                  ? 'border-red-500 focus:ring-red-500'
                   : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
-              }`}
+                }`}
               placeholder="Confirm your password"
             />
             {errors.confirmPassword && (
@@ -592,11 +621,27 @@ function SignupForm() {
           </div>
 
           {/* Signup Button */}
+          {errors.general && (
+            <p className="text-sm text-red-600 text-center bg-red-50 border border-red-200 rounded-lg py-2 px-3">
+              {errors.general}
+            </p>
+          )}
           <button
             type="submit"
-            className="w-full bg-green-500 text-white py-2.5 rounded-lg hover:bg-green-600 transition font-medium focus:outline-none focus:ring-2 focus:ring-green-700 focus:ring-offset-2"
+            disabled={isLoading}
+            className="w-full bg-green-500 text-white py-2.5 rounded-lg hover:bg-green-600 transition font-medium focus:outline-none focus:ring-2 focus:ring-green-700 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Create Account
+            {isLoading ? (
+              <>
+                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                Sending OTP...
+              </>
+            ) : (
+              'Create Account'
+            )}
           </button>
 
           {/* Divider */}
@@ -615,9 +660,9 @@ function SignupForm() {
               type="button"
               className="flex items-center justify-center px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition focus:outline-none focus:ring-2 focus:ring-green-500 min-w-[280px]"
             >
-              <img 
-                src={GoogleLogo} 
-                alt="Google" 
+              <img
+                src={GoogleLogo}
+                alt="Google"
                 className="w-5 h-5 object-contain"
               />
               <span className="ml-2 text-sm font-medium text-gray-700">Continue with Google</span>

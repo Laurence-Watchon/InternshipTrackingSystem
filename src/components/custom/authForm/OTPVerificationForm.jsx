@@ -5,12 +5,23 @@ import SchoolLogo from '../../../assets/Schoollogo.png'
 function OTPVerificationForm() {
   const navigate = useNavigate()
   const location = useLocation()
-  const email = location.state?.email || 'user@example.com' // Email from signup
+  const email = location.state?.email || ''
   
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
   const [timer, setTimer] = useState(180) // 3 minutes in seconds
   const [canResend, setCanResend] = useState(false)
+  const [error, setError] = useState('')
+  const [successMsg, setSuccessMsg] = useState('')
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [isResending, setIsResending] = useState(false)
   const inputRefs = useRef([])
+
+  // Redirect if no email in state
+  useEffect(() => {
+    if (!email) {
+      navigate('/signup')
+    }
+  }, [email, navigate])
 
   // Timer countdown
   useEffect(() => {
@@ -36,14 +47,13 @@ function OTPVerificationForm() {
 
   // Handle OTP input change
   const handleChange = (index, value) => {
-    // Only allow numbers
     if (value && !/^\d+$/.test(value)) return
 
     const newOtp = [...otp]
-    newOtp[index] = value.slice(-1) // Only take last character
+    newOtp[index] = value.slice(-1)
     setOtp(newOtp)
+    setError('')
 
-    // Auto-focus next input
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus()
     }
@@ -68,42 +78,80 @@ function OTPVerificationForm() {
     })
     setOtp(newOtp)
 
-    // Focus last filled input
     const lastIndex = Math.min(pastedData.length, 5)
     inputRefs.current[lastIndex]?.focus()
   }
 
-  // Handle verify
-  const handleVerify = (e) => {
+  // Handle verify — calls backend to check OTP and save user to DB
+  const handleVerify = async (e) => {
     e.preventDefault()
     const otpValue = otp.join('')
     
     if (otpValue.length !== 6) {
-      alert('Please enter all 6 digits')
+      setError('Please enter all 6 digits.')
       return
     }
 
-    // TODO: Add actual OTP verification API call
-    console.log('Verifying OTP:', otpValue)
-    
-    // For now, just navigate to login
-    alert('Email verified successfully!')
-    navigate('/login')
+    setIsVerifying(true)
+    setError('')
+    try {
+      const res = await fetch('http://localhost:3001/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp: otpValue })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || 'Verification failed. Please try again.')
+        return
+      }
+
+      // Success — user saved to MongoDB
+      setSuccessMsg('Email verified! Redirecting to login...')
+      setTimeout(() => navigate('/login'), 2000)
+    } catch {
+      setError('Cannot connect to server. Please try again later.')
+    } finally {
+      setIsVerifying(false)
+    }
   }
 
   // Handle resend OTP
-  const handleResend = () => {
+  const handleResend = async () => {
     if (!canResend) return
 
-    // TODO: Add actual resend OTP API call
-    console.log('Resending OTP to:', email)
-    
-    // Reset timer and OTP
-    setTimer(180)
-    setCanResend(false)
-    setOtp(['', '', '', '', '', ''])
-    inputRefs.current[0]?.focus()
-    alert('OTP sent to your email!')
+    setIsResending(true)
+    setError('')
+    setSuccessMsg('')
+    try {
+      const res = await fetch('http://localhost:3001/api/auth/resend-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to resend OTP. Please sign up again.')
+        if (data.error?.toLowerCase().includes('session')) {
+          setTimeout(() => navigate('/signup'), 2500)
+        }
+        return
+      }
+
+      setTimer(180)
+      setCanResend(false)
+      setOtp(['', '', '', '', '', ''])
+      inputRefs.current[0]?.focus()
+      setSuccessMsg('A new OTP has been sent to your email!')
+    } catch {
+      setError('Cannot connect to server. Please try again later.')
+    } finally {
+      setIsResending(false)
+    }
   }
 
   return (
@@ -134,7 +182,7 @@ function OTPVerificationForm() {
               Verify Your Email
             </h2>
             <p className="text-gray-600 text-sm mb-1">
-              We've sent a verification code to
+              We&apos;ve sent a verification code to
             </p>
             <p className="text-green-600 font-medium">
               {email}
@@ -161,6 +209,18 @@ function OTPVerificationForm() {
               ))}
             </div>
 
+            {/* Error / Success Messages */}
+            {error && (
+              <p className="text-sm text-red-600 text-center bg-red-50 border border-red-200 rounded-lg py-2 px-3 mb-4">
+                {error}
+              </p>
+            )}
+            {successMsg && (
+              <p className="text-sm text-green-700 text-center bg-green-50 border border-green-200 rounded-lg py-2 px-3 mb-4">
+                {successMsg}
+              </p>
+            )}
+
             {/* Timer */}
             <div className="text-center mb-6">
               {timer > 0 ? (
@@ -178,26 +238,37 @@ function OTPVerificationForm() {
             {/* Verify Button */}
             <button
               type="submit"
-              className="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 transition font-medium focus:outline-none focus:ring-2 focus:ring-green-700 focus:ring-offset-2 mb-4"
+              disabled={isVerifying}
+              className="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 transition font-medium focus:outline-none focus:ring-2 focus:ring-green-700 focus:ring-offset-2 mb-4 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Verify Email
+              {isVerifying ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                  Verifying...
+                </>
+              ) : (
+                'Verify Email'
+              )}
             </button>
 
             {/* Resend OTP */}
             <div className="text-center">
               <p className="text-sm text-gray-600">
-                Didn't receive the code?{' '}
+                Didn&apos;t receive the code?{' '}
                 <button
                   type="button"
                   onClick={handleResend}
-                  disabled={!canResend}
+                  disabled={!canResend || isResending}
                   className={`font-medium ${
-                    canResend
+                    canResend && !isResending
                       ? 'text-green-600 hover:text-green-700 cursor-pointer'
                       : 'text-gray-400 cursor-not-allowed'
                   }`}
                 >
-                  Resend OTP
+                  {isResending ? 'Sending...' : 'Resend OTP'}
                 </button>
               </p>
             </div>
