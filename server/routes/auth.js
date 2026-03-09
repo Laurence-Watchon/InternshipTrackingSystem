@@ -247,4 +247,44 @@ router.post("/resend-otp", async (req, res) => {
   }
 });
 
-export default router;
+// -----------------------------------------------
+// POST /api/auth/login
+// Checks credentials and returns role
+// -----------------------------------------------
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required." });
+    }
+
+    const db = await connectDB();
+
+    // Find user by email
+    const user = await db.collection("users").findOne({ email });
+    if (!user) {
+      return res.status(401).json({ error: "Wrong credentials. Please try again." });
+    }
+
+    // Compare password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: "Wrong credentials. Please try again." });
+    }
+
+    // Return role so the frontend can redirect correctly
+    res.json({
+      message: "Login successful.",
+      role: user.role,         // "student" or "admin"
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Something went wrong. Please try again." });
+  }
+});
+
+export default router;
