@@ -5,6 +5,7 @@ import GoogleLogo from '../../../assets/google.png'
 import ComboBox from '../../ui/ComboBox'
 import TermsAndConditions from '../dialog/TermsAndConditions'
 import PrivacyPolicy from '../dialog/PrivacyPolicy'
+import Loading from '../../ui/CenterLoading'
 
 function SignupForm() {
   const navigate = useNavigate()
@@ -184,26 +185,6 @@ function SignupForm() {
 
   const validateForm = () => {
     const newErrors = {}
-
-    // First Name validation
-    const capitalizedFirstName = capitalizeName(formData.firstName)
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required'
-    } else if (formData.firstName.trim().length < 2) {
-      newErrors.firstName = 'First name must be at least 2 characters'
-    } else if (!/^[a-zA-Z\s]+$/.test(formData.firstName)) {
-      newErrors.firstName = 'First name can only contain letters'
-    }
-
-    // Last Name validation
-    const capitalizedLastName = capitalizeName(formData.lastName)
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required'
-    } else if (formData.lastName.trim().length < 2) {
-      newErrors.lastName = 'Last name must be at least 2 characters'
-    } else if (!/^[a-zA-Z\s]+$/.test(formData.lastName)) {
-      newErrors.lastName = 'Last name can only contain letters'
-    }
 
     // Student Number validation
     if (!formData.studentNumber.trim()) {
@@ -626,22 +607,15 @@ function SignupForm() {
               {errors.general}
             </p>
           )}
+          
+          {isLoading && <Loading message="Sending verification code..." />}
+
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-green-500 text-white py-2.5 rounded-lg hover:bg-green-600 transition font-medium focus:outline-none focus:ring-2 focus:ring-green-700 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-green-500 text-white py-2.5 rounded-lg hover:bg-green-600 transition font-medium focus:outline-none focus:ring-2 focus:ring-green-700 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {isLoading ? (
-              <>
-                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                </svg>
-                Sending OTP...
-              </>
-            ) : (
-              'Create Account'
-            )}
+            Create Account
           </button>
 
           {/* Divider */}
