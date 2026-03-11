@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../../context/AuthContext'
 import SchoolLogo from '../../../assets/Schoollogo.png'
 import GoogleLogo from '../../../assets/google.png'
 import Loading from '../../ui/CenterLoading'
 
 function LoginForm() {
   const navigate = useNavigate()
+  const { login } = useAuth()
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -98,6 +100,14 @@ function LoginForm() {
         setLoginError(data.error || 'Wrong credentials. Please try again.')
         return
       }
+
+      // Store user info in global context
+      login({
+        role: data.role,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email
+      })
 
       // Navigate based on role
       if (data.role === 'admin') {
