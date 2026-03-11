@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AlertTriangle, Check, ChevronDown } from 'lucide-react'
 
 function RequiredHoursCard({ initialHours, onSave }) {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -64,8 +65,8 @@ function RequiredHoursCard({ initialHours, onSave }) {
   }
 
   return (
-    <div className={`rounded-lg border-2 transition-all ${
-      hasAllHours ? 'bg-green-50 border-green-200' : 'bg-white border-red-200'
+    <div className={`rounded-xl border-4 transition-all ${
+      hasAllHours ? 'bg-green-50 border-green-200' : 'bg-white border-red-300'
     }`}>
       {/* Header - Clickable */}
       <button
@@ -74,16 +75,12 @@ function RequiredHoursCard({ initialHours, onSave }) {
       >
         <div className="flex items-center space-x-3">
           <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-            hasAllHours ? 'bg-green-100' : 'bg-white'
+            hasAllHours ? 'bg-green-100' : ''
           }`}>
             {hasAllHours ? (
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+              <Check className="w-6 h-6 text-green-600" />
             ) : (
-              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
+              <AlertTriangle className="w-6 h-6 text-red-600" />
             )}
           </div>
           <div className="text-left">
@@ -91,22 +88,17 @@ function RequiredHoursCard({ initialHours, onSave }) {
               Required Hours per Course
             </h3>
             <p className={`text-sm ${hasAllHours ? 'text-green-700' : 'text-red-700'}`}>
-              {hasAllHours 
-                ? 'All course hours have been set' 
+              {hasAllHours
+                ? 'All course hours have been set'
                 : 'Please set required hours for all courses'}
             </p>
           </div>
         </div>
-        <svg 
+        <ChevronDown 
           className={`w-5 h-5 ${hasAllHours ? 'text-green-600' : 'text-red-600'} transition-transform ${
             isExpanded ? 'rotate-180' : ''
-          }`} 
-          fill="none" 
-          stroke="currentColor" 
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+          }`}
+        />
       </button>
 
       {/* Expanded Content */}
@@ -122,11 +114,10 @@ function RequiredHoursCard({ initialHours, onSave }) {
                 type="text"
                 value={hours['BSCS-DS']}
                 onChange={(e) => handleChange('BSCS-DS', e.target.value)}
-                className={`w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 ${
-                  errors['BSCS-DS']
-                    ? 'border-red-500 focus:ring-red-500'
-                    : 'border-gray-300 focus:ring-green-500'
-                }`}
+                className={`w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 ${errors['BSCS-DS']
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-gray-300 focus:ring-green-500'
+                  }`}
                 placeholder="Enter hours (e.g., 500)"
               />
               {errors['BSCS-DS'] && (
@@ -143,11 +134,10 @@ function RequiredHoursCard({ initialHours, onSave }) {
                 type="text"
                 value={hours['BSIT-BA']}
                 onChange={(e) => handleChange('BSIT-BA', e.target.value)}
-                className={`w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 ${
-                  errors['BSIT-BA']
-                    ? 'border-red-500 focus:ring-red-500'
-                    : 'border-gray-300 focus:ring-green-500'
-                }`}
+                className={`w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 ${errors['BSIT-BA']
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-gray-300 focus:ring-green-500'
+                  }`}
                 placeholder="Enter hours (e.g., 500)"
               />
               {errors['BSIT-BA'] && (
@@ -164,11 +154,10 @@ function RequiredHoursCard({ initialHours, onSave }) {
                 type="text"
                 value={hours['BSIT-SD']}
                 onChange={(e) => handleChange('BSIT-SD', e.target.value)}
-                className={`w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 ${
-                  errors['BSIT-SD']
-                    ? 'border-red-500 focus:ring-red-500'
-                    : 'border-gray-300 focus:ring-green-500'
-                }`}
+                className={`w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 ${errors['BSIT-SD']
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-gray-300 focus:ring-green-500'
+                  }`}
                 placeholder="Enter hours (e.g., 500)"
               />
               {errors['BSIT-SD'] && (

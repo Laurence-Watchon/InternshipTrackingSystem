@@ -1,4 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
+import ProtectedRoute from './components/auth/ProtectedRoute'
+import PublicRoute from './components/auth/PublicRoute'
+import NotFound from './components/ui/NotFound'
 import LandingPage from './pages/global/LandingPage'
 import LoginPage from './pages/global/LoginPage'
 import SignupPage from './pages/global/SignupPage'
@@ -20,33 +24,62 @@ import './App.css'
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/verification" element={<VerificationPage />} />
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={
+            <PublicRoute>
+              <LandingPage />
+            </PublicRoute>
+          } />
+          <Route path="/login" element={
+            <PublicRoute>
+              <LoginPage />
+            </PublicRoute>
+          } />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/verification" element={<VerificationPage />} />
 
-        {/* User Dashboard Routes */}
-        <Route path="/user/home" element={<UserHome />} />
-        <Route path="/user/requirements" element={<UserRequirements />} />
-        <Route path="/user/endorsement" element={<UserEndorsement />} />
-        <Route path="/user/time-tracking" element={<UserTimeTracking />} />
-        <Route path="/user/journal" element={<UserJournal />} />
-        <Route path="/user/profile" element={<Profile />} />
+          {/* User Dashboard Routes */}
+          <Route path="/user/*" element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <Routes>
+                <Route path="home" element={<UserHome />} />
+                <Route path="requirements" element={<UserRequirements />} />
+                <Route path="endorsement" element={<UserEndorsement />} />
+                <Route path="time-tracking" element={<UserTimeTracking />} />
+                <Route path="journal" element={<UserJournal />} />
+                <Route path="profile" element={<Profile />} />
+                {/* User Nested Catch-all */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </ProtectedRoute>
+          } />
 
-        {/* Admin Dashboard Routes */}
-        <Route path="/admin/home" element={<AdminDashboard />} />
-        <Route path="/admin/approvals" element={<AdminPendingApprovals />} />
-        <Route path="/admin/requirements" element={<RequirementsManagement />} />
-        <Route path="/admin/students" element={<StudentManagement />} />
-        <Route path="/admin/endorsements" element={<AdminEndorsements />} />
-        <Route path="/admin/students-requirements" element={<AdminStudentRequirements />} />
-        <Route path="/admin/students-requirements/:studentId" element={<AdminStudentRequirementsDetail />} />
-      </Routes>
-    </Router>
+          {/* Admin Dashboard Routes */}
+          <Route path="/admin/*" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <Routes>
+                <Route path="home" element={<AdminDashboard />} />
+                <Route path="approvals" element={<AdminPendingApprovals />} />
+                <Route path="requirements" element={<RequirementsManagement />} />
+                <Route path="students" element={<StudentManagement />} />
+                <Route path="endorsements" element={<AdminEndorsements />} />
+                <Route path="students-requirements" element={<AdminStudentRequirements />} />
+                <Route path="students-requirements/:studentId" element={<AdminStudentRequirementsDetail />} />
+                {/* Admin Nested Catch-all */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </ProtectedRoute>
+          } />
+
+          {/* Global Catch-all */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
   )
 }
 
-export default App
+export default App
