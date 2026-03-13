@@ -1,8 +1,9 @@
 import { Link, useLocation } from 'react-router-dom'
 import SchoolLogo from '../../../assets/Schoollogo.png'
 import { House, NotebookText, CircleCheckBig, Clock, BookOpen, User, Users, File, UserRoundPlus } from 'lucide-react';
+import Skeleton from '../../ui/Skeleton';
 
-function AppSidebar({ isOpen, onClose, role = 'user' }) {
+function AppSidebar({ isOpen, onClose, role = 'user', isLoading = false }) {
   const location = useLocation()
 
   const menuItems = {
@@ -124,12 +125,20 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
         {/* Logo Section */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
           <div className="flex items-center space-x-3">
-            <img
-              src={SchoolLogo}
-              alt="Laguna University"
-              className="w-8 h-8"
-            />
-            <span className="font-bold text-sm sm:text-base text-gray-900">LU Internship</span>
+            {isLoading ? (
+              <Skeleton variant="circular" width={32} height={32} />
+            ) : (
+              <img
+                src={SchoolLogo}
+                alt="Laguna University"
+                className="w-8 h-8"
+              />
+            )}
+            {isLoading ? (
+              <Skeleton variant="text" width={100} height={20} />
+            ) : (
+              <span className="font-bold text-sm sm:text-base text-gray-900">LU Internship</span>
+            )}
           </div>
           {/* Close button - only visible on mobile */}
           <button
@@ -146,39 +155,50 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
         {/* Navigation Menu */}
         <nav className="flex-1 overflow-y-auto py-4 h-[calc(100vh-4rem)]">
           <ul className="space-y-1 px-3">
-            {currentMenuItems.map((item) => (
-              <li key={item.path}>
-                <Link
-                  to={item.path}
-                  className={`
-                    flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors
-                    ${isActive(item.path)
-                      ? 'bg-green-50 text-green-600 font-medium'
-                      : 'text-gray-700 hover:bg-gray-50'
-                    }
-                  `}
-                  onClick={(e) => {
-                    const currentPath = location.pathname
-                    const targetPath = item.path
+            {isLoading ? (
+              [...Array(6)].map((_, i) => (
+                <li key={i} className="px-4 py-3">
+                  <div className="flex items-center space-x-3">
+                    <Skeleton variant="circular" width={20} height={20} />
+                    <Skeleton variant="text" width="70%" />
+                  </div>
+                </li>
+              ))
+            ) : (
+              currentMenuItems.map((item) => (
+                <li key={item.path}>
+                  <Link
+                    to={item.path}
+                    className={`
+                      flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors
+                      ${isActive(item.path)
+                        ? 'bg-green-50 text-green-600 font-medium'
+                        : 'text-gray-700 hover:bg-gray-50'
+                      }
+                    `}
+                    onClick={(e) => {
+                      const currentPath = location.pathname
+                      const targetPath = item.path
 
-                    // If already inside students-requirements details, prevent navigation
-                    if (
-                      targetPath === '/admin/students-requirements' &&
-                      currentPath.startsWith('/admin/students-requirements/')
-                    ) {
-                      e.preventDefault()
-                      return
-                    }
+                      // If already inside students-requirements details, prevent navigation
+                      if (
+                        targetPath === '/admin/students-requirements' &&
+                        currentPath.startsWith('/admin/students-requirements/')
+                      ) {
+                        e.preventDefault()
+                        return
+                      }
 
-                    // Close sidebar on mobile
-                    if (window.innerWidth < 1024) onClose()
-                  }}
-                >
-                  {item.icon}
-                  <span className="text-sm">{item.title}</span>
-                </Link>
-              </li>
-            ))}
+                      // Close sidebar on mobile
+                      if (window.innerWidth < 1024) onClose()
+                    }}
+                  >
+                    {item.icon}
+                    <span className="text-sm">{item.title}</span>
+                  </Link>
+                </li>
+              ))
+            )}
           </ul>
         </nav>
       </aside>

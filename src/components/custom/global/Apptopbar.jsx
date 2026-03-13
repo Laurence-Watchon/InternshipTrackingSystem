@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
 import PageTitle from '../../ui/PageTitle'
 import Dialog from '../../ui/Dialog'
+import Skeleton from '../../ui/Skeleton'
 import { Bell } from 'lucide-react';
 
-function AppTopbar({ onMenuClick }) {
+function AppTopbar({ onMenuClick, isLoading = false }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
@@ -69,141 +70,156 @@ function AppTopbar({ onMenuClick }) {
               </svg>
             </button>
             <div className="min-w-0 flex-1">
-              <PageTitle />
+              <PageTitle isLoading={isLoading} />
             </div>
           </div>
 
           {/* Right side - Notifications, Profile */}
           <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
-            {/* Notifications */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setShowNotifications(!showNotifications)
-                  setShowProfileMenu(false)
-                }}
-                className="bg-white relative p-2 text-black-500 hover:text-green-600 hover:bg-green-50 focus:outline-none rounded-lg"
-                aria-label="Notifications"
-              >
-                <Bell />
-                {/* Notification badge */}
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
-
-              {/* Notifications Dropdown */}
-              {showNotifications && (
-                <>
-                  <div
-                    className="fixed inset-0 z-10"
-                    onClick={() => setShowNotifications(false)}
-                  />
-                  <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20 max-h-[80vh] overflow-hidden">
-                    <div className="px-4 py-2 border-b border-gray-200">
-                      <h3 className="font-semibold text-gray-900">Notifications</h3>
-                    </div>
-                    <div className="max-h-96 overflow-y-auto">
-                      {notifications.map((notif) => (
-                        <div
-                          key={notif.id}
-                          className={`px-4 py-3 hover:bg-gray-50 cursor-pointer ${notif.unread ? 'bg-green-50' : ''
-                            }`}
-                        >
-                          <div className="flex items-start space-x-3">
-                            {notif.unread && (
-                              <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900">{notif.title}</p>
-                              <p className="text-sm text-gray-600 truncate">{notif.message}</p>
-                              <p className="text-xs text-gray-500 mt-1">{notif.time}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="px-4 py-2 border-t border-gray-200">
-                      <button className="bg-white text-sm text-green-600 hover:text-green-700 font-medium">
-                        View all notifications
-                      </button>
-                    </div>
+            {isLoading ? (
+              <>
+                <Skeleton variant="circular" width={40} height={40} />
+                <div className="flex items-center space-x-3">
+                  <Skeleton variant="circular" width={36} height={36} />
+                  <div className="hidden md:block">
+                    <Skeleton variant="text" width={100} />
+                    <Skeleton variant="text" width={60} />
                   </div>
-                </>
-              )}
-            </div>
-
-            {/* Profile Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setShowProfileMenu(!showProfileMenu)
-                  setShowNotifications(false)
-                }}
-                className="bg-white flex items-center space-x-2 sm:space-x-3 focus:outline-none p-2 rounded-lg hover:bg-green-50"
-                aria-label="User menu"
-              >
-                <div className="w-8 h-8 sm:w-9 sm:h-9 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                  {getInitials()}
                 </div>
-                <div className="hidden md:block text-left">
-                  <p className="text-sm font-medium text-gray-900">
-                    {user ? `${user.firstName} ${user.lastName}` : 'Guest User'}
-                  </p>
-                  <p className="text-xs text-gray-500 capitalize">{user ? user.role : ''}</p>
-                </div>
-                <svg className="w-4 h-4 text-gray-500 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
+              </>
+            ) : (
+              <>
+                {/* Notifications */}
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      setShowNotifications(!showNotifications)
+                      setShowProfileMenu(false)
+                    }}
+                    className="bg-white relative p-2 text-black-500 hover:text-green-600 hover:bg-green-50 focus:outline-none rounded-lg"
+                    aria-label="Notifications"
+                  >
+                    <Bell />
+                    {/* Notification badge */}
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                  </button>
 
-              {/* Profile Dropdown Menu */}
-              {showProfileMenu && (
-                <>
-                  <div
-                    className="fixed inset-0 z-10"
-                    onClick={() => setShowProfileMenu(false)}
-                  />
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
-                    <div className="px-4 py-2 border-b border-gray-200">
+                  {/* Notifications Dropdown */}
+                  {showNotifications && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setShowNotifications(false)}
+                      />
+                      <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20 max-h-[80vh] overflow-hidden">
+                        <div className="px-4 py-2 border-b border-gray-200">
+                          <h3 className="font-semibold text-gray-900">Notifications</h3>
+                        </div>
+                        <div className="max-h-96 overflow-y-auto">
+                          {notifications.map((notif) => (
+                            <div
+                              key={notif.id}
+                              className={`px-4 py-3 hover:bg-gray-50 cursor-pointer ${notif.unread ? 'bg-green-50' : ''
+                                }`}
+                            >
+                              <div className="flex items-start space-x-3">
+                                {notif.unread && (
+                                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900">{notif.title}</p>
+                                  <p className="text-sm text-gray-600 truncate">{notif.message}</p>
+                                  <p className="text-xs text-gray-500 mt-1">{notif.time}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="px-4 py-2 border-t border-gray-200">
+                          <button className="bg-white text-sm text-green-600 hover:text-green-700 font-medium">
+                            View all notifications
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Profile Dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      setShowProfileMenu(!showProfileMenu)
+                      setShowNotifications(false)
+                    }}
+                    className="bg-white flex items-center space-x-2 sm:space-x-3 focus:outline-none p-2 rounded-lg hover:bg-green-50"
+                    aria-label="User menu"
+                  >
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                      {getInitials()}
+                    </div>
+                    <div className="hidden md:block text-left">
                       <p className="text-sm font-medium text-gray-900">
                         {user ? `${user.firstName} ${user.lastName}` : 'Guest User'}
                       </p>
-                      <p className="text-xs text-gray-500 truncate">{user ? user.email : ''}</p>
+                      <p className="text-xs text-gray-500 capitalize">{user ? user.role : ''}</p>
                     </div>
-                    <Link
-                      to={user?.role === 'admin' ? '/admin/home' : '/user/profile'}
-                      className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      onClick={() => setShowProfileMenu(false)}
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                      <span>My Profile</span>
-                    </Link>
-                    <Link
-                      to={user?.role === 'admin' ? '/admin/requirements' : '/user/requirements'}
-                      className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      onClick={() => setShowProfileMenu(false)}
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <span>Requirements</span>
-                    </Link>
-                    <hr className="my-2 border-gray-200" />
-                    <button
-                      onClick={handleLogoutClick}
-                      className="bg-white flex items-center space-x-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left focus:outline-none"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                      </svg>
-                      <span>Logout</span>
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+                    <svg className="w-4 h-4 text-gray-500 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {/* Profile Dropdown Menu */}
+                  {showProfileMenu && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setShowProfileMenu(false)}
+                      />
+                      <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
+                        <div className="px-4 py-2 border-b border-gray-200">
+                          <p className="text-sm font-medium text-gray-900">
+                            {user ? `${user.firstName} ${user.lastName}` : 'Guest User'}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">{user ? user.email : ''}</p>
+                        </div>
+                        <Link
+                          to={user?.role === 'admin' ? '/admin/home' : '/user/profile'}
+                          className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          onClick={() => setShowProfileMenu(false)}
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          <span>My Profile</span>
+                        </Link>
+                        <Link
+                          to={user?.role === 'admin' ? '/admin/requirements' : '/user/requirements'}
+                          className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          onClick={() => setShowProfileMenu(false)}
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <span>Requirements</span>
+                        </Link>
+                        <hr className="my-2 border-gray-200" />
+                        <button
+                          onClick={handleLogoutClick}
+                          className="bg-white flex items-center space-x-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left focus:outline-none"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          </svg>
+                          <span>Logout</span>
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </header>

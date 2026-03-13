@@ -1,12 +1,21 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import AdminHomeCourses from '../../components/ui/AdminHomeCourses'
 import Card from '../../components/ui/Card'
 import RecentStudents from '../../components/ui/RecentStudents'
 import PartnerCompanies from '../../components/ui/PartnerCompanies'
+import Skeleton from '../../components/ui/Skeleton'
 
 function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('all')
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [])
 
   // Mock data - replace with actual API data
   const collegeData = {
@@ -56,100 +65,142 @@ function AdminDashboard() {
   const isSpecificCourse = activeTab !== 'all'
 
   return (
-    <AppLayout role="admin">
+    <AppLayout role="admin" isLoading={isLoading}>
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">{collegeData.name}</h1>
-        <p className="text-gray-600 mt-1">
-          Manage students, requirements, and endorsements for your college
-        </p>
+        {isLoading ? (
+          <>
+            <Skeleton variant="rectangular" height={32} width={400} className="mb-2" />
+            <Skeleton variant="text" width={500} />
+          </>
+        ) : (
+          <>
+            <h1 className="text-2xl font-bold text-gray-900">{collegeData.name}</h1>
+            <p className="text-gray-600 mt-1">
+              Manage students, requirements, and endorsements for your college
+            </p>
+          </>
+        )}
       </div>
 
       {/* Course Selection Tabs */}
       <div className="mb-6">
-        <AdminHomeCourses
-          courses={courses}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
+        {isLoading ? (
+          <div className="bg-white rounded-lg shadow p-2 flex space-x-4">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} variant="rectangular" height={40} width={100} className="rounded-md" />
+            ))}
+          </div>
+        ) : (
+          <AdminHomeCourses
+            courses={courses}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        )}
       </div>
 
       {/* Stats Cards */}
       <div className={`grid grid-cols-1 md:grid-cols-2 ${isSpecificCourse ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} gap-6 mb-6`}>
-        {/* Total Students */}
-        <Card
-          title="Total Students"
-          value={currentStats.totalStudents}
-          color="bg-blue-500"
-          icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-          }
-        />
+        {isLoading ? (
+          [...Array(isSpecificCourse ? 5 : 4)].map((_, i) => (
+            <div key={i} className="bg-white rounded-lg shadow p-6">
+              <Skeleton variant="rectangular" height={48} width={48} className="mb-4" />
+              <Skeleton variant="text" width="60%" />
+              <Skeleton variant="text" height={32} width="40%" />
+            </div>
+          ))
+        ) : (
+          <>
+            {/* Total Students */}
+            <Card
+              title="Total Students"
+              value={currentStats.totalStudents}
+              color="bg-blue-500"
+              icon={
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              }
+            />
 
-        {/* Deployed */}
-        <Card
-          title="Deployed"
-          value={currentStats.deployed}
-          color="bg-green-500"
-          sub={`${((currentStats.deployed / currentStats.totalStudents) * 100).toFixed(0)}% of total`}
-          icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
-        />
+            {/* Deployed */}
+            <Card
+              title="Deployed"
+              value={currentStats.deployed}
+              color="bg-green-500"
+              sub={`${((currentStats.deployed / currentStats.totalStudents) * 100).toFixed(0)}% of total`}
+              icon={
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              }
+            />
 
-        {/* Requirements */}
-        <Card
-          title="Requirements"
-          value={currentStats.requirements}
-          color="bg-purple-500"
-          sub="Completed"
-          icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          }
-        />
+            {/* Requirements */}
+            <Card
+              title="Requirements"
+              value={currentStats.requirements}
+              color="bg-purple-500"
+              sub="Completed"
+              icon={
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              }
+            />
 
-        {/* Pending Endorsement */}
-        <Card
-          title="Pending Endorsement"
-          value={currentStats.pendingEndorsement}
-          color="bg-orange-500"
-          sub="Awaiting approval"
-          icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
-        />
+            {/* Pending Endorsement */}
+            <Card
+              title="Pending Endorsement"
+              value={currentStats.pendingEndorsement}
+              color="bg-orange-500"
+              sub="Awaiting approval"
+              icon={
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              }
+            />
 
-        {/* Required Hours - Only for specific course */}
-        {isSpecificCourse && (
-          <Card
-            title="Required Hours"
-            value={currentStats.requiredHours}
-            color="bg-yellow-500"
-            sub="Per student"
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            }
-          />
+            {/* Required Hours - Only for specific course */}
+            {isSpecificCourse && (
+              <Card
+                title="Required Hours"
+                value={currentStats.requiredHours}
+                color="bg-yellow-500"
+                sub="Per student"
+                icon={
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                }
+              />
+            )}
+          </>
         )}
       </div>
 
       {/* Two Column Layout - Same Height */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Students List */}
-        <RecentStudents activeCourse={activeTab} />
+        {isLoading ? (
+          <>
+            <div className="bg-white rounded-lg shadow p-6 h-[400px]">
+              <Skeleton variant="rectangular" height="100%" />
+            </div>
+            <div className="bg-white rounded-lg shadow p-6 h-[400px]">
+              <Skeleton variant="rectangular" height="100%" />
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Students List */}
+            <RecentStudents activeCourse={activeTab} />
 
-        {/* Companies List */}
-        <PartnerCompanies />
+            {/* Companies List */}
+            <PartnerCompanies />
+          </>
+        )}
       </div>
     </AppLayout>
   )

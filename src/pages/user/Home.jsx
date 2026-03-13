@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import WeeklyHours from '../../components/ui/WeeklyHours'
 import CircularProgress from '../../components/ui/CircularProgress'
+import Skeleton from '../../components/ui/Skeleton'
 import { NotebookText, CircleCheckBig, Hourglass, BookOpen } from 'lucide-react';
 
 const scrollbarStyle = `
@@ -24,6 +26,15 @@ const APPROVED_HOURS = 120
 const REQUIRED_HOURS = 500
 
 function UserHome() {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
   const stats = [
     {
       title: 'Requirements',
@@ -84,81 +95,131 @@ function UserHome() {
   ]
 
   return (
-    <AppLayout>
+    <AppLayout isLoading={isLoading}>
       <style>{scrollbarStyle}</style>
 
       {/* Welcome */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Welcome back, John! 👋</h1>
-        <p className="text-gray-600 mt-1">Here's what's happening with your internship today.</p>
+        {isLoading ? (
+          <>
+            <Skeleton variant="rectangular" height={32} width={300} className="mb-2" />
+            <Skeleton variant="text" width={400} />
+          </>
+        ) : (
+          <>
+            <h1 className="text-2xl font-bold text-gray-900">Welcome back, John! 👋</h1>
+            <p className="text-gray-600 mt-1">Here's what's happening with your internship today.</p>
+          </>
+        )}
       </div>
 
       {/* Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        {stats.map((stat, index) => (
-          <div key={index} className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className={`${stat.color} text-white p-3 rounded-lg`}>
-                {stat.icon}
-              </div>
+        {isLoading ? (
+          [...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white rounded-lg shadow p-6">
+              <Skeleton variant="rectangular" height={48} width={48} className="mb-4" />
+              <Skeleton variant="text" width="60%" />
+              <Skeleton variant="text" height={32} width="40%" />
+              <Skeleton variant="rectangular" height={8} className="mt-2" />
             </div>
-            <h3 className="text-gray-500 text-sm font-medium">{stat.title}</h3>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
-            {stat.percentage && (
-              <div className="mt-2">
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className={`${stat.color} h-2 rounded-full`} style={{ width: stat.percentage }} />
+          ))
+        ) : (
+          stats.map((stat, index) => (
+            <div key={index} className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className={`${stat.color} text-white p-3 rounded-lg`}>
+                  {stat.icon}
                 </div>
               </div>
-            )}
-          </div>
-        ))}
+              <h3 className="text-gray-500 text-sm font-medium">{stat.title}</h3>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+              {stat.percentage && (
+                <div className="mt-2">
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className={`${stat.color} h-2 rounded-full`} style={{ width: stat.percentage }} />
+                  </div>
+                </div>
+              )}
+            </div>
+          ))
+        )}
       </div>
 
       {/* Recent Activities + Upcoming Tasks */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2 bg-white rounded-lg shadow">
           <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Activities</h2>
+            {isLoading ? (
+              <Skeleton variant="text" width={150} height={24} />
+            ) : (
+              <h2 className="text-lg font-semibold text-gray-900">Recent Activities</h2>
+            )}
           </div>
           <div className="p-6 overflow-y-auto custom-scroll" style={{ maxHeight: '340px' }}>
             <div className="space-y-4">
-              {recentActivities.map((activity, index) => (
-                <div key={index} className="flex items-start space-x-4">
-                  <div className={`${activity.color} w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0`}>
-                    <span className="text-lg">{activity.icon}</span>
+              {isLoading ? (
+                [...Array(5)].map((_, i) => (
+                  <div key={i} className="flex items-start space-x-4">
+                    <Skeleton variant="circular" height={40} width={40} />
+                    <div className="flex-1">
+                      <Skeleton variant="text" width="40%" />
+                      <Skeleton variant="text" width="70%" />
+                      <Skeleton variant="text" width="20%" />
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">{activity.title}</p>
-                    <p className="text-sm text-gray-600">{activity.description}</p>
-                    <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
+                ))
+              ) : (
+                recentActivities.map((activity, index) => (
+                  <div key={index} className="flex items-start space-x-4">
+                    <div className={`${activity.color} w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0`}>
+                      <span className="text-lg">{activity.icon}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900">{activity.title}</p>
+                      <p className="text-sm text-gray-600">{activity.description}</p>
+                      <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow flex flex-col">
           <div className="p-6 border-b border-gray-200 flex-shrink-0">
-            <h2 className="text-lg font-semibold text-gray-900">Upcoming Tasks</h2>
+            {isLoading ? (
+              <Skeleton variant="text" width={150} height={24} />
+            ) : (
+              <h2 className="text-lg font-semibold text-gray-900">Upcoming Tasks</h2>
+            )}
           </div>
           <div className="p-6 overflow-y-auto custom-scroll" style={{ maxHeight: '340px' }}>
             <div className="space-y-4">
-              {upcomingTasks.map((task, index) => (
-                <div key={index} className="border-l-4 border-green-500 pl-4 py-2">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">{task.task}</p>
-                      <p className="text-xs text-gray-500 mt-1">{task.deadline}</p>
-                    </div>
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ml-2 flex-shrink-0
-                      ${task.priority === 'high' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-600'}`}>
-                      {task.priority}
-                    </span>
+              {isLoading ? (
+                [...Array(4)].map((_, i) => (
+                  <div key={i} className="border-l-4 border-gray-200 pl-4 py-2">
+                    <Skeleton variant="text" width="80%" />
+                    <Skeleton variant="text" width="30%" />
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                upcomingTasks.map((task, index) => (
+                  <div key={index} className="border-l-4 border-green-500 pl-4 py-2">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">{task.task}</p>
+                        <p className="text-xs text-gray-500 mt-1">{task.deadline}</p>
+                      </div>
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ml-2 flex-shrink-0
+                        ${task.priority === 'high' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-600'}`}>
+                        {task.priority}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -167,13 +228,24 @@ function UserHome() {
       {/* Weekly Hours (2/3) + Overall Progress (1/3) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <WeeklyHours weeklyData={WEEKLY_DATA} target={40} />
+          {isLoading ? (
+            <div className="bg-white rounded-lg shadow p-6 h-[300px]">
+              <Skeleton variant="rectangular" height="100%" />
+            </div>
+          ) : (
+            <WeeklyHours weeklyData={WEEKLY_DATA} target={40} />
+          )}
         </div>
         <div className="lg:col-span-1">
-          <CircularProgress completed={APPROVED_HOURS} required={REQUIRED_HOURS} />
+          {isLoading ? (
+            <div className="bg-white rounded-lg shadow p-6 h-[300px] flex items-center justify-center">
+              <Skeleton variant="circular" height={200} width={200} />
+            </div>
+          ) : (
+            <CircularProgress completed={APPROVED_HOURS} required={REQUIRED_HOURS} />
+          )}
         </div>
       </div>
-
     </AppLayout>
   )
 }
