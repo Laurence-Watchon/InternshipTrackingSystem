@@ -1,4 +1,5 @@
 import { useLocation } from 'react-router-dom'
+import Skeleton from './Skeleton'
 
 const PAGE_TITLES = {
   '/user/home':         'Dashboard',
@@ -15,12 +16,16 @@ const PAGE_TITLES = {
   '/admin/students-requirements': 'Student Requirements',
 }
 
-export default function PageTitle() {
+export default function PageTitle({ isLoading = false }) {
   const { pathname } = useLocation()
   let title = PAGE_TITLES[pathname]
 
   if (!title && pathname.startsWith('/admin/students-requirements/')) {
     title = 'Student Requirement Details'
+  }
+
+  if (isLoading) {
+    return <Skeleton variant="text" width={150} height={28} className="hidden sm:block" />
   }
 
   return (
