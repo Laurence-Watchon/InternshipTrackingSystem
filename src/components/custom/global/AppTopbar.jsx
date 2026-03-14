@@ -3,10 +3,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
 import PageTitle from '../../ui/PageTitle'
 import Dialog from '../../ui/Dialog'
-import Skeleton from '../../ui/Skeleton'
 import { Bell } from 'lucide-react';
 
-function AppTopbar({ onMenuClick, isLoading = false }) {
+function AppTopbar({ onMenuClick }) {
     const [showProfileMenu, setShowProfileMenu] = useState(false)
     const [showNotifications, setShowNotifications] = useState(false)
     const [showLogoutDialog, setShowLogoutDialog] = useState(false)
@@ -70,26 +69,14 @@ function AppTopbar({ onMenuClick, isLoading = false }) {
                             </svg>
                         </button>
                         <div className="min-w-0 flex-1">
-                            <PageTitle isLoading={isLoading} />
+                            <PageTitle />
                         </div>
                     </div>
 
                     {/* Right side - Notifications, Profile */}
                     <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
-                        {isLoading ? (
-                            <>
-                                <Skeleton variant="circular" width={40} height={40} />
-                                <div className="flex items-center space-x-3">
-                                    <Skeleton variant="circular" width={36} height={36} />
-                                    <div className="hidden md:block">
-                                        <Skeleton variant="text" width={100} />
-                                        <Skeleton variant="text" width={60} />
-                                    </div>
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                {/* Notifications */}
+                        <>
+                            {/* Notifications */}
                                 <div className="relative">
                                     <button
                                         onClick={() => {
@@ -218,8 +205,7 @@ function AppTopbar({ onMenuClick, isLoading = false }) {
                                         </>
                                     )}
                                 </div>
-                            </>
-                        )}
+                        </>
                     </div>
                 </div>
             </header>

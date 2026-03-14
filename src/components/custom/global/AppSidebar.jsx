@@ -1,10 +1,34 @@
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { useAuth } from '../../../context/AuthContext'
 import SchoolLogo from '../../../assets/Schoollogo.png'
 import { House, NotebookText, CircleCheckBig, Clock, BookOpen, User, Users, File, UserRoundPlus } from 'lucide-react';
-import Skeleton from '../../ui/Skeleton';
 
-function AppSidebar({ isOpen, onClose, role = 'user', isLoading = false }) {
+function AppSidebar({ isOpen, onClose, role = 'user' }) {
   const location = useLocation()
+  const { user } = useAuth()
+  const [pendingCount, setPendingCount] = useState(0)
+
+  // Fetch strictly for Admin whenever route changes
+  useEffect(() => {
+    if (role === 'admin' && user?.college) {
+      const fetchPendingCount = async () => {
+        try {
+          const res = await fetch(`http://localhost:3001/api/admin/pending?college=${user.college}`)
+          if (res.ok) {
+            const data = await res.json()
+            setPendingCount(data.length)
+          }
+        } catch (err) {
+          console.error("Failed to fetch pending count", err)
+        }
+      }
+      fetchPendingCount()
+
+      window.addEventListener('pendingCountUpdated', fetchPendingCount)
+      return () => window.removeEventListener('pendingCountUpdated', fetchPendingCount)
+    }
+  }, [role, location.pathname, user?.college])
 
   const menuItems = {
     user: [
@@ -125,20 +149,12 @@ function AppSidebar({ isOpen, onClose, role = 'user', isLoading = false }) {
         {/* Logo Section */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
           <div className="flex items-center space-x-3">
-            {isLoading ? (
-              <Skeleton variant="circular" width={32} height={32} />
-            ) : (
-              <img
-                src={SchoolLogo}
-                alt="Laguna University"
-                className="w-8 h-8"
-              />
-            )}
-            {isLoading ? (
-              <Skeleton variant="text" width={100} height={20} />
-            ) : (
-              <span className="font-bold text-sm sm:text-base text-gray-900">LU Internship</span>
-            )}
+            <img
+              src={SchoolLogo}
+              alt="Laguna University"
+              className="w-8 h-8"
+            />
+            <span className="font-bold text-sm sm:text-base text-gray-900">LU Internship</span>
           </div>
           {/* Close button - only visible on mobile */}
           <button
@@ -155,25 +171,15 @@ function AppSidebar({ isOpen, onClose, role = 'user', isLoading = false }) {
         {/* Navigation Menu */}
         <nav className="flex-1 overflow-y-auto py-4 h-[calc(100vh-4rem)]">
           <ul className="space-y-1 px-3">
-            {isLoading ? (
-              [...Array(6)].map((_, i) => (
-                <li key={i} className="px-4 py-3">
-                  <div className="flex items-center space-x-3">
-                    <Skeleton variant="circular" width={20} height={20} />
-                    <Skeleton variant="text" width="70%" />
-                  </div>
-                </li>
-              ))
-            ) : (
-              currentMenuItems.map((item) => (
+            {currentMenuItems.map((item) => (
                 <li key={item.path}>
                   <Link
                     to={item.path}
                     className={`
-                      flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors
+                      flex items-center justify-between px-4 py-3 rounded-lg transition-colors group
                       ${isActive(item.path)
                         ? 'bg-green-50 text-green-600 font-medium'
-                        : 'text-gray-700 hover:bg-gray-50'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-green-600'
                       }
                     `}
                     onClick={(e) => {
@@ -193,12 +199,23 @@ function AppSidebar({ isOpen, onClose, role = 'user', isLoading = false }) {
                       if (window.innerWidth < 1024) onClose()
                     }}
                   >
-                    {item.icon}
-                    <span className="text-sm">{item.title}</span>
+                    <div className="flex items-center space-x-3">
+                      {item.icon}
+                      <span className="text-sm">{item.title}</span>
+                    </div>
+
+                    {/* Pending Approvals Badge */}
+                    {item.title === 'Pending Approvals' && pendingCount > 0 && (
+                      <div className="ml-auto flex items-center">
+                        <span className="flex items-center justify-center h-5 min-w-[1.25rem] px-1.5 text-[11px] font-bold text-white bg-red-500 rounded-full shadow-sm">
+                          {pendingCount}
+                        </span>
+                      </div>
+                    )}
+
                   </Link>
                 </li>
-              ))
-            )}
+              ))}
           </ul>
         </nav>
       </aside>

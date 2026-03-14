@@ -296,13 +296,15 @@ function SignupForm() {
       const data = await res.json()
 
       if (!res.ok) {
-        // Surface server-side errors (e.g. email already taken)
-        if (data.error?.toLowerCase().includes('email')) {
-          setErrors(prev => ({ ...prev, email: data.error }))
-        } else if (data.error?.toLowerCase().includes('student number')) {
-          setErrors(prev => ({ ...prev, studentNumber: data.error }))
+        // Surface server-side errors
+        if (data.errors) {
+          // New simultaneous errors payload
+          setErrors(prev => ({ ...prev, ...data.errors }))
+        } else if (data.error) {
+          // Old fallback standard string error
+          setErrors(prev => ({ ...prev, general: data.error }))
         } else {
-          setErrors(prev => ({ ...prev, general: data.error || 'Something went wrong. Please try again.' }))
+          setErrors(prev => ({ ...prev, general: 'Something went wrong. Please try again.' }))
         }
         return
       }
@@ -377,11 +379,10 @@ function SignupForm() {
                 type="text"
                 value={formData.firstName}
                 onChange={handleChange}
-                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
-                  errors.firstName
+                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${errors.firstName
                     ? 'border-red-500 focus:ring-red-500'
                     : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
-                }`}
+                  }`}
                 placeholder="First name"
               />
               {errors.firstName && (
@@ -398,11 +399,10 @@ function SignupForm() {
                 type="text"
                 value={formData.lastName}
                 onChange={handleChange}
-                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
-                  errors.lastName
+                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${errors.lastName
                     ? 'border-red-500 focus:ring-red-500'
                     : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
-                }`}
+                  }`}
                 placeholder="Last name"
               />
               {errors.lastName && (
@@ -423,8 +423,8 @@ function SignupForm() {
               value={formData.studentNumber}
               onChange={handleChange}
               className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${errors.studentNumber
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
                 }`}
               placeholder="Enter your student number"
             />
@@ -445,8 +445,8 @@ function SignupForm() {
               value={formData.phoneNumber}
               onChange={handleChange}
               className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${errors.phoneNumber
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
                 }`}
               placeholder="09XXXXXXXXX"
             />
@@ -467,8 +467,8 @@ function SignupForm() {
               value={formData.email}
               onChange={handleChange}
               className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${errors.email
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
                 }`}
               placeholder="your.email@gmail.com"
             />
@@ -528,8 +528,8 @@ function SignupForm() {
               value={formData.password}
               onChange={handleChange}
               className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${errors.password
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
                 }`}
               placeholder="Create a password"
             />
@@ -570,8 +570,8 @@ function SignupForm() {
               value={formData.confirmPassword}
               onChange={handleChange}
               className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${errors.confirmPassword
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
                 }`}
               placeholder="Confirm your password"
             />

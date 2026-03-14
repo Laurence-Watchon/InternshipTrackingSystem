@@ -11,10 +11,24 @@ function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1500)
-    return () => clearTimeout(timer)
+    const loadData = async () => {
+      // Enforce a minimum loading time of 1 second
+      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 1000))
+
+      try {
+        // Replace this with your actual API calls later
+        const fetchData = new Promise(resolve => setTimeout(resolve, 0))
+
+        // This will wait for BOTH the 1s minimum time OR the data to load (whichever is longer)
+        await Promise.all([fetchData, minLoadingTime])
+      } catch (error) {
+        console.error("Error loading dashboard data:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadData()
   }, [])
 
   // Mock data - replace with actual API data
@@ -68,19 +82,10 @@ function AdminDashboard() {
     <AppLayout role="admin" isLoading={isLoading}>
       {/* Page Header */}
       <div className="mb-6">
-        {isLoading ? (
-          <>
-            <Skeleton variant="rectangular" height={32} width={400} className="mb-2" />
-            <Skeleton variant="text" width={500} />
-          </>
-        ) : (
-          <>
-            <h1 className="text-2xl font-bold text-gray-900">{collegeData.name}</h1>
-            <p className="text-gray-600 mt-1">
-              Manage students, requirements, and endorsements for your college
-            </p>
-          </>
-        )}
+        <h1 className="text-2xl font-bold text-gray-900">{collegeData.name}</h1>
+        <p className="text-gray-600 mt-1">
+          Manage students, requirements, and endorsements for your college
+        </p>
       </div>
 
       {/* Course Selection Tabs */}
