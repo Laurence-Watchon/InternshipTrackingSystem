@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import Dialog from '../../components/ui/Dialog'
 import RejectRegistrationDialog from '../../components/custom/dialog/RejectRegistrationDialog'
+import Skeleton from '../../components/ui/Skeleton'
+import Toast from '../../components/ui/Toast'
+import { useAuth } from '../../context/AuthContext'
 
 const COURSE_COLORS = {
   // CAS
@@ -32,10 +35,23 @@ const COURSE_COLORS = {
 }
 
 export default function AdminPendingApprovals() {
+  const { user } = useAuth()
   const [students, setStudents] = useState([])
   const [filterCourse, setFilterCourse] = useState('All')
   const [search, setSearch] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+
+  // Dictionary for mapping acronyms to full college names
+  const COLLEGE_NAMES = {
+    'CAS': 'COLLEGE OF ARTS AND SCIENCES',
+    'CBAA': 'COLLEGE OF BUSINESS ADMINISTRATION AND ACCOUNTANCY',
+    'CCS': 'COLLEGE OF COMPUTING STUDIES',
+    'COE': 'COLLEGE OF ENGINEERING',
+    'COED': 'COLLEGE OF EDUCATION'
+  }
+
+  // Fallback to exactly what they have if it's not in the dictionary
+  const displayCollege = user?.college ? (COLLEGE_NAMES[user.college] || `${user.college} COLLEGE`) : 'COLLEGE DASHBOARD'
 
   // Approve dialog state
   const [approveTarget, setApproveTarget] = useState(null)
@@ -43,14 +59,29 @@ export default function AdminPendingApprovals() {
   // Reject dialog state
   const [rejectTarget, setRejectTarget] = useState(null)
 
+  // Toast notification state
+  const [toast, setToast] = useState(null)
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type })
+  }
+
   useEffect(() => {
-    fetchPendingStudents()
-  }, [])
+    if (user?.college) {
+      fetchPendingStudents()
+    }
+  }, [user?.college])
 
   const fetchPendingStudents = async () => {
     try {
       setIsLoading(true)
-      const res = await fetch("http://localhost:3001/api/admin/pending")
+
+      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 1000))
+
+      const resPromise = fetch(`http://localhost:3001/api/admin/pending?college=${user.college}`)
+
+      const [res] = await Promise.all([resPromise, minLoadingTime])
+
       if (res.ok) {
         const data = await res.json()
         setStudents(data)
@@ -84,13 +115,17 @@ export default function AdminPendingApprovals() {
       })
       if (res.ok) {
         setStudents(prev => prev.filter(s => s._id !== approveTarget._id))
+        showToast('Successfully approved', 'success')
         setApproveTarget(null)
+        window.dispatchEvent(new Event('pendingCountUpdated'))
       } else {
         const errData = await res.json()
         console.error("Failed to approve:", errData.error)
+        showToast(`Failed to approve: ${errData.error}`, 'error')
       }
     } catch (err) {
       console.error("Error approving student:", err)
+      showToast('Error approving student', 'error')
     }
   }
 
@@ -106,13 +141,17 @@ export default function AdminPendingApprovals() {
       if (res.ok) {
         console.log(`Softly Rejected ${rejectTarget.studentNumber}: ${reason}`)
         setStudents(prev => prev.filter(s => s._id !== rejectTarget._id))
+        showToast(`Registration for ${rejectTarget.studentNumber} rejected due to ${reason}`, 'error')
         setRejectTarget(null)
+        window.dispatchEvent(new Event('pendingCountUpdated'))
       } else {
         const errData = await res.json()
         console.error("Failed to reject:", errData.error)
+        showToast(`Failed to reject: ${errData.error}`, 'error')
       }
     } catch (err) {
       console.error("Error rejecting student:", err)
+      showToast('Error rejecting student', 'error')
     }
   }
 
@@ -129,7 +168,7 @@ export default function AdminPendingApprovals() {
     <AppLayout role="admin">
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">COLLEGE OF COMPUTING STUDIES</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{displayCollege}</h1>
         <p className="text-gray-600 mt-1">Review and manage student registration requests for your college.</p>
       </div>
 
@@ -140,9 +179,13 @@ export default function AdminPendingApprovals() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 border-b border-gray-100">
           <div>
             <h2 className="text-base font-semibold text-gray-900">Pending Registrations</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {filtered.length} student{filtered.length !== 1 ? 's' : ''} awaiting approval
-            </p>
+            {isLoading ? (
+              <Skeleton variant="text" width={150} height={16} className="mt-0.5" />
+            ) : (
+              <p className="text-xs text-gray-500 mt-0.5">
+                {students.length} student{students.length !== 1 ? 's' : ''} awaiting approval
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
@@ -157,6 +200,7 @@ export default function AdminPendingApprovals() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className="pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-green-400 bg-gray-50 w-48"
+                disabled={isLoading}
               />
             </div>
 
@@ -166,12 +210,14 @@ export default function AdminPendingApprovals() {
                 <button
                   key={c}
                   onClick={() => setFilterCourse(c)}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition focus:outline-none
+                  disabled={isLoading}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed
                     ${filterCourse === c
                       ? 'bg-green-500 text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                 >
-                  {c} {c !== 'All' ? `(${students.filter(s => s.course === c).length})` : `(${students.length})`}
+                  {c} {c !== 'All' && !isLoading ? `(${students.filter(s => s.course === c).length})` : ''}
+                  {c === 'All' && !isLoading ? `(${students.length})` : ''}
                 </button>
               ))}
             </div>
@@ -180,12 +226,43 @@ export default function AdminPendingApprovals() {
 
         {/* Table */}
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-            <svg className="w-10 h-10 mb-4 animate-spin text-green-500" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <p className="text-base font-semibold text-gray-500">Loading pending registrations...</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Student</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Student No.</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Email Address</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Course</th>
+                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {[...Array(5)].map((_, i) => (
+                  <tr key={i}>
+                    <td className="px-5 py-3.5 flex items-center gap-3">
+                      <Skeleton variant="circular" width={36} height={36} className="bg-gray-200" />
+                      <Skeleton variant="text" width={120} className="bg-gray-200" />
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <Skeleton variant="text" width={80} className="bg-gray-200" />
+                    </td>
+                    <td className="px-5 py-3.5 hidden md:table-cell">
+                      <Skeleton variant="text" width={150} className="bg-gray-200" />
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <Skeleton variant="rectangular" width={60} height={24} className="rounded-full bg-gray-200" />
+                    </td>
+                    <td className="px-5 py-3.5 text-center">
+                      <div className="flex justify-center gap-2">
+                        <Skeleton variant="rectangular" width={70} height={28} className="rounded-lg bg-gray-200" />
+                        <Skeleton variant="rectangular" width={60} height={28} className="rounded-lg bg-gray-200" />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-gray-400">
@@ -279,9 +356,13 @@ export default function AdminPendingApprovals() {
 
             {/* Footer count */}
             <div className="px-5 py-3 border-t border-gray-100">
-              <p className="text-xs text-gray-400">
-                Showing {filtered.length} of {students.length} pending registration{students.length !== 1 ? 's' : ''}
-              </p>
+              {isLoading ? (
+                <Skeleton variant="text" width={250} height={16} />
+              ) : (
+                <p className="text-xs text-gray-400">
+                  Showing {filtered.length} of {students.length} pending registration{students.length !== 1 ? 's' : ''}
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -307,6 +388,15 @@ export default function AdminPendingApprovals() {
         onConfirm={handleRejectConfirm}
         student={rejectTarget}
       />
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </AppLayout>
   )
 }

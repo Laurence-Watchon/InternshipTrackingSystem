@@ -15,11 +15,11 @@ const scrollbarStyle = `
 
 // Replace with real API data
 const WEEKLY_DATA = [
-  { week: 'Week 1',  hours: 20 },
-  { week: 'Week 2',  hours: 25 },
-  { week: 'Week 3',  hours: 28 },
-  { week: 'Week 4',  hours: 22 },
-  { week: 'Week 5',  hours: 25 },
+  { week: 'Week 1', hours: 20 },
+  { week: 'Week 2', hours: 25 },
+  { week: 'Week 3', hours: 28 },
+  { week: 'Week 4', hours: 22 },
+  { week: 'Week 5', hours: 25 },
 ]
 
 const APPROVED_HOURS = 120
@@ -29,10 +29,24 @@ function UserHome() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
+    const loadData = async () => {
+      // Enforce a minimum loading time of 1 second
+      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 1000));
+
+      try {
+        // Replace this with your actual API calls later
+        const fetchData = new Promise(resolve => setTimeout(resolve, 0));
+
+        // This will wait for BOTH the 1s minimum time OR the data to load (whichever is longer)
+        await Promise.all([fetchData, minLoadingTime]);
+      } catch (error) {
+        console.error("Error loading home data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
   const stats = [
@@ -73,25 +87,25 @@ function UserHome() {
   ]
 
   const recentActivities = [
-    { title: 'Time logged',          description: 'You logged 8 hours today',                       time: '2 hours ago',  icon: '⏰', color: 'bg-blue-100 text-blue-600'    },
-    { title: 'Document approved',    description: 'Your resume has been approved',                  time: '5 hours ago',  icon: '✅', color: 'bg-green-100 text-green-600'  },
-    { title: 'Journal submitted',    description: 'Daily journal for Feb 15 submitted',             time: '1 day ago',    icon: '📝', color: 'bg-purple-100 text-purple-600' },
-    { title: 'Requirement uploaded', description: 'Medical certificate submitted for review',       time: '2 days ago',   icon: '📄', color: 'bg-yellow-100 text-yellow-600' },
-    { title: 'Hours milestone',      description: 'You reached 100 hours!',                        time: '3 days ago',   icon: '🏆', color: 'bg-orange-100 text-orange-600' },
-    { title: 'Supervisor comment',   description: 'Your supervisor left a comment on your journal', time: '4 days ago',   icon: '💬', color: 'bg-blue-100 text-blue-600'    },
-    { title: 'Document rejected',    description: 'Please re-upload your barangay clearance',      time: '4 days ago',   icon: '❌', color: 'bg-red-100 text-red-600'      },
-    { title: 'Journal submitted',    description: 'Daily journal for Feb 12 submitted',             time: '5 days ago',   icon: '📝', color: 'bg-purple-100 text-purple-600' },
-    { title: 'Time logged',          description: 'You logged 7.5 hours',                          time: '5 days ago',   icon: '⏰', color: 'bg-blue-100 text-blue-600'    },
-    { title: 'Account verified',     description: 'Your student account has been verified',         time: '6 days ago',   icon: '🎉', color: 'bg-green-100 text-green-600'  },
+    { title: 'Time logged', description: 'You logged 8 hours today', time: '2 hours ago', icon: '⏰', color: 'bg-blue-100 text-blue-600' },
+    { title: 'Document approved', description: 'Your resume has been approved', time: '5 hours ago', icon: '✅', color: 'bg-green-100 text-green-600' },
+    { title: 'Journal submitted', description: 'Daily journal for Feb 15 submitted', time: '1 day ago', icon: '📝', color: 'bg-purple-100 text-purple-600' },
+    { title: 'Requirement uploaded', description: 'Medical certificate submitted for review', time: '2 days ago', icon: '📄', color: 'bg-yellow-100 text-yellow-600' },
+    { title: 'Hours milestone', description: 'You reached 100 hours!', time: '3 days ago', icon: '🏆', color: 'bg-orange-100 text-orange-600' },
+    { title: 'Supervisor comment', description: 'Your supervisor left a comment on your journal', time: '4 days ago', icon: '💬', color: 'bg-blue-100 text-blue-600' },
+    { title: 'Document rejected', description: 'Please re-upload your barangay clearance', time: '4 days ago', icon: '❌', color: 'bg-red-100 text-red-600' },
+    { title: 'Journal submitted', description: 'Daily journal for Feb 12 submitted', time: '5 days ago', icon: '📝', color: 'bg-purple-100 text-purple-600' },
+    { title: 'Time logged', description: 'You logged 7.5 hours', time: '5 days ago', icon: '⏰', color: 'bg-blue-100 text-blue-600' },
+    { title: 'Account verified', description: 'Your student account has been verified', time: '6 days ago', icon: '🎉', color: 'bg-green-100 text-green-600' },
   ]
 
   const upcomingTasks = [
-    { task: 'Submit Medical Certificate', deadline: 'Feb 20, 2026', priority: 'high'   },
-    { task: 'Complete 40 more hours',     deadline: 'Mar 15, 2026', priority: 'medium' },
-    { task: 'Upload daily journal',       deadline: 'Today',        priority: 'high'   },
-    { task: 'Get supervisor signature',   deadline: 'Feb 25, 2026', priority: 'high'   },
-    { task: 'Submit weekly report',       deadline: 'Feb 22, 2026', priority: 'medium' },
-    { task: 'Update endorsement letter',  deadline: 'Mar 1, 2026',  priority: 'medium' },
+    { task: 'Submit Medical Certificate', deadline: 'Feb 20, 2026', priority: 'high' },
+    { task: 'Complete 40 more hours', deadline: 'Mar 15, 2026', priority: 'medium' },
+    { task: 'Upload daily journal', deadline: 'Today', priority: 'high' },
+    { task: 'Get supervisor signature', deadline: 'Feb 25, 2026', priority: 'high' },
+    { task: 'Submit weekly report', deadline: 'Feb 22, 2026', priority: 'medium' },
+    { task: 'Update endorsement letter', deadline: 'Mar 1, 2026', priority: 'medium' },
   ]
 
   return (

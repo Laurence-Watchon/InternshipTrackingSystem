@@ -10,12 +10,20 @@ const router = express.Router();
 // -----------------------------------------------
 router.get("/pending", async (req, res) => {
   try {
-    const db = await connectDB();
-    const pendingStudents = await db.collection("users").find({
+    const { college } = req.query;
+
+    const query = {
       role: "student",
       isVerified: false,
       isRejected: { $ne: true } // Exclude rejected students
-    }).toArray();
+    };
+
+    if (college && college !== "All") {
+      query.college = college;
+    }
+
+    const db = await connectDB();
+    const pendingStudents = await db.collection("users").find(query).toArray();
     res.json(pendingStudents);
   } catch (err) {
     console.error("Error fetching pending students:", err);

@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 import AppSidebar from './AppSidebar'
 import AppTopbar from './AppTopbar'
 
-function AppLayout({ children, role = 'user', isLoading = false }) {
+function AppLayout({ children, role = 'user' }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { pathname } = useLocation()
 
@@ -23,13 +23,12 @@ function AppLayout({ children, role = 'user', isLoading = false }) {
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         role={role}
-        isLoading={isLoading}
       />
 
       {/* Main Content Area */}
       <div className="lg:ml-64 transition-all duration-300">
         {/* Topbar */}
-        <AppTopbar onMenuClick={() => setSidebarOpen(true)} isLoading={isLoading} />
+        <AppTopbar onMenuClick={() => setSidebarOpen(true)} />
 
         {/* Page Content */}
         <main className="pt-16 min-h-screen">

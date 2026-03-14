@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import SchoolLogo from '../../../assets/Schoollogo.png'
+import { useAuth } from '../../../context/AuthContext'
 import Loading from '../../ui/CenterLoading'
 
 const OTP_EXPIRY_KEY = 'otp_expiry_timestamp'
@@ -9,6 +9,7 @@ const OTP_DURATION = 180 // 3 minutes in seconds
 function OTPVerificationForm() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { login } = useAuth()
   const email = location.state?.email || ''
 
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
@@ -156,7 +157,15 @@ function OTPVerificationForm() {
         return
       }
 
-      // Success — show flash screen then redirect
+      // Auto log the user in using global context
+      login({
+        role: data.role,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email
+      })
+
+      // Success — show flash screen then redirect to user home
       sessionStorage.removeItem(OTP_EXPIRY_KEY)
       setIsVerified(true)
       setTimeout(() => navigate('/user/home'), 3000)
@@ -255,14 +264,6 @@ function OTPVerificationForm() {
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-white flex items-center justify-center py-12 px-4">
         <div className="max-w-md w-full">
           <div className="bg-white rounded-2xl shadow-2xl p-8">
-            {/* Logo */}
-            <div className="flex justify-center mb-6">
-              <img
-                src={SchoolLogo}
-                alt="Laguna University Logo"
-                className="w-16 h-16"
-              />
-            </div>
 
             {/* Avatar Circle */}
             <div className="flex justify-center mb-6">
@@ -301,11 +302,10 @@ function OTPVerificationForm() {
                     onChange={(e) => handleChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
                     onPaste={handlePaste}
-                    className={`w-12 h-12 text-center text-xl font-bold border-2 rounded-lg focus:outline-none focus:ring-2 transition ${
-                      otpError
-                        ? 'border-red-500 focus:ring-red-400 bg-red-50 text-red-600'
-                        : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
-                    }`}
+                    className={`w-12 h-12 text-center text-xl font-bold border-2 rounded-lg focus:outline-none focus:ring-2 transition ${otpError
+                      ? 'border-red-500 focus:ring-red-400 bg-red-50 text-red-600'
+                      : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
+                      }`}
                   />
                 ))}
               </div>
@@ -353,11 +353,10 @@ function OTPVerificationForm() {
                     type="button"
                     onClick={handleResend}
                     disabled={!canResend || isResending}
-                    className={`font-medium ${
-                      canResend && !isResending
-                        ? 'text-green-600 hover:text-green-700 cursor-pointer'
-                        : 'text-gray-400 cursor-not-allowed'
-                    }`}
+                    className={`font-medium ${canResend && !isResending
+                      ? 'text-green-600 hover:text-green-700 cursor-pointer'
+                      : 'text-gray-400 cursor-not-allowed'
+                      }`}
                   >
                     {isResending ? 'Sending...' : 'Resend OTP'}
                   </button>

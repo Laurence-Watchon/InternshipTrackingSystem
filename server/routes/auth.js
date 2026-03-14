@@ -129,16 +129,20 @@ router.post("/signup", async (req, res) => {
 
     const db = await connectDB();
 
-    // Check if student number already exists
+    // Check for duplicates simultaneously
     const existingStudent = await db.collection("users").findOne({ studentNumber });
-    if (existingStudent) {
-      return res.status(400).json({ error: "Student number is already registered." });
+    const existingUser = await db.collection("users").findOne({ email });
+
+    const duplicateErrors = {};
+    if (existingStudent && !existingStudent.isRejected) {
+      duplicateErrors.studentNumber = "Student number is already registered.";
+    }
+    if (existingUser && !existingUser.isRejected) {
+      duplicateErrors.email = "Email is already registered.";
     }
 
-    // Check if email already exists
-    const existingUser = await db.collection("users").findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ error: "Email is already registered." });
+    if (Object.keys(duplicateErrors).length > 0) {
+      return res.status(400).json({ errors: duplicateErrors });
     }
 
     // Hash password
@@ -207,12 +211,26 @@ router.post("/verify-otp", async (req, res) => {
     // Save user to MongoDB
     const db = await connectDB();
     const userData = { ...stored.userData, isVerified: false };
+
+    // If returning from a rejection, delete the old rejected record first
+    await db.collection("users").deleteOne({
+      studentNumber: userData.studentNumber,
+      isRejected: true
+    });
+
     await db.collection("users").insertOne(userData);
 
     // Clean up OTP store
     otpStore.delete(email);
 
-    res.json({ message: "Email verified! Account created successfully." });
+    res.json({
+      message: "Email verified! Account created successfully.",
+      role: userData.role,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      email: userData.email,
+      college: userData.college,
+    });
   } catch (err) {
     console.error("Verify OTP error:", err);
     res.status(500).json({ error: "Something went wrong. Please try again." });
@@ -269,7 +287,7 @@ router.post("/login", async (req, res) => {
 
     // Check if user is softly rejected
     if (user.isRejected) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: "rejected",
         reason: user.rejectionReason || "No specific reason provided.",
         college: user.college || "your College"
@@ -289,6 +307,7 @@ router.post("/login", async (req, res) => {
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
+      college: user.college,
     });
   } catch (err) {
     console.error("Login error:", err);
@@ -296,4 +315,4 @@ router.post("/login", async (req, res) => {
   }
 });
 
-export default router;
+export default router;

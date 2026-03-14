@@ -123,7 +123,8 @@ function LoginForm() {
         role: data.role,
         firstName: data.firstName,
         lastName: data.lastName,
-        email: data.email
+        email: data.email,
+        college: data.college
       })
 
       // Navigate based on role
