@@ -4,6 +4,7 @@ import { useAuth } from '../../../context/AuthContext'
 import SchoolLogo from '../../../assets/Schoollogo.png'
 import GoogleLogo from '../../../assets/google.png'
 import Loading from '../../ui/CenterLoading'
+import RejectedDialog from '../../ui/RejectedDialog'
 
 function LoginForm() {
   const navigate = useNavigate()
@@ -20,6 +21,12 @@ function LoginForm() {
 
   const [isLoading, setIsLoading] = useState(false)
   const [loginError, setLoginError] = useState('')
+
+  const [rejectDialog, setRejectDialog] = useState({
+    isOpen: false,
+    reason: '',
+    college: ''
+  })
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -97,7 +104,17 @@ function LoginForm() {
       const data = await res.json()
 
       if (!res.ok) {
-        setLoginError(data.error || 'Wrong credentials. Please try again.')
+        if (res.status === 403 && data.error === 'rejected') {
+          // Open the specific rejection dialog
+          setRejectDialog({
+            isOpen: true,
+            reason: data.reason,
+            college: data.college
+          })
+        } else {
+          // Normal password/email error
+          setLoginError(data.error || 'Wrong credentials. Please try again.')
+        }
         return
       }
 
@@ -124,18 +141,18 @@ function LoginForm() {
 
   // Helper: determine border color for a field
   const getInputClass = (fieldName) => {
-    const hasError = errors[fieldName] || (loginError && (fieldName === 'email' || fieldName === 'password'))
-    return `w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
-      hasError
-        ? 'border-red-500 focus:ring-red-500'
-        : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
-    }`
+    const hasError = errors[fieldName] || 
+      ((loginError || rejectDialog.isOpen) && (fieldName === 'email' || fieldName === 'password'))
+    return `w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${hasError
+      ? 'border-red-500 focus:ring-red-500'
+      : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
+      }`
   }
 
   return (
     <>
       {/* Full-screen loading overlay */}
-      {isLoading && <Loading message="Logging in..."/>}
+      {isLoading && <Loading message="Logging in..." />}
 
       <div className="p-6 md:p-8 flex flex-col justify-center h-full">
         {/* Logo and Title */}
@@ -266,6 +283,13 @@ function LoginForm() {
           </div>
         </form>
       </div>
+
+      <RejectedDialog
+        isOpen={rejectDialog.isOpen}
+        onClose={() => setRejectDialog(prev => ({ ...prev, isOpen: false }))}
+        reason={rejectDialog.reason}
+        college={rejectDialog.college}
+      />
     </>
   )
 }

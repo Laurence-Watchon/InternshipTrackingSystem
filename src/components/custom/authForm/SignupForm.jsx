@@ -186,6 +186,16 @@ function SignupForm() {
   const validateForm = () => {
     const newErrors = {}
 
+    // First Name validation
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required'
+    }
+
+    // Last Name validation
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required'
+    }
+
     // Student Number validation
     if (!formData.studentNumber.trim()) {
       newErrors.studentNumber = 'Student number is required'
@@ -367,10 +377,11 @@ function SignupForm() {
                 type="text"
                 value={formData.firstName}
                 onChange={handleChange}
-                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${errors.firstName
+                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
+                  errors.firstName
                     ? 'border-red-500 focus:ring-red-500'
                     : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
-                  }`}
+                }`}
                 placeholder="First name"
               />
               {errors.firstName && (
@@ -387,10 +398,11 @@ function SignupForm() {
                 type="text"
                 value={formData.lastName}
                 onChange={handleChange}
-                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${errors.lastName
+                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
+                  errors.lastName
                     ? 'border-red-500 focus:ring-red-500'
                     : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
-                  }`}
+                }`}
                 placeholder="Last name"
               />
               {errors.lastName && (
@@ -601,13 +613,13 @@ function SignupForm() {
             )}
           </div>
 
-          {/* Signup Button */}
+          {/* General Errors at Bottom */}
           {errors.general && (
             <p className="text-sm text-red-600 text-center bg-red-50 border border-red-200 rounded-lg py-2 px-3">
               {errors.general}
             </p>
           )}
-          
+
           {isLoading && <Loading message="Sending verification code..." />}
 
           <button
