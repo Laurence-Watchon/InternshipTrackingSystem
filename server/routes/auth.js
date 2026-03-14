@@ -267,6 +267,15 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Wrong credentials. Please try again." });
     }
 
+    // Check if user is softly rejected
+    if (user.isRejected) {
+      return res.status(403).json({ 
+        error: "rejected",
+        reason: user.rejectionReason || "No specific reason provided.",
+        college: user.college || "your College"
+      });
+    }
+
     // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {

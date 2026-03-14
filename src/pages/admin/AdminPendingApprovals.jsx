@@ -1,37 +1,70 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import Dialog from '../../components/ui/Dialog'
 import RejectRegistrationDialog from '../../components/custom/dialog/RejectRegistrationDialog'
 
-const INITIAL_STUDENTS = [
-  { id: 1,  lastName: 'Dela Cruz',  firstName: 'Juan',      studentNumber: '221-1234', email: 'juan.delacruz@gmail.com',   course: 'BSCS-DS' },
-  { id: 2,  lastName: 'Reyes',      firstName: 'Maria',     studentNumber: '221-1235', email: 'maria.reyes@gmail.com',     course: 'BSIT-SD' },
-  { id: 3,  lastName: 'Santos',     firstName: 'Carlos',    studentNumber: '221-1236', email: 'carlos.santos@gmail.com',   course: 'BSIT-BA' },
-  { id: 4,  lastName: 'Garcia',     firstName: 'Ana',       studentNumber: '221-1237', email: 'ana.garcia@gmail.com',      course: 'BSCS-DS' },
-  { id: 5,  lastName: 'Mendoza',    firstName: 'Jose',      studentNumber: '221-1238', email: 'jose.mendoza@gmail.com',    course: 'BSIT-SD' },
-  { id: 6,  lastName: 'Torres',     firstName: 'Luz',       studentNumber: '221-1239', email: 'luz.torres@gmail.com',      course: 'BSIT-BA' },
-  { id: 7,  lastName: 'Flores',     firstName: 'Miguel',    studentNumber: '221-1240', email: 'miguel.flores@gmail.com',   course: 'BSCS-DS' },
-  { id: 8,  lastName: 'Ramos',      firstName: 'Elena',     studentNumber: '221-1241', email: 'elena.ramos@gmail.com',     course: 'BSIT-SD' },
-]
-
 const COURSE_COLORS = {
+  // CAS
+  'BAComm': 'bg-emerald-100 text-emerald-700',
+  'BA-Psych': 'bg-lime-100 text-lime-700',
+  'BS-Psych': 'bg-teal-100 text-teal-700',
+
+  // CBAA
+  'BSA': 'bg-yellow-100 text-yellow-700',
+  'BSAIS': 'bg-amber-100 text-amber-700',
+  'BSEntrep': 'bg-orange-100 text-orange-700',
+  'BSTM': 'bg-cyan-100 text-cyan-700',
+
+  // CCS
   'BSCS-DS': 'bg-blue-100 text-blue-700',
-  'BSIT-SD': 'bg-green-100 text-green-700',
   'BSIT-BA': 'bg-purple-100 text-purple-700',
+  'BSIT-SD': 'bg-green-100 text-green-700',
+
+  // COE
+  'BSME': 'bg-rose-100 text-rose-700',
+
+  // COED
+  'BEED': 'bg-indigo-100 text-indigo-700',
+  'BPEd': 'bg-pink-100 text-pink-700',
+  'BSED-English': 'bg-violet-100 text-violet-700',
+  'BSED-Math': 'bg-fuchsia-100 text-fuchsia-700',
+  'BSED-Science': 'bg-sky-100 text-sky-700'
 }
 
 export default function AdminPendingApprovals() {
-  const [students, setStudents]           = useState(INITIAL_STUDENTS)
-  const [filterCourse, setFilterCourse]   = useState('All')
-  const [search, setSearch]               = useState('')
+  const [students, setStudents] = useState([])
+  const [filterCourse, setFilterCourse] = useState('All')
+  const [search, setSearch] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
 
   // Approve dialog state
   const [approveTarget, setApproveTarget] = useState(null)
 
   // Reject dialog state
-  const [rejectTarget, setRejectTarget]   = useState(null)
+  const [rejectTarget, setRejectTarget] = useState(null)
 
-  const courses = ['All', ...Array.from(new Set(INITIAL_STUDENTS.map(s => s.course)))]
+  useEffect(() => {
+    fetchPendingStudents()
+  }, [])
+
+  const fetchPendingStudents = async () => {
+    try {
+      setIsLoading(true)
+      const res = await fetch("http://localhost:3001/api/admin/pending")
+      if (res.ok) {
+        const data = await res.json()
+        setStudents(data)
+      } else {
+        console.error("Failed to fetch pending students")
+      }
+    } catch (err) {
+      console.error("Error fetching students:", err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const courses = ['All', ...Array.from(new Set(students.map(s => s.course)))]
 
   const filtered = students.filter(s => {
     const matchesCourse = filterCourse === 'All' || s.course === filterCourse
@@ -44,15 +77,43 @@ export default function AdminPendingApprovals() {
     return matchesCourse && matchesSearch
   })
 
-  function handleApproveConfirm() {
-    setStudents(prev => prev.filter(s => s.id !== approveTarget.id))
-    setApproveTarget(null)
+  async function handleApproveConfirm() {
+    try {
+      const res = await fetch(`http://localhost:3001/api/admin/approve/${approveTarget._id}`, {
+        method: 'PUT'
+      })
+      if (res.ok) {
+        setStudents(prev => prev.filter(s => s._id !== approveTarget._id))
+        setApproveTarget(null)
+      } else {
+        const errData = await res.json()
+        console.error("Failed to approve:", errData.error)
+      }
+    } catch (err) {
+      console.error("Error approving student:", err)
+    }
   }
 
-  function handleRejectConfirm(reason) {
-    console.log(`Rejected ${rejectTarget.studentNumber}: ${reason}`)
-    setStudents(prev => prev.filter(s => s.id !== rejectTarget.id))
-    setRejectTarget(null)
+  async function handleRejectConfirm(reason) {
+    try {
+      const res = await fetch(`http://localhost:3001/api/admin/reject/${rejectTarget._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason })
+      })
+      if (res.ok) {
+        console.log(`Softly Rejected ${rejectTarget.studentNumber}: ${reason}`)
+        setStudents(prev => prev.filter(s => s._id !== rejectTarget._id))
+        setRejectTarget(null)
+      } else {
+        const errData = await res.json()
+        console.error("Failed to reject:", errData.error)
+      }
+    } catch (err) {
+      console.error("Error rejecting student:", err)
+    }
   }
 
   function getInitials(s) {
@@ -118,7 +179,15 @@ export default function AdminPendingApprovals() {
         </div>
 
         {/* Table */}
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+            <svg className="w-10 h-10 mb-4 animate-spin text-green-500" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p className="text-base font-semibold text-gray-500">Loading pending registrations...</p>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-gray-400">
             <svg className="w-14 h-14 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -147,7 +216,7 @@ export default function AdminPendingApprovals() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filtered.map((student, index) => (
-                  <tr key={student.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={student._id} className="hover:bg-gray-50 transition-colors">
 
                     {/* Student name + avatar */}
                     <td className="px-5 py-3.5">
@@ -174,8 +243,8 @@ export default function AdminPendingApprovals() {
 
                     {/* Course badge */}
                     <td className="px-5 py-3.5">
-                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full
-                        ${COURSE_COLORS[student.course] || 'bg-gray-100 text-gray-600'}`}>
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap
+                        ${COURSE_COLORS[student.course] || 'bg-gray-100 text-gray-700'}`}>
                         {student.course}
                       </span>
                     </td>
