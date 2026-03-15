@@ -3,7 +3,10 @@ import AppLayout from '../../components/custom/global/AppLayout'
 import WeeklyHours from '../../components/ui/WeeklyHours'
 import CircularProgress from '../../components/ui/CircularProgress'
 import Skeleton from '../../components/ui/Skeleton'
-import { NotebookText, CircleCheckBig, Hourglass, BookOpen } from 'lucide-react';
+import { NotebookText, CircleCheckBig, Hourglass, BookOpen } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
+import PendingApprovalDialog from '../../components/custom/dialog/PendingApprovalDialog'
+import { useNavigate } from 'react-router-dom'
 
 const scrollbarStyle = `
   .custom-scroll::-webkit-scrollbar { width: 4px; }
@@ -26,6 +29,8 @@ const APPROVED_HOURS = 120
 const REQUIRED_HOURS = 500
 
 function UserHome() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -109,8 +114,15 @@ function UserHome() {
   ]
 
   return (
-    <AppLayout isLoading={isLoading}>
-      <style>{scrollbarStyle}</style>
+    <>
+      {/* Block unverified students from accessing the homepage */}
+      <PendingApprovalDialog
+        isOpen={user && user.isVerified === false}
+        onClose={() => { logout(); navigate('/login') }}
+      />
+
+      <AppLayout isLoading={isLoading}>
+        <style>{scrollbarStyle}</style>
 
       {/* Welcome */}
       <div className="mb-6">
@@ -260,7 +272,8 @@ function UserHome() {
           )}
         </div>
       </div>
-    </AppLayout>
+      </AppLayout>
+    </>
   )
 }
 
