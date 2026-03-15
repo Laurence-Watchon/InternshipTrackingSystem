@@ -5,6 +5,7 @@ import SchoolLogo from '../../../assets/Schoollogo.png'
 import GoogleLogo from '../../../assets/google.png'
 import Loading from '../../ui/CenterLoading'
 import RejectedDialog from '../../ui/RejectedDialog'
+import PendingApprovalDialog from '../dialog/PendingApprovalDialog'
 
 function LoginForm() {
   const navigate = useNavigate()
@@ -27,6 +28,8 @@ function LoginForm() {
     reason: '',
     college: ''
   })
+
+  const [pendingDialog, setPendingDialog] = useState(false)
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -111,6 +114,9 @@ function LoginForm() {
             reason: data.reason,
             college: data.college
           })
+        } else if (res.status === 403 && data.error === 'pending') {
+          // Student account not yet verified — show pending dialog
+          setPendingDialog(true)
         } else {
           // Normal password/email error
           setLoginError(data.error || 'Wrong credentials. Please try again.')
@@ -124,7 +130,8 @@ function LoginForm() {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
-        college: data.college
+        college: data.college,
+        isVerified: data.isVerified
       })
 
       // Navigate based on role
@@ -291,6 +298,8 @@ function LoginForm() {
         reason={rejectDialog.reason}
         college={rejectDialog.college}
       />
+
+      <PendingApprovalDialog isOpen={pendingDialog} onClose={() => setPendingDialog(false)} />
     </>
   )
 }

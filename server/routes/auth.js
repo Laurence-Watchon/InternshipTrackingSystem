@@ -300,14 +300,20 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Wrong credentials. Please try again." });
     }
 
+    // Block students who haven't been verified by admin yet
+    if (user.role === "student" && user.isVerified === false) {
+      return res.status(403).json({ error: "pending" });
+    }
+
     // Return role so the frontend can redirect correctly
     res.json({
       message: "Login successful.",
-      role: user.role,         // "student" or "admin"
+      role: user.role,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
       college: user.college,
+      isVerified: user.isVerified,
     });
   } catch (err) {
     console.error("Login error:", err);
