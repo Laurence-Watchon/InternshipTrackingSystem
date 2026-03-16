@@ -6,6 +6,8 @@ import GoogleLogo from '../../../assets/google.png'
 import Loading from '../../ui/CenterLoading'
 import RejectedDialog from '../../ui/RejectedDialog'
 import PendingApprovalDialog from '../dialog/PendingApprovalDialog'
+import ForgotPasswordDialog from '../dialog/ForgotPasswordDialog'
+import Toast from '../../ui/Toast'
 
 function LoginForm() {
   const navigate = useNavigate()
@@ -14,6 +16,12 @@ function LoginForm() {
     email: '',
     password: ''
   })
+  
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
+
+  const showGlobalToast = (message, type = 'success') => {
+    setToast({ show: true, message, type })
+  }
 
   const [errors, setErrors] = useState({
     email: '',
@@ -30,6 +38,7 @@ function LoginForm() {
   })
 
   const [pendingDialog, setPendingDialog] = useState(false)
+  const [forgotPasswordDialog, setForgotPasswordDialog] = useState(false)
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -236,9 +245,13 @@ function LoginForm() {
                 Remember me
               </label>
             </div>
-            <a href="#" className="text-sm text-green-600 hover:text-green-700 font-medium">
+            <button 
+              type="button"
+              onClick={() => setForgotPasswordDialog(true)}
+              className="text-sm text-green-600 hover:text-green-700 font-medium focus:outline-none"
+            >
               Forgot password?
-            </a>
+            </button>
           </div>
 
           {/* Login Button */}
@@ -300,6 +313,21 @@ function LoginForm() {
       />
 
       <PendingApprovalDialog isOpen={pendingDialog} onClose={() => setPendingDialog(false)} />
+      
+      <ForgotPasswordDialog 
+        isOpen={forgotPasswordDialog} 
+        onClose={() => setForgotPasswordDialog(false)} 
+        showGlobalToast={showGlobalToast}
+      />
+
+      {toast.show && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast({ ...toast, show: false })} 
+          duration={3000}
+        />
+      )}
     </>
   )
 }
