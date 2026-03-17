@@ -28,11 +28,13 @@ function App() {
       <Router>
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={
-            <PublicRoute>
-              <LandingPage />
-            </PublicRoute>
-          } />
+          <Route element={<PublicRoute><LandingPage /></PublicRoute>}>
+            <Route path="/" />
+            <Route path="/home" />
+            <Route path="/objectives" />
+            <Route path="/importance" />
+            <Route path="/footer" />
+          </Route>
           <Route path="/login" element={
             <PublicRoute>
               <LoginPage />
@@ -82,4 +84,4 @@ function App() {
   )
 }
 
-export default App
+export default App

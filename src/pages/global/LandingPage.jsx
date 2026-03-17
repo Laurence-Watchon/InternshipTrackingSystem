@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import Navbar from '../../components/custom/landing/NavBar.jsx'
 import HeroSection from '../../components/custom/landing/HeroSection'
 import ObjectivesSection from '../../components/custom/landing/ObjectivesSection'
