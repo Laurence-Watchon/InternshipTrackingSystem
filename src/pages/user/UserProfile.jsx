@@ -1,29 +1,64 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import Dialog from '../../components/ui/Dialog'
-import AlertDialog from '../../components/ui/AlertDialog'
+import { useAuth } from '../../context/AuthContext'
+import { AlertCircle } from 'lucide-react'
+import Toast from '../../components/ui/Toast'
 
 function Profile() {
-  const [originalData] = useState({
-    firstName: 'John',
-    lastName: 'Doe',
-    studentNumber: '221-2543',
-    phoneNumber: '09123456789',
-    email: 'john.doe@gmail.com',
-    college: 'CCS',
-    collegeName: 'College of Computer Studies',
-    course: 'BSIT-SD',
-    courseName: 'BS Information Technology - Software Development',
-    company: 'Tech Solutions Inc.',
-    supervisor: 'Jane Smith',
-    startDate: '2026-01-15'
-  })
+  const { user: authUser } = useAuth()
+  const [originalData, setOriginalData] = useState(null)
+  const [formData, setFormData] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(null)
 
-  const [formData, setFormData]                       = useState({ ...originalData })
-  const [errors, setErrors]                           = useState({})
-  const [showConfirmDialog, setShowConfirmDialog]     = useState(false)
-  const [showNoChangesDialog, setShowNoChangesDialog] = useState(false)
-  const [showSuccessDialog, setShowSuccessDialog]     = useState(false)
+  const [errors, setErrors] = useState({})
+  const [isSaving, setIsSaving] = useState(false)
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!authUser?.id) {
+        setFetchError('User ID not found. Please log in again.')
+        setIsLoading(false)
+        return
+      }
+
+      try {
+        const response = await fetch(`http://localhost:3001/api/auth/profile/${authUser.id}`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch profile data')
+        }
+        const data = await response.json()
+
+        // Map database fields to profile fields if necessary
+        const profileData = {
+          firstName: data.firstName || '',
+          lastName: data.lastName || '',
+          studentNumber: data.studentNumber || '',
+          phoneNumber: data.phoneNumber || '',
+          email: data.email || '',
+          college: data.college || '',
+          collegeName: data.college || 'Not specified', // Might need mapping if acronym
+          course: data.course || '',
+          courseName: data.course || 'Not specified',   // Might need mapping if acronym
+          company: data.company || 'Not specified',
+          supervisor: data.supervisor || 'Not specified',
+          startDate: data.startDate || ''
+        }
+
+        setOriginalData(profileData)
+        setFormData(profileData)
+      } catch (err) {
+        console.error('Error fetching profile:', err)
+        setFetchError('Could not load profile data. Please try again later.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchUserData()
+  }, [authUser?.id])
 
   const capitalizeName = (name) =>
     name.trim().replace(/\s+/g, ' ')
@@ -89,19 +124,80 @@ function Profile() {
 
   const handleSaveClick = () => {
     if (!validateForm()) return
-    if (!hasChanges()) { setShowNoChangesDialog(true); return }
-    setShowConfirmDialog(true)
+    if (!hasChanges()) {
+      setToast({ show: true, message: 'No information was changed.', type: 'info' })
+      return
+    }
+    handleConfirmSave()
   }
 
-  const handleConfirmSave = () => {
+  const handleConfirmSave = async () => {
+    setIsSaving(true)
+    const minSavingTime = new Promise((resolve) => setTimeout(resolve, 2000))
+
     const updatedData = {
       ...formData,
       firstName: capitalizeName(formData.firstName),
-      lastName:  capitalizeName(formData.lastName),
+      lastName: capitalizeName(formData.lastName),
     }
-    console.log('Saving profile:', updatedData)
-    setShowConfirmDialog(false)
-    setShowSuccessDialog(true)
+
+    try {
+      const [response] = await Promise.all([
+        fetch(`http://localhost:3001/api/auth/profile/${authUser.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updatedData),
+        }),
+        minSavingTime
+      ])
+
+      if (!response.ok) {
+        throw new Error('Failed to update profile')
+      }
+
+      setToast({ show: true, message: 'Profile updated successfully!', type: 'success' })
+      setOriginalData(updatedData)
+    } catch (err) {
+      console.error('Error updating profile:', err)
+      setToast({ show: true, message: 'Failed to update profile. Please try again.', type: 'error' })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <AppLayout role="user">
+        <div className="flex flex-col items-center justify-center min-h-[400px]">
+          <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-600 font-medium text-lg">Loading your profile...</p>
+        </div>
+      </AppLayout>
+    )
+  }
+
+  if (fetchError || !formData) {
+    return (
+      <AppLayout role="user">
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-center px-4">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center text-red-600 mb-4 animate-shake">
+            <AlertCircle size={32} />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Oops! Something went wrong</h2>
+          <p className="text-gray-600 mb-6 max-w-md">
+            {fetchError || "We couldn't load your profile information. Please try refreshing the page."}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition font-medium focus:outline-none"
+          >
+            Retry Loading
+          </button>
+        </div>
+      </AppLayout>
+    )
   }
 
   return (
@@ -121,13 +217,13 @@ function Profile() {
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center space-x-4">
               <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
-                {formData.firstName.charAt(0)}{formData.lastName.charAt(0)}
+                {originalData.firstName.charAt(0)}{originalData.lastName.charAt(0)}
               </div>
               <div>
                 <h2 className="text-xl font-bold text-gray-900">
-                  {formData.firstName} {formData.lastName}
+                  {originalData.firstName} {originalData.lastName}
                 </h2>
-                <p className="text-sm text-gray-500">{formData.studentNumber}</p>
+                <p className="text-sm text-gray-500">{originalData.studentNumber}</p>
                 <p className="text-sm text-green-600 font-medium">Student</p>
               </div>
             </div>
@@ -232,42 +328,31 @@ function Profile() {
           <div className="p-6 border-t border-gray-200 flex justify-end">
             <button
               onClick={handleSaveClick}
-              className="px-6 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition font-medium focus:outline-none"
+              disabled={isSaving}
+              className={`px-6 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition font-medium focus:outline-none flex items-center
+                ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              Save Changes
+              {isSaving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
             </button>
           </div>
         </div>
       </div>
 
-      {/* ── Confirm Save — uses shared Dialog from ui ── */}
-      <Dialog
-        isOpen={showConfirmDialog}
-        onClose={() => setShowConfirmDialog(false)}
-        onConfirm={handleConfirmSave}
-        title="Confirm Changes"
-        message="Are you sure you want to save these changes to your profile?"
-        confirmLabel="Save"
-        cancelLabel="Cancel"
-      />
-
-      {/* ── No Changes — unchanged AlertDialog ── */}
-      <AlertDialog
-        isOpen={showNoChangesDialog}
-        onClose={() => setShowNoChangesDialog(false)}
-        type="info"
-        title="No Changes"
-        description="No information was changed. Make some changes before saving."
-      />
-
-      {/* ── Success — unchanged AlertDialog ── */}
-      <AlertDialog
-        isOpen={showSuccessDialog}
-        onClose={() => setShowSuccessDialog(false)}
-        type="success"
-        title="Profile Updated"
-        description="Your profile has been updated successfully!"
-      />
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ ...toast, show: false })}
+          duration={3000}
+        />
+      )}
     </AppLayout>
   )
 }

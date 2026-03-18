@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 
 export default function Toast({ message, type = 'success', onClose, duration = 3000 }) {
   useEffect(() => {
@@ -11,11 +11,34 @@ export default function Toast({ message, type = 'success', onClose, duration = 3
     }
   }, [duration, onClose]);
 
-  const isSuccess = type === 'success';
-  const Icon = isSuccess ? CheckCircle2 : AlertCircle;
-  const bgColor = isSuccess ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
-  const textColor = isSuccess ? 'text-green-800' : 'text-red-800';
-  const iconColor = isSuccess ? 'text-green-500' : 'text-red-500';
+  const getToastStyles = () => {
+    switch (type) {
+      case 'success':
+        return {
+          Icon: CheckCircle2,
+          bgColor: 'bg-green-50 border-green-200',
+          textColor: 'text-green-800',
+          iconColor: 'text-green-500'
+        };
+      case 'error':
+        return {
+          Icon: AlertCircle,
+          bgColor: 'bg-red-50 border-red-200',
+          textColor: 'text-red-800',
+          iconColor: 'text-red-500'
+        };
+      case 'info':
+      default:
+        return {
+          Icon: Info,
+          bgColor: 'bg-blue-50 border-blue-200',
+          textColor: 'text-blue-800',
+          iconColor: 'text-blue-500'
+        };
+    }
+  };
+
+  const { Icon, bgColor, textColor, iconColor } = getToastStyles();
 
   return (
     <div className={`fixed bottom-8 right-8 z-[100] flex items-center p-5 rounded-xl border-2 shadow-2xl ${bgColor} ${textColor} animate-slide-in-right min-w-[400px] max-w-lg w-full`}>

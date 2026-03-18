@@ -89,4 +89,31 @@ router.put("/reject/:id", async (req, res) => {
   }
 });
 
+// -----------------------------------------------
+// GET /api/admin/students
+// Fetches all verified students for a specific college
+// -----------------------------------------------
+router.get("/students", async (req, res) => {
+  try {
+    const { college } = req.query;
+
+    if (!college) {
+      return res.status(400).json({ error: "College is required." });
+    }
+
+    const query = {
+      role: "student",
+      isVerified: true,
+      college: college
+    };
+
+    const db = await connectDB();
+    const students = await db.collection("users").find(query).toArray();
+    res.json(students);
+  } catch (err) {
+    console.error("Error fetching students:", err);
+    res.status(500).json({ error: "Failed to fetch students." });
+  }
+});
+
 export default router;

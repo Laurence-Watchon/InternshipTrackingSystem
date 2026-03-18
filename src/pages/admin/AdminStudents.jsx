@@ -1,324 +1,117 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import AdminHomeCourses from '../../components/ui/AdminHomeCourses'
 import AdminStudentsTable from '../../components/ui/AdminStudentsTable'
 import StudentDetailsModal from '../../components/custom/dialog/StudentDetailsModal'
 import Pagination from '../../components/ui/Pagination'
+import Skeleton from '../../components/ui/Skeleton'
+import { useAuth } from '../../context/AuthContext'
+import { AlertCircle } from 'lucide-react'
 
 function StudentManagement() {
+  const { user: authUser } = useAuth()
   const [activeTab, setActiveTab] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedStudent, setSelectedStudent] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [allStudents, setAllStudents] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
   const itemsPerPage = 10
 
-  // Mock data for courses
+  useEffect(() => {
+    const fetchStudents = async () => {
+      // Enforce a minimum loading time of 1 second for better UX
+      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 1000))
+
+      if (!authUser?.college) {
+        // If no college, stop loading after the minimum time
+        await minLoadingTime
+        setIsLoading(false)
+        return
+      }
+      
+      try {
+        setIsLoading(true)
+        const fetchData = fetch(`http://localhost:3001/api/admin/students?college=${encodeURIComponent(authUser.college)}`)
+          .then(res => {
+            if (!res.ok) throw new Error('Failed to fetch students')
+            return res.json()
+          })
+
+        const [data] = await Promise.all([fetchData, minLoadingTime])
+        
+        // Map database fields to mock fields if needed
+        const mappedData = data.map(student => ({
+          ...student,
+          fullName: `${student.firstName} ${student.lastName}`,
+          id: student._id,
+          requirementsCompleted: student.requirementsCompleted || 0,
+          totalRequirements: student.totalRequirements || 7,
+          isDeployed: student.isDeployed || false,
+          completedRequirements: student.completedRequirements || []
+        }))
+        
+        setAllStudents(mappedData)
+      } catch (err) {
+        console.error('Error fetching students:', err)
+        setError(err.message)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchStudents()
+  }, [authUser?.college])
+
+  const coursesByCollege = {
+    CAS: [
+      { value: 'BAComm', label: 'BA Communication' },
+      { value: 'BA-Psych', label: 'BA Psychology' },
+      { value: 'BS-Psych', label: 'BS Psychology' }
+    ],
+    CBAA: [
+      { value: 'BSA', label: 'BS Accountancy' },
+      { value: 'BSAIS', label: 'BS Accounting Information System' },
+      { value: 'BSEntrep', label: 'BS Entrepreneurship' },
+      { value: 'BSTM', label: 'BS Tourism Management' }
+    ],
+    CCS: [
+      { value: 'BSCS-DS', label: 'BS Computer Science - Data Science' },
+      { value: 'BSIT-BA', label: 'BS Information Technology - Business Analytics' },
+      { value: 'BSIT-SD', label: 'BS Information Technology - Software Development' }
+    ],
+    COE: [
+      { value: 'BSME', label: 'BS Mechanical Engineering' }
+    ],
+    COED: [
+      { value: 'BEED', label: 'Bachelor of Elementary Education' },
+      { value: 'BPEd', label: 'Bachelor of Physical Education' },
+      { value: 'BSED-English', label: 'BS Education (Major in English)' },
+      { value: 'BSED-Math', label: 'BS Education (Major in Mathematics)' },
+      { value: 'BSED-Science', label: 'BS Education (Major in Science)' }
+    ]
+  }
+
+  // Derive courses counts dynamically based on admin's college
+  const currentCollegeCourses = coursesByCollege[authUser?.college] || []
   const courses = [
-    { id: 'all', name: 'All', count: 156 },
-    { id: 'bscs-ds', name: 'BSCS-DS', count: 45 },
-    { id: 'bsit-ba', name: 'BSIT-BA', count: 58 },
-    { id: 'bsit-sd', name: 'BSIT-SD', count: 53 }
+    { id: 'all', name: 'All', count: allStudents.length },
+    ...currentCollegeCourses.map(c => ({
+      id: c.value.toLowerCase(),
+      name: c.value,
+      count: allStudents.filter(s => s.course === c.value).length
+    }))
   ]
 
-  // Mock student data
-  const allStudents = [
-    {
-      id: 1,
-      fullName: 'Juan Dela Cruz',
-      studentNumber: '221-1234',
-      phoneNumber: '09123456789',
-      email: 'juan.delacruz@gmail.com',
-      college: 'College of Computer Studies',
-      course: 'BSIT-SD',
-      requirementsCompleted: 7,
-      totalRequirements: 7,
-      isDeployed: true,
-      completedRequirements: [
-        'Copy of Registration Form',
-        'Attendance / Copy Evaluation',
-        'Application Letter',
-        'Curriculum Vitae',
-        'AVP Self Introduction',
-        'Notarized Consent Form',
-        'Medical Clearance'
-      ],
-      companyName: 'Tech Solutions Inc.',
-      companyAddress: 'Makati City, Metro Manila',
-      supervisor: 'John Smith'
-    },
-    {
-      id: 2,
-      fullName: 'Maria Santos',
-      studentNumber: '221-2345',
-      phoneNumber: '09234567890',
-      email: 'maria.santos@gmail.com',
-      college: 'College of Computer Studies',
-      course: 'BSCS-DS',
-      requirementsCompleted: 7,
-      totalRequirements: 7,
-      isDeployed: true,
-      completedRequirements: [
-        'Copy of Registration Form',
-        'Attendance / Copy Evaluation',
-        'Application Letter',
-        'Curriculum Vitae',
-        'AVP Self Introduction',
-        'Notarized Consent Form',
-        'Medical Clearance'
-      ],
-      companyName: 'Data Analytics Corp.',
-      companyAddress: 'BGC, Taguig City',
-      supervisor: 'Jane Doe'
-    },
-    {
-      id: 3,
-      fullName: 'Pedro Reyes',
-      studentNumber: '221-3456',
-      phoneNumber: '09345678901',
-      email: 'pedro.reyes@gmail.com',
-      college: 'College of Computer Studies',
-      course: 'BSIT-BA',
-      requirementsCompleted: 4,
-      totalRequirements: 7,
-      isDeployed: false,
-      completedRequirements: [
-        'Copy of Registration Form',
-        'Attendance / Copy Evaluation',
-        'Application Letter',
-        'Curriculum Vitae'
-      ],
-      companyName: '',
-      companyAddress: '',
-      supervisor: ''
-    },
-    {
-      id: 4,
-      fullName: 'Anna Garcia',
-      studentNumber: '221-4567',
-      phoneNumber: '09456789012',
-      email: 'anna.garcia@gmail.com',
-      college: 'College of Computer Studies',
-      course: 'BSIT-SD',
-      requirementsCompleted: 7,
-      totalRequirements: 7,
-      isDeployed: true,
-      completedRequirements: [
-        'Copy of Registration Form',
-        'Attendance / Copy Evaluation',
-        'Application Letter',
-        'Curriculum Vitae',
-        'AVP Self Introduction',
-        'Notarized Consent Form',
-        'Medical Clearance'
-      ],
-      companyName: 'Software Innovations',
-      companyAddress: 'Alabang, Muntinlupa City',
-      supervisor: 'Emily Brown'
-    },
-    {
-      id: 5,
-      fullName: 'Carlos Mendoza',
-      studentNumber: '221-5678',
-      phoneNumber: '09567890123',
-      email: 'carlos.mendoza@gmail.com',
-      college: 'College of Computer Studies',
-      course: 'BSCS-DS',
-      requirementsCompleted: 5,
-      totalRequirements: 7,
-      isDeployed: false,
-      completedRequirements: [
-        'Copy of Registration Form',
-        'Attendance / Copy Evaluation',
-        'Application Letter',
-        'Curriculum Vitae',
-        'AVP Self Introduction'
-      ],
-      companyName: '',
-      companyAddress: '',
-      supervisor: ''
-    },
-    {
-      id: 6,
-      fullName: 'Sofia Rodriguez',
-      studentNumber: '221-6789',
-      phoneNumber: '09678901234',
-      email: 'sofia.rodriguez@gmail.com',
-      college: 'College of Computer Studies',
-      course: 'BSIT-BA',
-      requirementsCompleted: 7,
-      totalRequirements: 7,
-      isDeployed: true,
-      completedRequirements: [
-        'Copy of Registration Form',
-        'Attendance / Copy Evaluation',
-        'Application Letter',
-        'Curriculum Vitae',
-        'AVP Self Introduction',
-        'Notarized Consent Form',
-        'Medical Clearance'
-      ],
-      companyName: 'Cloud Computing Inc.',
-      companyAddress: 'Mandaluyong City',
-      supervisor: 'Sarah Wilson'
-    },
-    {
-      id: 7,
-      fullName: 'Sofia Rodriguez',
-      studentNumber: '221-6789',
-      phoneNumber: '09678901234',
-      email: 'sofia.rodriguez@gmail.com',
-      college: 'College of Computer Studies',
-      course: 'BSIT-BA',
-      requirementsCompleted: 7,
-      totalRequirements: 7,
-      isDeployed: true,
-      completedRequirements: [
-        'Copy of Registration Form',
-        'Attendance / Copy Evaluation',
-        'Application Letter',
-        'Curriculum Vitae',
-        'AVP Self Introduction',
-        'Notarized Consent Form',
-        'Medical Clearance'
-      ],
-      companyName: 'Cloud Computing Inc.',
-      companyAddress: 'Mandaluyong City',
-      supervisor: 'Sarah Wilson'
-    },
-    {
-      id: 8,
-      fullName: 'Sofia Rodriguez',
-      studentNumber: '221-6789',
-      phoneNumber: '09678901234',
-      email: 'sofia.rodriguez@gmail.com',
-      college: 'College of Computer Studies',
-      course: 'BSIT-BA',
-      requirementsCompleted: 7,
-      totalRequirements: 7,
-      isDeployed: true,
-      completedRequirements: [
-        'Copy of Registration Form',
-        'Attendance / Copy Evaluation',
-        'Application Letter',
-        'Curriculum Vitae',
-        'AVP Self Introduction',
-        'Notarized Consent Form',
-        'Medical Clearance'
-      ],
-      companyName: 'Cloud Computing Inc.',
-      companyAddress: 'Mandaluyong City',
-      supervisor: 'Sarah Wilson'
-    },
-    {
-      id: 9,
-      fullName: 'Sofia Rodriguez',
-      studentNumber: '221-6789',
-      phoneNumber: '09678901234',
-      email: 'sofia.rodriguez@gmail.com',
-      college: 'College of Computer Studies',
-      course: 'BSIT-BA',
-      requirementsCompleted: 7,
-      totalRequirements: 7,
-      isDeployed: true,
-      completedRequirements: [
-        'Copy of Registration Form',
-        'Attendance / Copy Evaluation',
-        'Application Letter',
-        'Curriculum Vitae',
-        'AVP Self Introduction',
-        'Notarized Consent Form',
-        'Medical Clearance'
-      ],
-      companyName: 'Cloud Computing Inc.',
-      companyAddress: 'Mandaluyong City',
-      supervisor: 'Sarah Wilson'
-    },
-    {
-      id: 10,
-      fullName: 'Sofia Rodriguez',
-      studentNumber: '221-6789',
-      phoneNumber: '09678901234',
-      email: 'sofia.rodriguez@gmail.com',
-      college: 'College of Computer Studies',
-      course: 'BSIT-BA',
-      requirementsCompleted: 7,
-      totalRequirements: 7,
-      isDeployed: true,
-      completedRequirements: [
-        'Copy of Registration Form',
-        'Attendance / Copy Evaluation',
-        'Application Letter',
-        'Curriculum Vitae',
-        'AVP Self Introduction',
-        'Notarized Consent Form',
-        'Medical Clearance'
-      ],
-      companyName: 'Cloud Computing Inc.',
-      companyAddress: 'Mandaluyong City',
-      supervisor: 'Sarah Wilson'
-    },
-    {
-      id: 11,
-      fullName: 'Sofia Rodriguez',
-      studentNumber: '221-6789',
-      phoneNumber: '09678901234',
-      email: 'sofia.rodriguez@gmail.com',
-      college: 'College of Computer Studies',
-      course: 'BSIT-BA',
-      requirementsCompleted: 7,
-      totalRequirements: 7,
-      isDeployed: true,
-      completedRequirements: [
-        'Copy of Registration Form',
-        'Attendance / Copy Evaluation',
-        'Application Letter',
-        'Curriculum Vitae',
-        'AVP Self Introduction',
-        'Notarized Consent Form',
-        'Medical Clearance'
-      ],
-      companyName: 'Cloud Computing Inc.',
-      companyAddress: 'Mandaluyong City',
-      supervisor: 'Sarah Wilson'
-    },
-    {
-      id: 12,
-      fullName: 'Sofia Rodriguez',
-      studentNumber: '221-6789',
-      phoneNumber: '09678901234',
-      email: 'sofia.rodriguez@gmail.com',
-      college: 'College of Computer Studies',
-      course: 'BSIT-BA',
-      requirementsCompleted: 7,
-      totalRequirements: 7,
-      isDeployed: true,
-      completedRequirements: [
-        'Copy of Registration Form',
-        'Attendance / Copy Evaluation',
-        'Application Letter',
-        'Curriculum Vitae',
-        'AVP Self Introduction',
-        'Notarized Consent Form',
-        'Medical Clearance'
-      ],
-      companyName: 'Cloud Computing Inc.',
-      companyAddress: 'Mandaluyong City',
-      supervisor: 'Sarah Wilson'
-    }
-  ]
 
   // Filter students by course
-  const filteredByCourse = activeTab === 'all' 
-    ? allStudents 
+  const filteredByCourse = activeTab === 'all'
+    ? allStudents
     : allStudents.filter(student => {
-        const courseMap = {
-          'bscs-ds': 'BSCS-DS',
-          'bsit-ba': 'BSIT-BA',
-          'bsit-sd': 'BSIT-SD'
-        }
-        return student.course === courseMap[activeTab]
-      })
+      return student.course.toLowerCase() === activeTab.toLowerCase()
+    })
 
   // Filter by search query
   const filteredStudents = filteredByCourse.filter(student =>
@@ -326,9 +119,9 @@ function StudentManagement() {
     student.studentNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
     student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
     student.course.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    student.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    student.companyAddress.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    student.supervisor.toLowerCase().includes(searchQuery.toLowerCase())
+    (student.companyName && student.companyName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (student.companyAddress && student.companyAddress.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (student.supervisor && student.supervisor.toLowerCase().includes(searchQuery.toLowerCase()))
   )
 
   // Pagination calculations
@@ -360,11 +153,23 @@ function StudentManagement() {
   // Show "no students available" message when there are no students at all
   const hasNoStudents = filteredByCourse.length === 0 && searchQuery === ''
 
+  // Page Title helper
+  const getFullCollegeName = (acronym) => {
+    const names = {
+      'CAS': 'College of Arts and Sciences',
+      'CBAA': 'College of Business Administration and Accountancy',
+      'CCS': 'College of Computing Studies',
+      'COE': 'College of Engineering',
+      'COED': 'College of Education'
+    }
+    return names[acronym] || acronym
+  }
+
   return (
     <AppLayout role="admin">
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">COLLEGE OF COMPUTING STUDIES</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{getFullCollegeName(authUser?.college)?.toUpperCase()}</h1>
         <p className="text-gray-600 mt-1">
           View and manage all students in your college
         </p>
@@ -372,33 +177,84 @@ function StudentManagement() {
 
       {/* Course Tabs */}
       <div className="mb-6">
-        <AdminHomeCourses
-          courses={courses}
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-        />
+        {isLoading ? (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 flex space-x-4">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} variant="rectangular" height={40} width={100} className="rounded-md" />
+            ))}
+          </div>
+        ) : (
+          <AdminHomeCourses
+            courses={courses}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
+        )}
       </div>
 
       {/* Search Bar */}
       <div className="mb-6">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+        {isLoading ? (
+          <Skeleton variant="rectangular" height={50} className="w-full rounded-lg" />
+        ) : (
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              placeholder="Search by name, student number, or email..."
+            />
           </div>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            placeholder="Search by name, student number, or email..."
-          />
-        </div>
+        )}
       </div>
 
-      {/* No Students Available Message */}
-      {hasNoStudents ? (
+      {/* Content Area */}
+      {isLoading ? (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+            <div className="grid grid-cols-6 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} variant="text" width="60%" />
+              ))}
+            </div>
+          </div>
+          <div className="divide-y divide-gray-200">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="px-6 py-6 border-b border-gray-200">
+                <div className="grid grid-cols-6 gap-4 items-center">
+                  <div className="col-span-1 flex items-center">
+                    <Skeleton variant="circular" width={40} height={40} className="mr-3" />
+                    <Skeleton variant="text" width="80%" />
+                  </div>
+                  {[...Array(5)].map((_, j) => (
+                    <Skeleton key={j} variant="text" width="70%" />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : error ? (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center text-red-600 text-3xl mb-4 mx-auto animate-shake">
+            <AlertCircle className="w-8 h-8" />
+          </div>
+          <p className="text-gray-800 font-bold text-xl mb-2">Failed to Load Students</p>
+          <p className="text-gray-500 mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition font-medium focus:outline-none"
+          >
+            Retry
+          </button>
+        </div>
+      ) : hasNoStudents ? (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12">
           <div className="flex flex-col items-center">
             <svg className="w-20 h-20 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -411,7 +267,7 @@ function StudentManagement() {
       ) : (
         <>
           {/* Students Table */}
-          <AdminStudentsTable 
+          <AdminStudentsTable
             students={paginatedStudents}
             onViewDetails={handleViewDetails}
           />

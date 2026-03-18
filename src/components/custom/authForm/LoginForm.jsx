@@ -133,8 +133,8 @@ function LoginForm() {
         return
       }
 
-      // Store user info in global context
       login({
+        id: data.id,
         role: data.role,
         firstName: data.firstName,
         lastName: data.lastName,
