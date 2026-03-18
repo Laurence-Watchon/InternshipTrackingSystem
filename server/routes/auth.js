@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import nodemailer from "nodemailer";
 import { connectDB } from "../db.js";
+import { ObjectId } from "mongodb";
 
 const router = express.Router();
 
@@ -311,13 +312,14 @@ router.post("/verify-otp", async (req, res) => {
       isRejected: true
     });
 
-    await db.collection("users").insertOne(userData);
+    const result = await db.collection("users").insertOne(userData);
 
     // Clean up OTP store
     otpStore.delete(email);
 
     res.json({
       message: "Email verified! Account created successfully.",
+      id: result.insertedId,
       role: userData.role,
       firstName: userData.firstName,
       lastName: userData.lastName,
@@ -401,6 +403,7 @@ router.post("/login", async (req, res) => {
     // Return role so the frontend can redirect correctly
     res.json({
       message: "Login successful.",
+      id: user._id,
       role: user.role,
       firstName: user.firstName,
       lastName: user.lastName,
@@ -520,6 +523,63 @@ router.post("/reset-password", async (req, res) => {
     res.json({ message: "Password reset successful! You can now log in." });
   } catch (err) {
     console.error("Reset password error:", err);
+    res.status(500).json({ error: "Something went wrong. Please try again." });
+  }
+});
+
+// -----------------------------------------------
+// GET /api/auth/profile/:id
+// Fetches user profile by ID
+// -----------------------------------------------
+router.get("/profile/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const db = await connectDB();
+    const user = await db.collection("users").findOne({ _id: new ObjectId(id) });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    // Don't send the password
+    const { password, ...safeUser } = user;
+    res.json(safeUser);
+  } catch (err) {
+    console.error("Fetch profile error:", err);
+    res.status(500).json({ error: "Something went wrong. Please try again." });
+  }
+});
+
+// -----------------------------------------------
+// PUT /api/auth/profile/:id
+// Updates user profile by ID
+// -----------------------------------------------
+router.put("/profile/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    // Remove immutable or sensitive fields if they exist in body
+    delete updateData._id;
+    delete updateData.password;
+    delete updateData.email; // Usually email update requires separate flow
+    delete updateData.role;
+    delete updateData.isVerified;
+
+    const db = await connectDB();
+    const result = await db.collection("users").updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { ...updateData, updatedAt: new Date() } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    res.json({ message: "Profile updated successfully." });
+  } catch (err) {
+    console.error("Update profile error:", err);
     res.status(500).json({ error: "Something went wrong. Please try again." });
   }
 });
