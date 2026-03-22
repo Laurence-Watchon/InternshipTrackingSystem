@@ -1,29 +1,27 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AlertTriangle, Check, ChevronDown } from 'lucide-react'
 
-function RequiredHoursCard({ initialHours, onSave }) {
+function RequiredHoursCard({ initialHours = {}, onSave }) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const [hours, setHours] = useState(initialHours || {
-    'BSCS-DS': '',
-    'BSIT-BA': '',
-    'BSIT-SD': ''
-  })
-  const [errors, setErrors] = useState({
-    'BSCS-DS': '',
-    'BSIT-BA': '',
-    'BSIT-SD': ''
-  })
+  const [hours, setHours] = useState(initialHours)
+  const [errors, setErrors] = useState({})
 
-  const hasAllHours = Object.values(hours).every(h => h !== '' && parseInt(h) > 0)
+  // Update hours state when initialHours changes (e.g., after fetching from API)
+  useEffect(() => {
+    if (Object.keys(initialHours).length > 0) {
+      setHours(initialHours)
+    }
+  }, [initialHours])
+
+  const courseKeys = Object.keys(initialHours)
+  const hasAllHours = courseKeys.length > 0 && courseKeys.every(h => hours[h] !== '' && parseInt(hours[h]) > 0)
 
   const handleChange = (course, value) => {
-    // Only allow numbers
     const numValue = value.replace(/[^0-9]/g, '')
     setHours(prev => ({
       ...prev,
       [course]: numValue
     }))
-    // Clear error when typing
     if (errors[course]) {
       setErrors(prev => ({
         ...prev,
@@ -33,26 +31,15 @@ function RequiredHoursCard({ initialHours, onSave }) {
   }
 
   const handleConfirm = () => {
-    // Validate all fields
-    const newErrors = {
-      'BSCS-DS': '',
-      'BSIT-BA': '',
-      'BSIT-SD': ''
-    }
+    const newErrors = {}
     let hasError = false
 
-    if (!hours['BSCS-DS'] || parseInt(hours['BSCS-DS']) <= 0) {
-      newErrors['BSCS-DS'] = 'BSCS-DS Required Hours is required'
-      hasError = true
-    }
-    if (!hours['BSIT-BA'] || parseInt(hours['BSIT-BA']) <= 0) {
-      newErrors['BSIT-BA'] = 'BSIT-BA Required Hours is required'
-      hasError = true
-    }
-    if (!hours['BSIT-SD'] || parseInt(hours['BSIT-SD']) <= 0) {
-      newErrors['BSIT-SD'] = 'BSIT-SD Required Hours is required'
-      hasError = true
-    }
+    courseKeys.forEach(course => {
+      if (!hours[course] || parseInt(hours[course]) <= 0) {
+        newErrors[course] = `${course} Required Hours is required`
+        hasError = true
+      }
+    })
 
     if (hasError) {
       setErrors(newErrors)
@@ -60,23 +47,21 @@ function RequiredHoursCard({ initialHours, onSave }) {
     }
 
     onSave(hours)
-    // Collapse the card after confirming
-    setIsExpanded(false)
   }
 
+  if (courseKeys.length === 0) return null
+
   return (
-    <div className={`rounded-xl border-4 transition-all ${
-      hasAllHours ? 'bg-green-50 border-green-200' : 'bg-white border-red-300'
-    }`}>
+    <div className={`rounded-xl border-4 transition-all ${hasAllHours ? 'bg-green-50 border-green-200' : 'bg-white border-red-300'
+      }`}>
       {/* Header - Clickable */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full px-6 py-4 flex items-center justify-between focus:outline-none"
       >
         <div className="flex items-center space-x-3">
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-            hasAllHours ? 'bg-green-100' : ''
-          }`}>
+          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${hasAllHours ? 'bg-green-100' : ''
+            }`}>
             {hasAllHours ? (
               <Check className="w-6 h-6 text-green-600" />
             ) : (
@@ -94,10 +79,9 @@ function RequiredHoursCard({ initialHours, onSave }) {
             </p>
           </div>
         </div>
-        <ChevronDown 
-          className={`w-5 h-5 ${hasAllHours ? 'text-green-600' : 'text-red-600'} transition-transform ${
-            isExpanded ? 'rotate-180' : ''
-          }`}
+        <ChevronDown
+          className={`w-5 h-5 ${hasAllHours ? 'text-green-600' : 'text-red-600'} transition-transform ${isExpanded ? 'rotate-180' : ''
+            }`}
         />
       </button>
 
@@ -105,65 +89,26 @@ function RequiredHoursCard({ initialHours, onSave }) {
       {isExpanded && (
         <div className="px-6 pb-6 space-y-4 border-t border-gray-200">
           <div className="pt-4 space-y-4">
-            {/* BSCS-DS */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                BSCS-DS Required Hours
-              </label>
-              <input
-                type="text"
-                value={hours['BSCS-DS']}
-                onChange={(e) => handleChange('BSCS-DS', e.target.value)}
-                className={`w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 ${errors['BSCS-DS']
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-green-500'
-                  }`}
-                placeholder="Enter hours (e.g., 500)"
-              />
-              {errors['BSCS-DS'] && (
-                <p className="text-red-500 text-sm mt-1">{errors['BSCS-DS']}</p>
-              )}
-            </div>
-
-            {/* BSIT-BA */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                BSIT-BA Required Hours
-              </label>
-              <input
-                type="text"
-                value={hours['BSIT-BA']}
-                onChange={(e) => handleChange('BSIT-BA', e.target.value)}
-                className={`w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 ${errors['BSIT-BA']
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-green-500'
-                  }`}
-                placeholder="Enter hours (e.g., 500)"
-              />
-              {errors['BSIT-BA'] && (
-                <p className="text-red-500 text-sm mt-1">{errors['BSIT-BA']}</p>
-              )}
-            </div>
-
-            {/* BSIT-SD */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                BSIT-SD Required Hours
-              </label>
-              <input
-                type="text"
-                value={hours['BSIT-SD']}
-                onChange={(e) => handleChange('BSIT-SD', e.target.value)}
-                className={`w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 ${errors['BSIT-SD']
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-green-500'
-                  }`}
-                placeholder="Enter hours (e.g., 500)"
-              />
-              {errors['BSIT-SD'] && (
-                <p className="text-red-500 text-sm mt-1">{errors['BSIT-SD']}</p>
-              )}
-            </div>
+            {courseKeys.map(course => (
+              <div key={course}>
+                <label className="block text-sm font-medium text-gray-700 mb-2 uppercase">
+                  {course} Required Hours
+                </label>
+                <input
+                  type="text"
+                  value={hours[course] || ''}
+                  onChange={(e) => handleChange(course, e.target.value)}
+                  className={`w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 ${errors[course]
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-green-500'
+                    }`}
+                  placeholder="Enter hours (e.g., 500)"
+                />
+                {errors[course] && (
+                  <p className="text-red-500 text-sm mt-1">{errors[course]}</p>
+                )}
+              </div>
+            ))}
 
             {/* Confirm Button */}
             <button

@@ -1,120 +1,123 @@
-import { useParams } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import AppLayout from '../../components/custom/global/AppLayout'
 import RequirementDetailCard from '../../components/ui/RequirementDetailCard'
+import { useAuth } from '../../context/AuthContext'
 
 function AdminStudentRequirementsDetail() {
   const { studentId } = useParams()
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  const [studentData, setStudentData] = useState(null)
+  const [requirements, setRequirements] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Mock student data - replace with API call
-  const studentData = {
-    id: studentId,
-    fullName: 'Santos, Maria',
-    studentNumber: '221-2345',
-    email: 'maria.santos@gmail.com',
-    course: 'BSCS-DS',
-    college: 'College of Computer Studies',
-    requirementsCompleted: 7,
-    totalRequirements: 9
+  useEffect(() => {
+    if (studentId && user?.college) {
+      fetchData()
+    }
+  }, [studentId, user])
+
+  const fetchData = async () => {
+    setIsLoading(true)
+    try {
+      // Get all monitoring data for this college to find this specific student
+      const response = await fetch(`http://localhost:3001/api/admin/students-monitoring?college=${encodeURIComponent(user.college)}`)
+      const data = await response.json()
+      
+      if (response.ok) {
+        const student = data.find(s => s.studentId === studentId)
+        if (student) {
+          setStudentData({
+            fullName: `${student.firstName} ${student.lastName}`,
+            studentNumber: student.studentNumber,
+            email: student.email || 'N/A',
+            course: student.course,
+            college: user.college,
+            requirementsCompleted: student.submissions.filter(s => s.status === 'verified').length,
+            totalRequirements: student.submissions.length
+          })
+
+          // Transform submissions to the format needed by the card
+          const transformedReqs = student.submissions.map(sub => ({
+            id: sub.requirementId,
+            submissionId: sub.submissionId,
+            title: sub.requirementTitle,
+            description: sub.requirementDescription || 'No description provided.',
+            status: sub.status,
+            submittedDate: sub.submittedAt,
+            fileUrl: sub.fileUrl,
+            fileName: sub.fileName,
+            fileType: sub.fileName?.includes('http') || sub.fileUrl?.includes('http') ? (sub.fileName?.endsWith('.pdf') ? 'pdf' : 'url') : 'file',
+            feedback: sub.feedback
+          }))
+          setRequirements(transformedReqs)
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching student details:', err)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  // Mock requirements with submissions (status: 'submitted' or 'pending')
-  const requirements = [
-    {
-      id: 1,
-      title: 'Copy of Registration Form',
-      description: 'Your official registration form from the registrar.',
-      status: 'submitted',
-      submittedDate: '2026-01-15',
-      fileUrl: 'https://example.com/files/registration-form.pdf',
-      fileName: 'registration-form.pdf',
-      fileType: 'pdf'
-    },
-    {
-      id: 2,
-      title: 'Attendance / Copy Evaluation of Pre-Deployment Orientation',
-      description: 'Attendance sheet or evaluation copy from orientation.',
-      status: 'submitted',
-      submittedDate: '2026-01-18',
-      fileUrl: 'https://example.com/files/attendance.pdf',
-      fileName: 'attendance.pdf',
-      fileType: 'pdf'
-    },
-    {
-      id: 3,
-      title: 'Scanned Copy of Application Letter',
-      description: 'Scanned or photo copy of your application letter.',
-      status: 'submitted',
-      submittedDate: '2026-01-20',
-      fileUrl: 'https://example.com/files/application-letter.pdf',
-      fileName: 'application-letter.pdf',
-      fileType: 'pdf'
-    },
-    {
-      id: 4,
-      title: 'Curriculum Vitae (LU Format)',
-      description: 'Your CV following the LU-prescribed format.',
-      status: 'submitted',
-      submittedDate: '2026-01-22',
-      fileUrl: 'https://example.com/files/cv.pdf',
-      fileName: 'cv.pdf',
-      fileType: 'pdf'
-    },
-    {
-      id: 5,
-      title: 'AVP Self Introduction',
-      description: 'Google Drive link to your self-introduction video.',
-      status: 'submitted',
-      submittedDate: '2026-01-24',
-      fileUrl: 'https://drive.google.com/file/d/example',
-      fileName: 'Video Link',
-      fileType: 'url'
-    },
-    {
-      id: 6,
-      title: 'Notarized Student Internship Consent Form (LU Format)',
-      description: 'Notarized consent form using the LU format.',
-      status: 'submitted',
-      submittedDate: '2026-01-26',
-      fileUrl: 'https://example.com/files/consent-form.pdf',
-      fileName: 'consent-form.pdf',
-      fileType: 'pdf'
-    },
-    {
-      id: 7,
-      title: 'Medical Clearance',
-      description: 'Medical clearance certificate.',
-      status: 'submitted',
-      submittedDate: '2026-01-28',
-      fileUrl: 'https://example.com/files/medical-clearance.pdf',
-      fileName: 'medical-clearance.pdf',
-      fileType: 'pdf'
-    },
-    {
-      id: 8,
-      title: 'Scanned Copy of MOA',
-      description: 'Memorandum of Agreement from your company.',
-      status: 'pending',
-      submittedDate: null,
-      fileUrl: null,
-      fileName: null,
-      fileType: null
-    },
-    {
-      id: 9,
-      title: 'Company Profile',
-      description: 'Company profile or information sheet.',
-      status: 'pending',
-      submittedDate: null,
-      fileUrl: null,
-      fileName: null,
-      fileType: null
+  const handleVerify = async (submissionId) => {
+    if (!submissionId) return
+    updateSubmissionStatus(submissionId, 'verified')
+  }
+
+  const handleReject = async (submissionId, feedback) => {
+    if (!submissionId) return
+    updateSubmissionStatus(submissionId, 'rejected', feedback)
+  }
+
+  const updateSubmissionStatus = async (submissionId, status, feedback = '') => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/admin/submissions/${submissionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, feedback })
+      })
+
+      if (response.ok) {
+        // Refresh data
+        fetchData()
+      } else {
+        alert('Failed to update submission status')
+      }
+    } catch (err) {
+      console.error('Error updating status:', err)
+      alert('An error occurred.')
     }
-  ]
+  }
 
   const handleFileClick = (fileUrl) => {
     if (fileUrl) {
       window.open(fileUrl, '_blank')
     }
+  }
+
+  if (isLoading) {
+    return (
+      <AppLayout role="admin">
+        <div className="flex items-center justify-center p-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+        </div>
+      </AppLayout>
+    )
+  }
+
+  if (!studentData) {
+    return (
+      <AppLayout role="admin">
+        <div className="p-12 text-center text-gray-500">
+          Student not found or no requirements matching.
+          <button onClick={() => navigate(-1)} className="block mx-auto mt-4 text-green-600 hover:underline">
+            Go Back
+          </button>
+        </div>
+      </AppLayout>
+    )
   }
 
   return (
@@ -174,6 +177,8 @@ function AdminStudentRequirementsDetail() {
               requirement={req}
               index={index + 1}
               onFileClick={handleFileClick}
+              onVerify={handleVerify}
+              onReject={handleReject}
             />
           ))}
         </div>

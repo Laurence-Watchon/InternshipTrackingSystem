@@ -6,8 +6,10 @@ import Pagination from '../../components/ui/Pagination'
 import AlertDialog from '../../components/ui/AlertDialog'
 import Dialog from '../../components/ui/Dialog'
 import RejectEndorsementModal from '../../components/custom/dialog/RejectEndorsementModal'
+import { useAuth } from '../../context/AuthContext'
 
 function AdminEndorsements() {
+  const { user } = useAuth()
   const [activeTab, setActiveTab] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
@@ -20,12 +22,60 @@ function AdminEndorsements() {
 
   const itemsPerPage = 10
 
+  const coursesByCollege = {
+    'COLLEGE OF ARTS AND SCIENCES': [
+      { value: 'BAComm', label: 'BA Communication' },
+      { value: 'BA-Psych', label: 'BA Psychology' },
+      { value: 'BS-Psych', label: 'BS Psychology' }
+    ],
+    'COLLEGE OF BUSINESS ADMINISTRATION AND ACCOUNTANCY': [
+      { value: 'BSA', label: 'BS Accountancy' },
+      { value: 'BSAIS', label: 'BS Accounting Information System' },
+      { value: 'BSEntrep', label: 'BS Entrepreneurship' },
+      { value: 'BSTM', label: 'BS Tourism Management' }
+    ],
+    'COLLEGE OF COMPUTING STUDIES': [
+      { value: 'BSCS-DS', label: 'BS Computer Science - Data Science' },
+      { value: 'BSIT-BA', label: 'BS Information Technology - Business Analytics' },
+      { value: 'BSIT-SD', label: 'BS Information Technology - Software Development' }
+    ],
+    'COLLEGE OF ENGINEERING': [
+      { value: 'BSME', label: 'BS Mechanical Engineering' }
+    ],
+    'COLLEGE OF EDUCATION': [
+      { value: 'BEED', label: 'Bachelor of Elementary Education' },
+      { value: 'BPEd', label: 'Bachelor of Physical Education' },
+      { value: 'BSED-English', label: 'BS Education (Major in English)' },
+      { value: 'BSED-Math', label: 'BS Education (Major in Mathematics)' },
+      { value: 'BSED-Science', label: 'BS Education (Major in Science)' }
+    ]
+  }
+
+  const collegeMapping = {
+    'CAS': 'COLLEGE OF ARTS AND SCIENCES',
+    'CBAA': 'COLLEGE OF BUSINESS ADMINISTRATION AND ACCOUNTANCY',
+    'CCS': 'COLLEGE OF COMPUTING STUDIES',
+    'COE': 'COLLEGE OF ENGINEERING',
+    'COED': 'COLLEGE OF EDUCATION'
+  }
+
+  const getFullCollegeName = (name) => {
+    if (!name) return 'COLLEGE OF COMPUTING STUDIES'
+    const upper = name.toUpperCase()
+    if (collegeMapping[upper]) return collegeMapping[upper]
+    return upper
+  }
+
+  const resolvedCollegeName = getFullCollegeName(user?.college)
+
   // Mock data for courses
   const courses = [
     { id: 'all', name: 'All', count: 25 },
-    { id: 'bscs-ds', name: 'BSCS-DS', count: 8 },
-    { id: 'bsit-ba', name: 'BSIT-BA', count: 10 },
-    { id: 'bsit-sd', name: 'BSIT-SD', count: 7 }
+    ...(coursesByCollege[resolvedCollegeName] || []).map(c => ({
+      id: c.value.toLowerCase(),
+      name: c.value,
+      count: 0 // In real app, this would be dynamic
+    }))
   ]
 
   // Mock data - students requesting endorsement
@@ -156,12 +206,7 @@ function AdminEndorsements() {
   const filteredByCourse = activeTab === 'all'
     ? allStudents
     : allStudents.filter(student => {
-        const courseMap = {
-          'bscs-ds': 'BSCS-DS',
-          'bsit-ba': 'BSIT-BA',
-          'bsit-sd': 'BSIT-SD'
-        }
-        return student.course === courseMap[activeTab]
+        return student.course.toLowerCase() === activeTab.toLowerCase()
       })
 
   // Sort by status: ready first, then pending, then completed
@@ -221,7 +266,7 @@ function AdminEndorsements() {
     <AppLayout role="admin">
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">COLLEGE OF COMPUTING STUDIES</h1>
+        <h1 className="text-2xl font-bold text-gray-900 uppercase">{resolvedCollegeName}</h1>
         <p className="text-gray-600 mt-1">
           Review and approve student endorsement requests
         </p>

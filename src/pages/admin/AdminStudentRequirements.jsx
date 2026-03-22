@@ -1,162 +1,113 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppLayout from '../../components/custom/global/AppLayout'
 import AdminHomeCourses from '../../components/ui/AdminHomeCourses'
 import StudentRequirementsTable from '../../components/ui/StudentRequirementsTable'
 import Pagination from '../../components/ui/Pagination'
+import { useAuth } from '../../context/AuthContext'
 
 function AdminStudentRequirements() {
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState('bscs-ds')
+  const { user } = useAuth()
+  const [activeTab, setActiveTab] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [studentsData, setStudentsData] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
 
   const itemsPerPage = 20
 
-  // Courses without "All"
-  const courses = [
-    { id: 'bscs-ds', name: 'BSCS-DS', count: 45 },
-    { id: 'bsit-ba', name: 'BSIT-BA', count: 58 },
-    { id: 'bsit-sd', name: 'BSIT-SD', count: 53 }
-  ]
-
-  // Mock student data - sorted alphabetically by last name
-  const allStudents = [
-    {
-      id: 1,
-      fullName: 'Cruz, Juan Dela',
-      studentNumber: '221-1234',
-      email: 'juan.delacruz@gmail.com',
-      course: 'BSIT-SD',
-      requirementsCompleted: 7,
-      totalRequirements: 7
-    },
-    {
-      id: 2,
-      fullName: 'Fernandez, Lucas',
-      studentNumber: '221-1235',
-      email: 'lucas.fernandez@gmail.com',
-      course: 'BSIT-BA',
-      requirementsCompleted: 5,
-      totalRequirements: 7
-    },
-    {
-      id: 3,
-      fullName: 'Garcia, Anna',
-      studentNumber: '221-4567',
-      email: 'anna.garcia@gmail.com',
-      course: 'BSIT-SD',
-      requirementsCompleted: 7,
-      totalRequirements: 7
-    },
-    {
-      id: 4,
-      fullName: 'Gonzales, Emma',
-      studentNumber: '221-2346',
-      email: 'emma.gonzales@gmail.com',
-      course: 'BSIT-SD',
-      requirementsCompleted: 6,
-      totalRequirements: 7
-    },
-    {
-      id: 5,
-      fullName: 'Hernandez, Sophia',
-      studentNumber: '221-0123',
-      email: 'sophia.hernandez@gmail.com',
-      course: 'BSCS-DS',
-      requirementsCompleted: 7,
-      totalRequirements: 7
-    },
-    {
-      id: 6,
-      fullName: 'Mendoza, Carlos',
-      studentNumber: '221-5678',
-      email: 'carlos.mendoza@gmail.com',
-      course: 'BSCS-DS',
-      requirementsCompleted: 5,
-      totalRequirements: 7
-    },
-    {
-      id: 7,
-      fullName: 'Pascual, Olivia',
-      studentNumber: '221-4568',
-      email: 'olivia.pascual@gmail.com',
-      course: 'BSIT-BA',
-      requirementsCompleted: 7,
-      totalRequirements: 7
-    },
-    {
-      id: 8,
-      fullName: 'Ramos, Gabriel',
-      studentNumber: '221-9012',
-      email: 'gabriel.ramos@gmail.com',
-      course: 'BSIT-SD',
-      requirementsCompleted: 4,
-      totalRequirements: 7
-    },
-    {
-      id: 9,
-      fullName: 'Reyes, Pedro',
-      studentNumber: '221-3456',
-      email: 'pedro.reyes@gmail.com',
-      course: 'BSIT-BA',
-      requirementsCompleted: 4,
-      totalRequirements: 7
-    },
-    {
-      id: 10,
-      fullName: 'Rivera, Daniel',
-      studentNumber: '221-3457',
-      email: 'daniel.rivera@gmail.com',
-      course: 'BSCS-DS',
-      requirementsCompleted: 7,
-      totalRequirements: 7
-    },
-    {
-      id: 11,
-      fullName: 'Rodriguez, Sofia',
-      studentNumber: '221-6789',
-      email: 'sofia.rodriguez@gmail.com',
-      course: 'BSIT-BA',
-      requirementsCompleted: 7,
-      totalRequirements: 7
-    },
-    {
-      id: 12,
-      fullName: 'Santos, Maria',
-      studentNumber: '221-2345',
-      email: 'maria.santos@gmail.com',
-      course: 'BSCS-DS',
-      requirementsCompleted: 7,
-      totalRequirements: 7
-    },
-    {
-      id: 13,
-      fullName: 'Torres, Miguel',
-      studentNumber: '221-7890',
-      email: 'miguel.torres@gmail.com',
-      course: 'BSCS-DS',
-      requirementsCompleted: 7,
-      totalRequirements: 7
+  useEffect(() => {
+    if (user?.college) {
+      fetchMonitoringData()
     }
-  ]
+  }, [user])
 
-  // Filter by course
-  const filteredByCourse = allStudents.filter(student => {
-    const courseMap = {
-      'bscs-ds': 'BSCS-DS',
-      'bsit-ba': 'BSIT-BA',
-      'bsit-sd': 'BSIT-SD'
+  const coursesByCollege = {
+    'COLLEGE OF ARTS AND SCIENCES': [
+      { id: 'BAComm', name: 'BA Communication' },
+      { id: 'BA-Psych', name: 'BA Psychology' },
+      { id: 'BS-Psych', name: 'BS Psychology' }
+    ],
+    'COLLEGE OF BUSINESS ADMINISTRATION AND ACCOUNTANCY': [
+      { id: 'BSA', name: 'BS Accountancy' },
+      { id: 'BSAIS', name: 'BS Accounting Information System' },
+      { id: 'BSEntrep', name: 'BS Entrepreneurship' },
+      { id: 'BSTM', name: 'BS Tourism Management' }
+    ],
+    'COLLEGE OF COMPUTING STUDIES': [
+      { id: 'bscs-ds', name: 'BS Computer Science - Data Science' },
+      { id: 'bsit-ba', name: 'BS Information Technology - Business Analytics' },
+      { id: 'bsit-sd', name: 'BS Information Technology - Software Development' }
+    ],
+    'COLLEGE OF ENGINEERING': [
+      { id: 'BSME', name: 'BS Mechanical Engineering' }
+    ],
+    'COLLEGE OF EDUCATION': [
+      { id: 'BEED', name: 'Bachelor of Elementary Education' },
+      { id: 'BPEd', name: 'Bachelor of Physical Education' },
+      { id: 'BSED-English', name: 'BS Education (Major in English)' },
+      { id: 'BSED-Math', name: 'BS Education (Major in Mathematics)' },
+      { id: 'BSED-Science', name: 'BS Education (Major in Science)' }
+    ]
+  }
+
+  const collegeMapping = {
+    'CAS': 'COLLEGE OF ARTS AND SCIENCES',
+    'CBAA': 'COLLEGE OF BUSINESS ADMINISTRATION AND ACCOUNTANCY',
+    'CCS': 'COLLEGE OF COMPUTING STUDIES',
+    'COE': 'COLLEGE OF ENGINEERING',
+    'COED': 'COLLEGE OF EDUCATION'
+  }
+
+  const getFullCollegeName = (name) => {
+    if (!name) return 'COLLEGE OF COMPUTING STUDIES'
+    const upper = name.toUpperCase()
+    if (collegeMapping[upper]) return collegeMapping[upper]
+    return upper
+  }
+
+  const resolvedCollegeName = getFullCollegeName(user?.college)
+  const currentCollegeCourses = coursesByCollege[resolvedCollegeName] || []
+
+  useEffect(() => {
+    if (currentCollegeCourses.length > 0 && !activeTab) {
+      setActiveTab(currentCollegeCourses[0].id.toLowerCase())
     }
-    return student.course === courseMap[activeTab]
+  }, [currentCollegeCourses, activeTab])
+
+  const fetchMonitoringData = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`http://localhost:3001/api/admin/students-monitoring?college=${encodeURIComponent(user.college)}`)
+      const data = await response.json()
+      if (response.ok) {
+        setStudentsData(data)
+      }
+    } catch (err) {
+      console.error('Error fetching monitoring data:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Courses with dynamic counts from data
+  const courses = currentCollegeCourses.map(course => ({
+    id: course.id.toLowerCase(),
+    name: course.id,
+    count: studentsData.filter(s => s.course === course.id).length
+  }))
+
+  const filteredByCourse = studentsData.filter(student => {
+    return student.course.toLowerCase() === activeTab.toLowerCase()
   })
 
   // Filter by search query
   const filteredStudents = filteredByCourse.filter(student =>
-    student.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    student.studentNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    student.email.toLowerCase().includes(searchQuery.toLowerCase())
+    `${student.firstName} ${student.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    student.studentNumber.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
 
   // Pagination
   const totalPages = Math.ceil(filteredStudents.length / itemsPerPage)
@@ -183,7 +134,7 @@ function AdminStudentRequirements() {
     <AppLayout role="admin">
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">COLLEGE OF COMPUTING STUDIES</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{resolvedCollegeName}</h1>
         <p className="text-gray-600 mt-1">
           View and manage all student requirement submissions
         </p>
@@ -217,10 +168,16 @@ function AdminStudentRequirements() {
       </div>
 
       {/* Students Table */}
-      <StudentRequirementsTable
-        students={currentStudents}
-        onRowClick={handleRowClick}
-      />
+      {isLoading ? (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+        </div>
+      ) : (
+        <StudentRequirementsTable
+          students={currentStudents}
+          onRowClick={handleRowClick}
+        />
+      )}
 
       {/* Pagination Info and Controls */}
       {filteredStudents.length > 0 && (
