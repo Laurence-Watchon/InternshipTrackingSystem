@@ -1,91 +1,24 @@
-function RecentStudents({ activeCourse }) {
-  // Mock data - 7 students
-  const allStudents = [
-    {
-      id: 1,
-      name: 'Juan Dela Cruz',
-      studentNumber: '221-1234',
-      course: 'BSIT-SD',
-      company: 'Tech Solutions Inc.',
-      status: 'deployed',
-      hours: 120,
-      requiredHours: 500
-    },
-    {
-      id: 2,
-      name: 'Maria Santos',
-      studentNumber: '221-2345',
-      course: 'BSCS-DS',
-      company: 'Data Analytics Corp.',
-      status: 'deployed',
-      hours: 250,
-      requiredHours: 500
-    },
-    {
-      id: 3,
-      name: 'Pedro Reyes',
-      studentNumber: '221-3456',
-      course: 'BSIT-BA',
-      company: 'Business Solutions Ltd.',
-      status: 'pending',
-      hours: 0,
-      requiredHours: 500
-    },
-    {
-      id: 4,
-      name: 'Anna Garcia',
-      studentNumber: '221-4567',
-      course: 'BSIT-SD',
-      company: 'Software Innovations',
-      status: 'deployed',
-      hours: 380,
-      requiredHours: 500
-    },
-    {
-      id: 5,
-      name: 'Carlos Mendoza',
-      studentNumber: '221-5678',
-      course: 'BSCS-DS',
-      company: 'AI Research Labs',
-      status: 'deployed',
-      hours: 450,
-      requiredHours: 500
-    },
-    {
-      id: 6,
-      name: 'Sofia Rodriguez',
-      studentNumber: '221-6789',
-      course: 'BSIT-BA',
-      company: 'Cloud Computing Inc.',
-      status: 'deployed',
-      hours: 200,
-      requiredHours: 500
-    },
-    {
-      id: 7,
-      name: 'Miguel Torres',
-      studentNumber: '221-7890',
-      course: 'BSCS-DS',
-      company: 'Machine Learning Studio',
-      status: 'deployed',
-      hours: 150,
-      requiredHours: 500
-    }
-  ]
+function RecentStudents({ students = [], activeCourse }) {
+  // ✅ Derived data from live props
+  const resolvedStudents = students.map(s => ({
+    id: s.studentId,
+    name: `${s.firstName || ''} ${s.lastName || ''}`.trim(),
+    studentNumber: s.studentNumber,
+    course: s.course,
+    // For now, these might be missing in monitoring data until more fields are added to backend
+    company: s.companyName || 'Not yet assigned', 
+    status: s.submissions?.some(sub => sub.status === 'approved' && sub.requirementTitle.toLowerCase().includes('endorsement')) 
+      ? 'deployed' 
+      : 'pending',
+    hours: s.hours || 0,
+    requiredHours: 500
+  }))
 
-  // Map activeCourse values to actual course codes
-  const courseMap = {
-    'bscs-ds': 'BSCS-DS',
-    'bsit-ba': 'BSIT-BA',
-    'bsit-sd': 'BSIT-SD'
-  }
-
-  // ✅ Derived data (NO useEffect needed)
   const filteredStudents =
     activeCourse === 'all'
-      ? allStudents
-      : allStudents.filter(
-          student => student.course === courseMap[activeCourse]
+      ? resolvedStudents
+      : resolvedStudents.filter(
+          student => student.course.toLowerCase() === activeCourse.toLowerCase()
         )
 
   const getStatusColor = (status) => {

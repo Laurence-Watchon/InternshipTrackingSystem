@@ -23,14 +23,14 @@ function StudentRequirementsTable({ students, onRowClick }) {
             {students.length > 0 ? (
               students.map((student) => (
                 <tr
-                  key={student.id}
-                  onClick={() => onRowClick(student.id)}
+                  key={student.studentId}
+                  onClick={() => onRowClick(student.studentId)}
                   className="hover:bg-gray-50 cursor-pointer transition"
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900">{student.fullName}</div>
+                        <div className="text-sm font-medium text-gray-900">{student.lastName}, {student.firstName}</div>
                       </div>
                     </div>
                   </td>
@@ -43,13 +43,13 @@ function StudentRequirementsTable({ students, onRowClick }) {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center justify-center">
                       <span className={`text-sm font-medium ${
-                        student.requirementsCompleted === student.totalRequirements
+                        student.submissions.filter(s => s.status === 'verified').length === student.submissions.length && student.submissions.length > 0
                           ? 'text-green-600'
                           : 'text-gray-900'
                       }`}>
-                        {student.requirementsCompleted}/{student.totalRequirements}
+                        {student.submissions.filter(s => s.status === 'submitted' || s.status === 'verified').length}/{student.submissions.length}
                       </span>
-                      {student.requirementsCompleted === student.totalRequirements ? (
+                      {student.submissions.length > 0 && student.submissions.filter(s => s.status === 'verified').length === student.submissions.length ? (
                         <svg className="w-5 h-5 text-green-500 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -64,13 +64,15 @@ function StudentRequirementsTable({ students, onRowClick }) {
               ))
             ) : (
               <tr>
-                <td colSpan="4" className="px-6 py-12 text-center">
-                  <div className="flex flex-col items-center">
-                    <svg className="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    <p className="text-gray-500 text-lg font-medium">No students found</p>
-                    <p className="text-gray-400 text-sm mt-1">Try adjusting your search or filters</p>
+                <td colSpan="4" className="px-6 py-20 text-center">
+                  <div className="flex flex-col items-center justify-center text-gray-400">
+                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                      <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                    </div>
+                    <p className="text-base font-semibold text-gray-500 uppercase tracking-wide">No students found</p>
+                    <p className="text-sm mt-1">Try adjusting your search or filters</p>
                   </div>
                 </td>
               </tr>

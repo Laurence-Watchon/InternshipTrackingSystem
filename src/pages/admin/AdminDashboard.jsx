@@ -5,22 +5,41 @@ import Card from '../../components/ui/Card'
 import RecentStudents from '../../components/ui/RecentStudents'
 import PartnerCompanies from '../../components/ui/PartnerCompanies'
 import Skeleton from '../../components/ui/Skeleton'
+import { useAuth } from '../../context/AuthContext'
 
 function AdminDashboard() {
+  const { user } = useAuth()
   const [activeTab, setActiveTab] = useState('all')
   const [isLoading, setIsLoading] = useState(true)
 
+  const [monitoringData, setMonitoringData] = useState([])
+  const [collegeSettings, setCollegeSettings] = useState(null)
+
   useEffect(() => {
     const loadData = async () => {
-      // Enforce a minimum loading time of 1 second
-      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 1000))
+      if (!user?.college) return
+      
+      setIsLoading(true)
+      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 800))
 
       try {
-        // Replace this with your actual API calls later
-        const fetchData = new Promise(resolve => setTimeout(resolve, 0))
-
-        // This will wait for BOTH the 1s minimum time OR the data to load (whichever is longer)
-        await Promise.all([fetchData, minLoadingTime])
+        const [monitoringRes, settingsRes] = await Promise.all([
+          fetch(`http://localhost:3001/api/admin/students-monitoring?college=${encodeURIComponent(user.college)}`),
+          fetch(`http://localhost:3001/api/admin/college-settings?college=${encodeURIComponent(user.college)}`)
+        ])
+        
+        const [monitoring, settings] = await Promise.all([
+          monitoringRes.json(),
+          settingsRes.json()
+        ])
+        
+        if (monitoringRes.ok) {
+          setMonitoringData(monitoring)
+        }
+        if (settingsRes.ok) {
+          setCollegeSettings(settings)
+        }
+        await minLoadingTime
       } catch (error) {
         console.error("Error loading dashboard data:", error)
       } finally {
@@ -29,60 +48,127 @@ function AdminDashboard() {
     }
 
     loadData()
-  }, [])
+  }, [user?.college])
 
-  // Mock data - replace with actual API data
-  const collegeData = {
-    name: 'COLLEGE OF COMPUTING STUDIES',
-    code: 'CCS'
+  const coursesByCollege = {
+    'COLLEGE OF ARTS AND SCIENCES': [
+      { value: 'BAComm', label: 'BA Communication' },
+      { value: 'BA-Psych', label: 'BA Psychology' },
+      { value: 'BS-Psych', label: 'BS Psychology' }
+    ],
+    'COLLEGE OF BUSINESS ADMINISTRATION AND ACCOUNTANCY': [
+      { value: 'BSA', label: 'BS Accountancy' },
+      { value: 'BSAIS', label: 'BS Accounting Information System' },
+      { value: 'BSEntrep', label: 'BS Entrepreneurship' },
+      { value: 'BSTM', label: 'BS Tourism Management' }
+    ],
+    'COLLEGE OF COMPUTING STUDIES': [
+      { value: 'BSCS-DS', label: 'BS Computer Science - Data Science' },
+      { value: 'BSIT-BA', label: 'BS Information Technology - Business Analytics' },
+      { value: 'BSIT-SD', label: 'BS Information Technology - Software Development' }
+    ],
+    'COLLEGE OF ENGINEERING': [
+      { value: 'BSME', label: 'BS Mechanical Engineering' }
+    ],
+    'COLLEGE OF EDUCATION': [
+      { value: 'BEED', label: 'Bachelor of Elementary Education' },
+      { value: 'BPEd', label: 'Bachelor of Physical Education' },
+      { value: 'BSED-English', label: 'BS Education (Major in English)' },
+      { value: 'BSED-Math', label: 'BS Education (Major in Mathematics)' },
+      { value: 'BSED-Science', label: 'BS Education (Major in Science)' }
+    ]
   }
 
-  const courses = [
-    { id: 'all', name: 'All', count: 156 },
-    { id: 'bscs-ds', name: 'BSCS-DS', count: 45 },
-    { id: 'bsit-ba', name: 'BSIT-BA', count: 58 },
-    { id: 'bsit-sd', name: 'BSIT-SD', count: 53 }
-  ]
+  const collegeMapping = {
+    'CAS': 'COLLEGE OF ARTS AND SCIENCES',
+    'CBAA': 'COLLEGE OF BUSINESS ADMINISTRATION AND ACCOUNTANCY',
+    'CCS': 'COLLEGE OF COMPUTING STUDIES',
+    'COE': 'COLLEGE OF ENGINEERING',
+    'COED': 'COLLEGE OF EDUCATION'
+  }
 
-  // Mock stats data
-  const statsData = {
-    all: {
-      totalStudents: 156,
-      deployed: 134,
-      requirements: 89,
-      pendingEndorsement: 12
-    },
-    'bscs-ds': {
-      totalStudents: 45,
-      deployed: 40,
-      requirements: 32,
-      pendingEndorsement: 3,
-      requiredHours: 500
-    },
-    'bsit-ba': {
-      totalStudents: 58,
-      deployed: 51,
-      requirements: 41,
-      pendingEndorsement: 5,
-      requiredHours: 500
-    },
-    'bsit-sd': {
-      totalStudents: 53,
-      deployed: 43,
-      requirements: 16,
-      pendingEndorsement: 4,
-      requiredHours: 500
+  const getFullCollegeName = (name) => {
+    if (!name) return 'COLLEGE OF COMPUTING STUDIES'
+    const upper = name.toUpperCase()
+    if (collegeMapping[upper]) return collegeMapping[upper]
+    return upper
+  }
+
+  const resolvedCollegeName = getFullCollegeName(user?.college)
+
+  const getCourseStats = (courseId) => {
+    const students = courseId === 'all' 
+      ? monitoringData 
+      : monitoringData.filter(s => s.course.toLowerCase() === courseId.toLowerCase())
+
+    const totalStudents = students.length
+    
+    // Get required hours for this specific tab/course
+    let reqHours = 0
+    if (courseId === 'all') {
+      // For "All", maybe average or just a default? 
+      // User says "based on database", so if they are all same, it's easy.
+      // We'll just show N/A or a primary course hour for "All".
+      reqHours = '---'
+    } else {
+      // Find course value from the activeTab (which is lowercase in the tab id)
+      const courses = coursesByCollege[resolvedCollegeName] || []
+      const courseMatch = courses.find(c => c.value.toLowerCase() === courseId.toLowerCase())
+      if (courseMatch && collegeSettings?.requiredHours) {
+        reqHours = collegeSettings.requiredHours[courseMatch.value] || 0
+      }
+    }
+
+    if (totalStudents === 0) return {
+      totalStudents: 0,
+      deployed: 0,
+      requirements: 0,
+      pendingEndorsement: 0,
+      requiredHours: reqHours || 0
+    }
+
+    // Logic for "deployed": if they have at least one submission that is "approved" 
+    // or specifically an endorsement requirement (this might need refinement based on exact req titles)
+    const deployed = students.filter(s => 
+      s.submissions.some(sub => sub.status === 'approved' && sub.requirementTitle.toLowerCase().includes('endorsement'))
+    ).length
+
+    // Logic for "requirements": average completion or students who completed all
+    const requirements = students.filter(s => 
+      s.submissions.length > 0 && s.submissions.every(sub => sub.status === 'approved')
+    ).length
+
+    // Pending endorsements
+    const pendingEndorsement = students.filter(s => 
+      s.submissions.some(sub => sub.status === 'pending' && sub.requirementTitle.toLowerCase().includes('endorsement'))
+    ).length
+
+    return {
+      totalStudents,
+      deployed,
+      requirements,
+      pendingEndorsement,
+      requiredHours: reqHours
     }
   }
 
-  const currentStats = statsData[activeTab]
+  const currentStats = getCourseStats(activeTab)
+  
+  const courses = [
+    { id: 'all', name: 'All', count: monitoringData.length },
+    ...(coursesByCollege[resolvedCollegeName] || []).map(c => ({
+      id: c.value.toLowerCase(),
+      name: c.value,
+      count: monitoringData.filter(s => s.course === c.value).length
+    }))
+  ]
   const isSpecificCourse = activeTab !== 'all'
 
   return (
     <AppLayout role="admin" isLoading={isLoading}>
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">{collegeData.name}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 uppercase">{resolvedCollegeName}</h1>
         <p className="text-gray-600 mt-1">
           Manage students, requirements, and endorsements for your college
         </p>
@@ -200,7 +286,10 @@ function AdminDashboard() {
         ) : (
           <>
             {/* Students List */}
-            <RecentStudents activeCourse={activeTab} />
+            <RecentStudents 
+          students={monitoringData}
+          activeCourse={activeTab} 
+        />
 
             {/* Companies List */}
             <PartnerCompanies />

@@ -66,26 +66,26 @@ function StudentManagement() {
   }, [authUser?.college])
 
   const coursesByCollege = {
-    CAS: [
+    'COLLEGE OF ARTS AND SCIENCES': [
       { value: 'BAComm', label: 'BA Communication' },
       { value: 'BA-Psych', label: 'BA Psychology' },
       { value: 'BS-Psych', label: 'BS Psychology' }
     ],
-    CBAA: [
+    'COLLEGE OF BUSINESS ADMINISTRATION AND ACCOUNTANCY': [
       { value: 'BSA', label: 'BS Accountancy' },
       { value: 'BSAIS', label: 'BS Accounting Information System' },
       { value: 'BSEntrep', label: 'BS Entrepreneurship' },
       { value: 'BSTM', label: 'BS Tourism Management' }
     ],
-    CCS: [
+    'COLLEGE OF COMPUTING STUDIES': [
       { value: 'BSCS-DS', label: 'BS Computer Science - Data Science' },
       { value: 'BSIT-BA', label: 'BS Information Technology - Business Analytics' },
       { value: 'BSIT-SD', label: 'BS Information Technology - Software Development' }
     ],
-    COE: [
+    'COLLEGE OF ENGINEERING': [
       { value: 'BSME', label: 'BS Mechanical Engineering' }
     ],
-    COED: [
+    'COLLEGE OF EDUCATION': [
       { value: 'BEED', label: 'Bachelor of Elementary Education' },
       { value: 'BPEd', label: 'Bachelor of Physical Education' },
       { value: 'BSED-English', label: 'BS Education (Major in English)' },
@@ -94,8 +94,25 @@ function StudentManagement() {
     ]
   }
 
+  const collegeMapping = {
+    'CAS': 'COLLEGE OF ARTS AND SCIENCES',
+    'CBAA': 'COLLEGE OF BUSINESS ADMINISTRATION AND ACCOUNTANCY',
+    'CCS': 'COLLEGE OF COMPUTING STUDIES',
+    'COE': 'COLLEGE OF ENGINEERING',
+    'COED': 'COLLEGE OF EDUCATION'
+  }
+
+  const getFullCollegeName = (name) => {
+    if (!name) return 'COLLEGE OF COMPUTING STUDIES'
+    const upper = name.toUpperCase()
+    if (collegeMapping[upper]) return collegeMapping[upper]
+    return upper
+  }
+
+  const resolvedCollegeName = getFullCollegeName(authUser?.college)
+  
   // Derive courses counts dynamically based on admin's college
-  const currentCollegeCourses = coursesByCollege[authUser?.college] || []
+  const currentCollegeCourses = coursesByCollege[resolvedCollegeName] || []
   const courses = [
     { id: 'all', name: 'All', count: allStudents.length },
     ...currentCollegeCourses.map(c => ({
@@ -153,23 +170,11 @@ function StudentManagement() {
   // Show "no students available" message when there are no students at all
   const hasNoStudents = filteredByCourse.length === 0 && searchQuery === ''
 
-  // Page Title helper
-  const getFullCollegeName = (acronym) => {
-    const names = {
-      'CAS': 'College of Arts and Sciences',
-      'CBAA': 'College of Business Administration and Accountancy',
-      'CCS': 'College of Computing Studies',
-      'COE': 'College of Engineering',
-      'COED': 'College of Education'
-    }
-    return names[acronym] || acronym
-  }
-
   return (
     <AppLayout role="admin">
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">{getFullCollegeName(authUser?.college)?.toUpperCase()}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 uppercase">{resolvedCollegeName}</h1>
         <p className="text-gray-600 mt-1">
           View and manage all students in your college
         </p>

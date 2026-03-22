@@ -1,105 +1,109 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import ClickableCard from '../../components/ui/ClickableCard'
-
-const REQUIREMENTS = [
-  {
-    id: 1,
-    title: 'Copy of Registration Form',
-    description: 'Your official registration form from the registrar.',
-    acceptedTypes: ['pdf', 'docx'],
-    inputType: 'file',
-  },
-  {
-    id: 2,
-    title: 'Attendance / Copy Evaluation of Pre-Deployment Orientation',
-    description: 'Attendance sheet or evaluation copy from orientation.',
-    acceptedTypes: ['png', 'jpg', 'jpeg'],
-    inputType: 'file',
-  },
-  {
-    id: 3,
-    title: 'Scanned Copy of Application Letter',
-    description: 'Scanned or photo copy of your application letter.',
-    acceptedTypes: ['pdf', 'docx', 'png', 'jpg', 'jpeg'],
-    inputType: 'file',
-  },
-  {
-    id: 4,
-    title: 'Curriculum Vitae (LU Format)',
-    description: 'Your CV following the LU-prescribed format.',
-    acceptedTypes: ['pdf', 'docx'],
-    inputType: 'file',
-  },
-  {
-    id: 5,
-    title: 'AVP Self Introduction',
-    description: 'Google Drive link to your self-introduction video.',
-    acceptedTypes: [],
-    inputType: 'link',
-  },
-  {
-    id: 6,
-    title: 'Notarized Student Internship Consent Form (LU Format)',
-    description: 'Notarized consent form using the LU format.',
-    acceptedTypes: ['pdf', 'docx', 'png', 'jpg', 'jpeg'],
-    inputType: 'file',
-  },
-  {
-    id: 7,
-    title: 'Medical Clearance',
-    description: 'Your medical clearance document.',
-    acceptedTypes: ['pdf', 'docx', 'png', 'jpg', 'jpeg'],
-    inputType: 'file',
-  },
-  {
-    id: 8,
-    title: 'Scanned Copy of MOA',
-    description: 'Scanned copy of the Memorandum of Agreement.',
-    acceptedTypes: ['pdf', 'docx'],
-    inputType: 'file',
-  },
-  {
-    id: 9,
-    title: 'Company Profile',
-    description: 'Company profile of your internship host organization.',
-    acceptedTypes: ['pdf', 'docx'],
-    inputType: 'file',
-  },
-]
-
-const noOutlineStyle = `
-  button:focus, input[type="file"]:focus, .no-outline:focus { outline: none !important; box-shadow: none !important; }
-`
+import { useAuth } from '../../context/AuthContext'
 
 function UserRequirements() {
-  const [states, setStates] = useState(() =>
-    Object.fromEntries(
-      REQUIREMENTS.map(r => [r.id, { status: 'pending', fileName: '', linkValue: '' }])
-    )
-  )
-
+  const { user } = useAuth()
+  const [requirements, setRequirements] = useState([])
+  const [submissions, setSubmissions] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [states, setStates] = useState({})
   const [openId, setOpenId] = useState(null)
+
+  useEffect(() => {
+    if (user?.college) {
+      fetchData()
+    }
+  }, [user])
+
+  const fetchData = async () => {
+    setIsLoading(true)
+    try {
+      // 1. Fetch requirements for the college
+      const reqRes = await fetch(`http://localhost:3001/api/student/requirements?college=${encodeURIComponent(user.college)}&course=${encodeURIComponent(user.course)}`)
+      const reqData = await reqRes.json()
+      
+      // 2. Fetch student's submissions
+      const subRes = await fetch(`http://localhost:3001/api/student/my-submissions?studentId=${user.id}`)
+      const subData = await subRes.json()
+
+      if (reqRes.ok && subRes.ok) {
+        setRequirements(reqData)
+        setSubmissions(subData)
+        
+        // Initialize states based on requirements and submissions
+        const newStates = {}
+        reqData.forEach(r => {
+          const sub = subData.find(s => s.requirementId === r._id)
+          newStates[r._id] = {
+            status: sub ? sub.status : 'pending',
+            fileName: sub ? sub.fileName : '',
+            fileUrl: sub ? sub.fileUrl : '',
+            linkValue: (r.acceptedFileTypes.includes('url') && sub) ? sub.fileUrl : ''
+          }
+        })
+        setStates(newStates)
+      }
+    } catch (err) {
+      console.error('Error fetching student requirements:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   function handleToggle(id) {
     setOpenId(prev => (prev === id ? null : id))
   }
 
-  function handleChange(id, newState) {
-    setStates(prev => ({ ...prev, [id]: newState }))
+  const handleStatusChange = async (id, newState) => {
+    // If status is 'submitted', we need to send to backend
+    if (newState.status === 'submitted') {
+      try {
+        const requirement = requirements.find(r => r._id === id)
+        const body = {
+          requirementId: id,
+          studentId: user.id,
+          college: user.college,
+          course: user.course,
+          fileName: newState.fileName || 'Link',
+          fileUrl: newState.fileUrl || newState.linkValue
+        }
+
+        const response = await fetch('http://localhost:3001/api/student/submissions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        })
+
+        if (response.ok) {
+          setStates(prev => ({ ...prev, [id]: newState }))
+          // Refresh data to be sure
+          fetchData()
+        } else {
+          const errorData = await response.json()
+          alert(errorData.error || 'Failed to submit document')
+        }
+      } catch (err) {
+        console.error('Error submitting document:', err)
+        alert('An error occurred during submission.')
+      }
+    } else {
+      setStates(prev => ({ ...prev, [id]: newState }))
+    }
   }
 
-  const submitted = Object.values(states).filter(s => s.status === 'submitted').length
+  const submitted = Object.values(states).filter(s => s.status === 'submitted' || s.status === 'verified').length
   const rejected  = Object.values(states).filter(s => s.status === 'rejected').length
   const pending   = Object.values(states).filter(s => s.status === 'pending').length
-  const total     = REQUIREMENTS.length
+  const total     = requirements.length
 
   return (
     <AppLayout>
       <style>{noOutlineStyle}</style>
       {/* Page header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">College of Computing Studies- BSCS-DS</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{user?.college} - {user?.course}</h1>
         <p className="text-gray-600 mt-1">Upload all required documents to complete your internship application.</p>
       </div>
 
@@ -176,17 +180,32 @@ function UserRequirements() {
       </div>
 
       {/* Requirements list — 1 per row */}
-      <div className="flex flex-col gap-3">
-        {REQUIREMENTS.map(req => (
-          <ClickableCard
-            key={req.id}
-            req={req}
-            state={states[req.id]}
-            isOpen={openId === req.id}
-            onToggle={() => handleToggle(req.id)}
-            onChange={(newState) => handleChange(req.id, newState)}
-          />
-        ))}
+      <div className="flex flex-col gap-3 min-h-[200px] relative">
+        {isLoading ? (
+          <div className="flex items-center justify-center p-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+          </div>
+        ) : requirements.length === 0 ? (
+          <div className="p-12 text-center text-gray-500 bg-white rounded-lg shadow-sm border border-gray-100">
+            No requirements have been set for your college yet.
+          </div>
+        ) : (
+          requirements.map((req, index) => (
+            <ClickableCard
+              key={req._id}
+              req={{
+                ...req,
+                id: index + 1, // display number
+                acceptedTypes: req.acceptedFileTypes,
+                inputType: req.acceptedFileTypes.includes('url') ? 'link' : 'file'
+              }}
+              state={states[req._id] || { status: 'pending', fileName: '', fileUrl: '', linkValue: '' }}
+              isOpen={openId === req._id}
+              onToggle={() => handleToggle(req._id)}
+              onChange={(newState) => handleStatusChange(req._id, newState)}
+            />
+          ))
+        )}
       </div>
     </AppLayout>
   )

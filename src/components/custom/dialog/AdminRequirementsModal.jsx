@@ -2,20 +2,22 @@ import { useState } from 'react'
 import AlertDialog from '../../ui/AlertDialog'
 import Dialog from '../../ui/Dialog'
 
-function AdminRequirementsModalContent({ onClose, onSave, requirement, mode }) {
+function AdminRequirementsModalContent({ onClose, onSave, requirement, mode, isLoading }) {
   // Initialize form data based on mode and requirement
   const getInitialFormData = () => {
     if (mode === 'edit' && requirement) {
       return {
         title: requirement.title,
         description: requirement.description,
-        acceptedFileTypes: [...requirement.acceptedFileTypes]
+        acceptedFileTypes: [...requirement.acceptedFileTypes],
+        course: [] // Always all courses
       }
     }
     return {
       title: '',
       description: '',
-      acceptedFileTypes: []
+      acceptedFileTypes: [],
+      course: [] // Always all courses
     }
   }
 
@@ -68,9 +70,13 @@ function AdminRequirementsModalContent({ onClose, onSave, requirement, mode }) {
     }
   }
 
+  const handleCourseToggle = (courseValue) => {
+    // Logic removed - always all courses
+  }
+
   const hasChanges = () => {
     if (mode === 'add') return true
-    
+
     if (!originalData) return true
 
     // Compare arrays by sorting them first
@@ -125,19 +131,22 @@ function AdminRequirementsModalContent({ onClose, onSave, requirement, mode }) {
     setShowConfirmDialog(true)
   }
 
-  const handleConfirmSave = () => {
+  const handleConfirmSave = async () => {
     const trimmedTitle = formData.title.trim()
     const trimmedDescription = formData.description.trim()
 
-    // Save with trimmed values
-    onSave({
-      ...formData,
-      title: trimmedTitle,
-      description: trimmedDescription
-    })
-
-    // Close confirmation dialog
-    setShowConfirmDialog(false)
+    try {
+      // Don't close the dialog here, let it show the loading state from the parent
+      await onSave({
+        ...formData,
+        title: trimmedTitle,
+        description: trimmedDescription
+      })
+      // Success is handled by the parent closing the modal
+    } catch (err) {
+      // If error, close confirm dialog so user can fix or retry
+      setShowConfirmDialog(false)
+    }
   }
 
   const handleClose = () => {
@@ -149,7 +158,7 @@ function AdminRequirementsModalContent({ onClose, onSave, requirement, mode }) {
     <>
       {/* Backdrop - clicking does nothing */}
       <div className="fixed inset-0 bg-black bg-opacity-50 z-50" />
-      
+
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative">
           {/* Header with X button */}
@@ -162,22 +171,22 @@ function AdminRequirementsModalContent({ onClose, onSave, requirement, mode }) {
               className="text-gray-400 hover:text-gray-600 transition focus:outline-none"
               aria-label="Close modal"
             >
-              <svg 
-                className="w-6 h-6" 
-                fill="none" 
-                stroke="currentColor" 
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M6 18L18 6M6 6l12 12" 
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
             </button>
           </div>
-          
+
           <div className="p-6 space-y-4">
             {/* Title */}
             <div>
@@ -189,11 +198,10 @@ function AdminRequirementsModalContent({ onClose, onSave, requirement, mode }) {
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
-                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 ${
-                  errors.title 
-                    ? 'border-red-500 focus:ring-red-500' 
+                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 ${errors.title
+                    ? 'border-red-500 focus:ring-red-500'
                     : 'border-gray-300 focus:ring-green-500'
-                }`}
+                  }`}
                 placeholder="e.g., Copy of Registration Form"
               />
               {errors.title && (
@@ -211,11 +219,10 @@ function AdminRequirementsModalContent({ onClose, onSave, requirement, mode }) {
                 value={formData.description}
                 onChange={handleChange}
                 rows={3}
-                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 ${
-                  errors.description 
-                    ? 'border-red-500 focus:ring-red-500' 
+                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 ${errors.description
+                    ? 'border-red-500 focus:ring-red-500'
                     : 'border-gray-300 focus:ring-green-500'
-                }`}
+                  }`}
                 placeholder="Brief description of the requirement"
               />
               {errors.description && (
@@ -233,13 +240,12 @@ function AdminRequirementsModalContent({ onClose, onSave, requirement, mode }) {
                   <button
                     key={option.value}
                     onClick={() => handleFileTypeToggle(option.value)}
-                    className={`px-4 py-2 rounded-lg border-2 transition font-medium focus:outline-none ${
-                      formData.acceptedFileTypes.includes(option.value)
+                    className={`px-4 py-2 rounded-lg border-2 transition font-medium focus:outline-none text-sm ${formData.acceptedFileTypes.includes(option.value)
                         ? 'border-green-500 bg-green-50 text-green-700'
                         : errors.fileTypes
-                        ? 'border-red-300 bg-white text-gray-700 hover:border-red-400'
-                        : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-                    }`}
+                          ? 'border-red-300 bg-white text-gray-700 hover:border-red-400'
+                          : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                      }`}
                   >
                     {option.label}
                   </button>
@@ -283,25 +289,26 @@ function AdminRequirementsModalContent({ onClose, onSave, requirement, mode }) {
         onClose={() => setShowConfirmDialog(false)}
         onConfirm={handleConfirmSave}
         title={mode === 'add' ? 'Add Requirement' : 'Save Changes'}
-        description={
-          mode === 'add' 
-            ? 'Are you sure you want to add this requirement?' 
+        isLoading={isLoading}
+        loadingLabel="Confirming..."
+        message={
+          mode === 'add'
+            ? 'Are you sure you want to add this requirement?'
             : 'Are you sure you want to save these changes?'
         }
-        confirmText="Confirm"
-        cancelText="Cancel"
+        confirmLabel="Confirm"
+        cancelLabel="Cancel"
       />
     </>
   )
 }
 
 // Wrapper component that handles remounting
-function AdminRequirementsModal({ isOpen, onClose, onSave, requirement, mode }) {
+function AdminRequirementsModal({ isOpen, onClose, onSave, requirement, mode, isLoading }) {
   if (!isOpen) return null
 
-  // Use a key that changes when modal opens to force remount and reset state
-  // eslint-disable-next-line react-hooks/purity
-  const modalKey = `${mode}-${requirement?.id || 'new'}-${Date.now()}`
+  // Use a stable key that only changes when the actual requirement or mode changes
+  const modalKey = `${mode}-${requirement?._id || 'new'}`
 
   return (
     <AdminRequirementsModalContent
@@ -310,6 +317,7 @@ function AdminRequirementsModal({ isOpen, onClose, onSave, requirement, mode }) 
       onSave={onSave}
       requirement={requirement}
       mode={mode}
+      isLoading={isLoading}
     />
   )
 }

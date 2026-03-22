@@ -26,24 +26,73 @@ const WEEKLY_DATA = [
 ]
 
 const APPROVED_HOURS = 120
-const REQUIRED_HOURS = 500
+// Removed hardcoded REQUIRED_HOURS as it's now dynamic
 
 function UserHome() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(true);
+  const [studentStats, setStudentStats] = useState({
+    requirements: '0 / 0',
+    requirementsPercent: '0%',
+    hours: '0 / 0',
+    hoursPercent: '0%',
+    requiredHours: 0,
+    approvedHours: 0,
+    endorsementStatus: 'Pending'
+  })
 
   useEffect(() => {
     const loadData = async () => {
-      // Enforce a minimum loading time of 1 second
-      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 1000));
+      if (!user?.id) return
+      
+      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 800));
 
       try {
-        // Replace this with your actual API calls later
-        const fetchData = new Promise(resolve => setTimeout(resolve, 0));
+        // Fetch all needed data in parallel
+        const [reqRes, subRes, settingsRes] = await Promise.all([
+          fetch(`http://localhost:3001/api/student/requirements?college=${encodeURIComponent(user.college)}`),
+          fetch(`http://localhost:3001/api/student/my-submissions?studentId=${user.id}`),
+          fetch(`http://localhost:3001/api/student/college-settings?college=${encodeURIComponent(user.college)}`)
+        ])
 
-        // This will wait for BOTH the 1s minimum time OR the data to load (whichever is longer)
-        await Promise.all([fetchData, minLoadingTime]);
+        const [reqs, subs, settings] = await Promise.all([
+          reqRes.json(),
+          subRes.json(),
+          settingsRes.json()
+        ])
+
+        if (reqRes.ok && subRes.ok && settingsRes.ok) {
+          // Calculate Requirements progress
+          const submittedCount = subs.filter(s => s.status === 'submitted' || s.status === 'verified').length
+          const totalReqs = reqs.length
+          const reqPercent = totalReqs > 0 ? (submittedCount / totalReqs) * 100 : 0
+
+          // Get required hours for this student's course
+          const reqHours = (settings.requiredHours && settings.requiredHours[user.course]) || 0
+          // For now, approvedHours is placeholder until we have journal system
+          const appHours = 0 
+          const hoursPercent = reqHours > 0 ? (appHours / reqHours) * 100 : 0
+
+          // Check for Endorsement status (it's one of the requirements usually, or derived)
+          // For now, we'll look for a submission with "endorsement" in title or just "Pending"
+          const endorsementSub = subs.find(s => s.fileName.toLowerCase().includes('endorsement'))
+          const endStatus = endorsementSub ? 
+            (endorsementSub.status === 'verified' ? 'Ready' : 'In Process') : 
+            'Pending'
+
+          setStudentStats({
+            requirements: `${submittedCount} / ${totalReqs}`,
+            requirementsPercent: `${reqPercent}%`,
+            hours: `${appHours} / ${reqHours}`,
+            hoursPercent: `${hoursPercent}%`,
+            requiredHours: reqHours,
+            approvedHours: appHours,
+            endorsementStatus: endStatus
+          })
+        }
+
+        await minLoadingTime;
       } catch (error) {
         console.error("Error loading home data:", error);
       } finally {
@@ -52,41 +101,33 @@ function UserHome() {
     };
 
     loadData();
-  }, []);
+  }, [user]);
 
   const stats = [
     {
       title: 'Requirements',
-      value: '3 / 8',
-      icon: (
-        <NotebookText />
-      ),
+      value: studentStats.requirements,
+      icon: <NotebookText />,
       color: 'bg-green-500',
-      percentage: '38%',
+      percentage: studentStats.requirementsPercent,
     },
     {
       title: 'Endorsement Letter',
-      value: 'In Process',
-      icon: (
-        <CircleCheckBig />
-      ),
-      color: 'bg-yellow-500',
+      value: studentStats.endorsementStatus,
+      icon: <CircleCheckBig />,
+      color: studentStats.endorsementStatus === 'Ready' ? 'bg-green-500' : 'bg-yellow-500',
     },
     {
       title: 'Total Hours',
-      value: '120 / 500',
-      icon: (
-        <Hourglass />
-      ),
+      value: studentStats.hours,
+      icon: <Hourglass />,
       color: 'bg-green-500',
-      percentage: '24%',
+      percentage: studentStats.hoursPercent,
     },
     {
       title: 'Journal Entries',
-      value: '15',
-      icon: (
-        <BookOpen />
-      ),
+      value: '0',
+      icon: <BookOpen />,
       color: 'bg-purple-500',
     },
   ]
@@ -268,7 +309,7 @@ function UserHome() {
               <Skeleton variant="circular" height={200} width={200} />
             </div>
           ) : (
-            <CircularProgress completed={APPROVED_HOURS} required={REQUIRED_HOURS} />
+            <CircularProgress completed={studentStats.approvedHours} required={studentStats.requiredHours} />
           )}
         </div>
       </div>
