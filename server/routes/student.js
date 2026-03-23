@@ -1,8 +1,15 @@
 import express from "express";
 import { connectDB } from "../db.js";
 import { ObjectId } from "mongodb";
+import multer from "multer";
+import cloudinary from "../config/cloudinary.js";
+import streamifier from "streamifier";
 
 const router = express.Router();
+
+// Multer setup for memory storage (direct to Cloudinary)
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 // -----------------------------------------------
 // GET /api/student/requirements
@@ -10,19 +17,11 @@ const router = express.Router();
 // -----------------------------------------------
 router.get("/requirements", async (req, res) => {
   try {
-    const { college, course } = req.query;
+    const { college } = req.query;
     if (!college) return res.status(400).json({ error: "College is required." });
 
     const db = await connectDB();
     const query = { college };
-    
-    // If course is provided, filter: show if course matches OR if requirements apply to all (empty array)
-    if (course) {
-      query.$or = [
-        { course: { $size: 0 } },
-        { course: course }
-      ];
-    }
 
     const requirements = await db.collection("requirements")
       .find(query)
@@ -33,6 +32,45 @@ router.get("/requirements", async (req, res) => {
   } catch (err) {
     console.error("Error fetching student requirements:", err);
     res.status(500).json({ error: "Failed to fetch requirements." });
+  }
+});
+
+// -----------------------------------------------
+// POST /api/student/upload
+// Uploads a file to Cloudinary and returns the secure URL
+// -----------------------------------------------
+router.post("/upload", upload.single("file"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded." });
+    }
+
+    // Use a stream to upload the buffer to Cloudinary
+    const streamUpload = (fileBuffer) => {
+      return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { resource_type: "auto", folder: "internship_submissions" },
+          (error, result) => {
+            if (result) {
+              resolve(result);
+            } else {
+              reject(error);
+            }
+          }
+        );
+        streamifier.createReadStream(fileBuffer).pipe(stream);
+      });
+    };
+
+    const result = await streamUpload(req.file.buffer);
+    res.json({
+      secure_url: result.secure_url,
+      public_id: result.public_id,
+      fileName: req.file.originalname
+    });
+  } catch (err) {
+    console.error("Cloudinary upload error:", err);
+    res.status(500).json({ error: "Failed to upload file to Cloudinary." });
   }
 });
 

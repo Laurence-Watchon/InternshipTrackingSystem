@@ -409,6 +409,7 @@ router.post("/login", async (req, res) => {
       lastName: user.lastName,
       email: user.email,
       college: user.college,
+      course: user.course,
       isVerified: user.isVerified,
     });
   } catch (err) {

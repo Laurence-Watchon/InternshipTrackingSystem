@@ -1,10 +1,22 @@
 import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import ClickableCard from '../../components/ui/ClickableCard'
+import Skeleton from '../../components/ui/Skeleton'
 import { useAuth } from '../../context/AuthContext'
+import PendingApprovalDialog from '../../components/custom/dialog/PendingApprovalDialog'
+import { useNavigate } from 'react-router-dom'
+
+const collegeMapping = {
+  'CAS': 'COLLEGE OF ARTS AND SCIENCES',
+  'CBAA': 'COLLEGE OF BUSINESS ADMINISTRATION AND ACCOUNTANCY',
+  'CCS': 'COLLEGE OF COMPUTING STUDIES',
+  'COE': 'COLLEGE OF ENGINEERING',
+  'COED': 'COLLEGE OF EDUCATION'
+}
 
 function UserRequirements() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const [requirements, setRequirements] = useState([])
   const [submissions, setSubmissions] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -19,11 +31,12 @@ function UserRequirements() {
 
   const fetchData = async () => {
     setIsLoading(true)
+    const minLoadingTime = new Promise(resolve => setTimeout(resolve, 800))
     try {
       // 1. Fetch requirements for the college
-      const reqRes = await fetch(`http://localhost:3001/api/student/requirements?college=${encodeURIComponent(user.college)}&course=${encodeURIComponent(user.course)}`)
+      const reqRes = await fetch(`http://localhost:3001/api/student/requirements?college=${encodeURIComponent(user.college)}`)
       const reqData = await reqRes.json()
-      
+
       // 2. Fetch student's submissions
       const subRes = await fetch(`http://localhost:3001/api/student/my-submissions?studentId=${user.id}`)
       const subData = await subRes.json()
@@ -31,7 +44,7 @@ function UserRequirements() {
       if (reqRes.ok && subRes.ok) {
         setRequirements(reqData)
         setSubmissions(subData)
-        
+
         // Initialize states based on requirements and submissions
         const newStates = {}
         reqData.forEach(r => {
@@ -48,6 +61,7 @@ function UserRequirements() {
     } catch (err) {
       console.error('Error fetching student requirements:', err)
     } finally {
+      await minLoadingTime
       setIsLoading(false)
     }
   }
@@ -60,7 +74,6 @@ function UserRequirements() {
     // If status is 'submitted', we need to send to backend
     if (newState.status === 'submitted') {
       try {
-        const requirement = requirements.find(r => r._id === id)
         const body = {
           requirementId: id,
           studentId: user.id,
@@ -94,120 +107,157 @@ function UserRequirements() {
   }
 
   const submitted = Object.values(states).filter(s => s.status === 'submitted' || s.status === 'verified').length
-  const rejected  = Object.values(states).filter(s => s.status === 'rejected').length
-  const pending   = Object.values(states).filter(s => s.status === 'pending').length
-  const total     = requirements.length
+  const rejected = Object.values(states).filter(s => s.status === 'rejected').length
+  const pending = Object.values(states).filter(s => s.status === 'pending').length
+  const total = requirements.length
 
   return (
-    <AppLayout>
-      <style>{noOutlineStyle}</style>
-      {/* Page header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">{user?.college} - {user?.course}</h1>
-        <p className="text-gray-600 mt-1">Upload all required documents to complete your internship application.</p>
-      </div>
+    <>
+      {/* Block unverified students from accessing the requirements page */}
+      <PendingApprovalDialog
+        isOpen={user && user.isVerified === false}
+        onClose={() => { logout(); navigate('/login') }}
+      />
 
-      {/* Summary cards — stat-card style matching UserHome */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        {/* Total */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-blue-500 text-white p-3 rounded-lg">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+      <AppLayout>
+        {/* Page header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">{collegeMapping[user?.college] || user?.college}</h1>
+          <p className="text-gray-500 text-sm font-medium mt-0.5">{user?.course}</p>
+          <p className="text-gray-600 mt-1">Upload all required documents to complete your internship application.</p>
+        </div>
+
+        {/* Summary cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          {isLoading ? (
+            [...Array(4)].map((_, i) => (
+              <div key={i} className="bg-white rounded-lg shadow p-6">
+                <Skeleton variant="rectangular" height={48} width={48} className="mb-4" />
+                <Skeleton variant="text" width="60%" />
+                <Skeleton variant="text" height={32} width="30%" />
+              </div>
+            ))
+          ) : (
+            <>
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="bg-blue-500 text-white p-3 rounded-lg">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-gray-500 text-sm font-medium">Total</h3>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{total}</p>
+              </div>
+
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="bg-green-500 text-white p-3 rounded-lg">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-gray-500 text-sm font-medium">Submitted</h3>
+                <p className="text-2xl font-bold text-green-600 mt-1">{submitted}</p>
+              </div>
+
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="bg-orange-400 text-white p-3 rounded-lg">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-gray-500 text-sm font-medium">Pending</h3>
+                <p className="text-2xl font-bold text-orange-500 mt-1">{pending}</p>
+              </div>
+
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="bg-red-500 text-white p-3 rounded-lg">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-gray-500 text-sm font-medium">Rejected</h3>
+                <p className="text-2xl font-bold text-red-500 mt-1">{rejected}</p>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Progress bar */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+          {isLoading ? (
+            <>
+              <div className="flex items-center justify-between mb-2">
+                <Skeleton variant="text" width={120} />
+                <Skeleton variant="text" width={80} />
+              </div>
+              <Skeleton variant="rectangular" height={10} className="rounded-full" />
+            </>
+          ) : (
+            <>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold text-gray-700">Overall Progress</p>
+                <p className="text-sm text-gray-500">{submitted} / {total} submitted</p>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-2.5">
+                <div
+                  className="bg-green-500 h-2.5 rounded-full transition-all duration-500"
+                  style={{ width: `${total > 0 ? (submitted / total) * 100 : 0}%` }}
+                />
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Requirements list */}
+        <div className="flex flex-col gap-3 min-h-[200px] relative">
+          {isLoading ? (
+            [...Array(3)].map((_, i) => (
+              <div key={i} className="bg-white rounded-lg shadow-sm border border-gray-100 p-5">
+                <div className="flex items-center gap-4">
+                  <Skeleton variant="rectangular" height={40} width={40} className="rounded-lg flex-shrink-0" />
+                  <div className="flex-1">
+                    <Skeleton variant="text" width="40%" className="mb-2" />
+                    <Skeleton variant="text" width="65%" />
+                  </div>
+                  <Skeleton variant="rectangular" height={32} width={80} className="rounded-lg flex-shrink-0" />
+                </div>
+              </div>
+            ))
+          ) : requirements.length === 0 ? (
+            <div className="p-12 text-center text-gray-500 bg-white rounded-lg shadow-sm border border-gray-100">
+              No requirements have been set for your college yet.
             </div>
-          </div>
-          <h3 className="text-gray-500 text-sm font-medium">Total</h3>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{total}</p>
+          ) : (
+            requirements.map((req, index) => (
+              <ClickableCard
+                key={req._id}
+                req={{
+                  ...req,
+                  id: index + 1,
+                  acceptedTypes: req.acceptedFileTypes,
+                  inputType: req.acceptedFileTypes.includes('url') ? 'link' : 'file'
+                }}
+                state={states[req._id] || { status: 'pending', fileName: '', fileUrl: '', linkValue: '' }}
+                isOpen={openId === req._id}
+                onToggle={() => handleToggle(req._id)}
+                onChange={(newState) => handleStatusChange(req._id, newState)}
+              />
+            ))
+          )}
         </div>
-
-        {/* Submitted */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-green-500 text-white p-3 rounded-lg">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-          </div>
-          <h3 className="text-gray-500 text-sm font-medium">Submitted</h3>
-          <p className="text-2xl font-bold text-green-600 mt-1">{submitted}</p>
-        </div>
-
-        {/* Pending */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-orange-400 text-white p-3 rounded-lg">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-          <h3 className="text-gray-500 text-sm font-medium">Pending</h3>
-          <p className="text-2xl font-bold text-orange-500 mt-1">{pending}</p>
-        </div>
-
-        {/* Rejected */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-red-500 text-white p-3 rounded-lg">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-          <h3 className="text-gray-500 text-sm font-medium">Rejected</h3>
-          <p className="text-2xl font-bold text-red-500 mt-1">{rejected}</p>
-        </div>
-      </div>
-
-      {/* Progress bar */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-sm font-semibold text-gray-700">Overall Progress</p>
-          <p className="text-sm text-gray-500">{submitted} / {total} submitted</p>
-        </div>
-        <div className="w-full bg-gray-100 rounded-full h-2.5">
-          <div
-            className="bg-green-500 h-2.5 rounded-full transition-all duration-500"
-            style={{ width: `${(submitted / total) * 100}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Requirements list — 1 per row */}
-      <div className="flex flex-col gap-3 min-h-[200px] relative">
-        {isLoading ? (
-          <div className="flex items-center justify-center p-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
-          </div>
-        ) : requirements.length === 0 ? (
-          <div className="p-12 text-center text-gray-500 bg-white rounded-lg shadow-sm border border-gray-100">
-            No requirements have been set for your college yet.
-          </div>
-        ) : (
-          requirements.map((req, index) => (
-            <ClickableCard
-              key={req._id}
-              req={{
-                ...req,
-                id: index + 1, // display number
-                acceptedTypes: req.acceptedFileTypes,
-                inputType: req.acceptedFileTypes.includes('url') ? 'link' : 'file'
-              }}
-              state={states[req._id] || { status: 'pending', fileName: '', fileUrl: '', linkValue: '' }}
-              isOpen={openId === req._id}
-              onToggle={() => handleToggle(req._id)}
-              onChange={(newState) => handleStatusChange(req._id, newState)}
-            />
-          ))
-        )}
-      </div>
-    </AppLayout>
+      </AppLayout>
+    </>
   )
 }
 

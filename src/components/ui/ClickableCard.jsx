@@ -73,31 +73,43 @@ export default function ClickableCard({ req, state, isOpen, onToggle, onChange }
 
   // uploading  = file picked, simulating upload to DB
   // uploaded   = upload done, preview ready, awaiting submit
-  const [uploading, setUploading]   = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [uploadedFile, setUploadedFile] = useState(null)   // { name, url, size, ext }
   const [dialogOpen, setDialogOpen] = useState(false)
 
-  function handleFile(e) {
+  async function handleFile(e) {
     const file = e.target.files[0]
     if (!file) return
 
     setUploading(true)
+    const formData = new FormData()
+    formData.append('file', file)
 
-    // --- Replace this block with your real API upload call ---
-    // e.g. const formData = new FormData(); formData.append('file', file)
-    //      const res = await fetch('/api/upload', { method: 'POST', body: formData })
-    //      const { url } = await res.json()
-    // ---------------------------------------------------------
-    const mockUrl = URL.createObjectURL(file)   // temporary local preview URL
-    setTimeout(() => {
-      setUploadedFile({
-        name: file.name,
-        size: file.size,
-        url: mockUrl,             // replace with real URL from your backend
-        ext: file.name.split('.').pop()?.toLowerCase(),
+    try {
+      const response = await fetch('http://localhost:3001/api/student/upload', {
+        method: 'POST',
+        body: formData,
       })
+
+      if (response.ok) {
+        const data = await response.json()
+        setUploadedFile({
+          name: data.fileName,
+          url: data.secure_url,
+          // size can be added if backend returns it, but for now we'll keep the local one or skip
+          size: file.size, 
+          ext: data.fileName.split('.').pop()?.toLowerCase(),
+        })
+      } else {
+        const errorData = await response.json()
+        alert(errorData.error || 'Failed to upload file.')
+      }
+    } catch (err) {
+      console.error('Error uploading file:', err)
+      alert('An error occurred during upload.')
+    } finally {
       setUploading(false)
-    }, 1800)  // simulated upload delay — remove when using real API
+    }
   }
 
   function handleSubmitClick() {
@@ -190,7 +202,7 @@ export default function ClickableCard({ req, state, isOpen, onToggle, onChange }
                     <p className="text-xs text-gray-400">Please wait while your file is being uploaded.</p>
                   </div>
 
-                /* ── 2. SUBMITTED — show clickable file, offer to remove ── */
+                  /* ── 2. SUBMITTED — show clickable file, offer to remove ── */
                 ) : fileName ? (
                   <div className="mx-auto" style={{ maxWidth: '340px' }}>
                     <a
@@ -216,7 +228,7 @@ export default function ClickableCard({ req, state, isOpen, onToggle, onChange }
                     </a>
                   </div>
 
-                /* ── 3. UPLOADED (not yet submitted) — preview + Submit button ── */
+                  /* ── 3. UPLOADED (not yet submitted) — preview + Submit button ── */
                 ) : uploadedFile ? (
                   <div className="flex flex-col gap-3 mx-auto" style={{ maxWidth: '340px' }}>
                     {/* Clickable file preview */}
@@ -258,7 +270,7 @@ export default function ClickableCard({ req, state, isOpen, onToggle, onChange }
                     </div>
                   </div>
 
-                /* ── 4. EMPTY — drop zone ── */
+                  /* ── 4. EMPTY — drop zone ── */
                 ) : (
                   <div
                     onClick={() => fileRef.current?.click()}
@@ -331,18 +343,19 @@ export default function ClickableCard({ req, state, isOpen, onToggle, onChange }
                         value={linkValue}
                         onChange={handleLink}
                         placeholder="https://drive.google.com/..."
-                        className={`w-full pl-9 pr-8 py-2.5 text-sm border rounded-lg outline-none transition
+                        className={`w-full pl-10 pr-11 py-2.5 text-sm border rounded-lg outline-none transition
                           ${linkValue
                             ? 'border-green-400 bg-green-50 text-green-800'
                             : 'border-gray-200 bg-gray-50 text-gray-700 focus:border-green-400'}`}
                       />
-                      {/* X button — positioned inside but not overlapping text */}
+                      {/* Plain X button — no background/border, just a simple icon */}
                       {linkValue && (
                         <button
                           onClick={() => onChange({ status: 'pending', fileName: '', fileUrl: '', linkValue: '' })}
-                          className="absolute inset-y-0 right-2 flex items-center text-gray-400 focus:outline-none"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 z-10 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none p-1"
+                          title="Clear link"
                         >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </button>
