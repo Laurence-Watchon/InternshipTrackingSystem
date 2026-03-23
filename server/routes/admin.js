@@ -95,7 +95,7 @@ router.put("/reject/:id", async (req, res) => {
 // -----------------------------------------------
 router.post("/requirements", async (req, res) => {
   try {
-    const { title, description, acceptedFileTypes, college, adminId, course } = req.body;
+    const { title, description, acceptedFileTypes, college, adminId } = req.body;
 
     if (!title || !college || !adminId) {
       return res.status(400).json({ error: "Title, college, and adminId are required." });
@@ -108,7 +108,6 @@ router.post("/requirements", async (req, res) => {
       acceptedFileTypes: acceptedFileTypes || [],
       college,
       adminId: new ObjectId(adminId),
-      course: course || [],
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -128,7 +127,7 @@ router.post("/requirements", async (req, res) => {
 router.put("/requirements/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, acceptedFileTypes, course } = req.body;
+    const { title, description, acceptedFileTypes } = req.body;
 
     const db = await connectDB();
     const result = await db.collection("requirements").updateOne(
@@ -137,7 +136,6 @@ router.put("/requirements/:id", async (req, res) => {
           title, 
           description, 
           acceptedFileTypes: acceptedFileTypes || [], 
-          course: course || [],
           updatedAt: new Date() 
       } }
     );
