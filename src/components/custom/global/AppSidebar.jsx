@@ -12,7 +12,7 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
   // Fetch strictly for Admin whenever route changes
   useEffect(() => {
     if (role === 'admin' && user?.college) {
-      const fetchPendingCount = async () => {
+      const fetchAdminPendingCount = async () => {
         try {
           const res = await fetch(`http://localhost:3001/api/admin/pending?college=${user.college}`)
           if (res.ok) {
@@ -23,12 +23,31 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
           console.error("Failed to fetch pending count", err)
         }
       }
-      fetchPendingCount()
+      fetchAdminPendingCount()
 
-      window.addEventListener('pendingCountUpdated', fetchPendingCount)
-      return () => window.removeEventListener('pendingCountUpdated', fetchPendingCount)
+      window.addEventListener('pendingCountUpdated', fetchAdminPendingCount)
+      return () => window.removeEventListener('pendingCountUpdated', fetchAdminPendingCount)
     }
-  }, [role, location.pathname, user?.college])
+
+    // Handle Student Pending Requirements Count
+    if (role === 'user' && user?.id) {
+      const fetchUserPendingCount = async () => {
+        try {
+          const res = await fetch(`http://localhost:3001/api/student/pending-requirements-count?studentId=${user.id}&college=${user.college}&course=${user.course || ''}`)
+          if (res.ok) {
+            const data = await res.json()
+            setPendingCount(data.count)
+          }
+        } catch (err) {
+          console.error("Failed to fetch user pending count", err)
+        }
+      }
+      fetchUserPendingCount()
+
+      window.addEventListener('userRequirementsUpdated', fetchUserPendingCount)
+      return () => window.removeEventListener('userRequirementsUpdated', fetchUserPendingCount)
+    }
+  }, [role, location.pathname, user])
 
   const menuItems = {
     user: [
@@ -204,8 +223,9 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
                       <span className="text-sm">{item.title}</span>
                     </div>
 
-                    {/* Pending Approvals Badge */}
-                    {item.title === 'Pending Approvals' && pendingCount > 0 && (
+                    {/* Pending Approvals / User Requirements Badge */}
+                    {((role === 'admin' && item.title === 'Pending Approvals') || 
+                      (role === 'user' && item.title === 'Requirements')) && pendingCount > 0 && (
                       <div className="ml-auto flex items-center">
                         <span className="flex items-center justify-center h-5 min-w-[1.25rem] px-1.5 text-[11px] font-bold text-white bg-red-500 rounded-full shadow-sm">
                           {pendingCount}

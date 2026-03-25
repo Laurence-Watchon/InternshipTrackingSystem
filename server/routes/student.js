@@ -21,14 +21,18 @@ router.get("/requirements", async (req, res) => {
     if (!college) return res.status(400).json({ error: "College is required." });
 
     const db = await connectDB();
-    const query = { college };
-
     const requirements = await db.collection("requirements")
-      .find(query)
-      .sort({ createdAt: -1 })
+      .find({ college })
+      .sort({ createdAt: 1 })
       .toArray();
 
-    res.json(requirements);
+    // Filter by course if requirement has course restrictions
+    const { course } = req.query;
+    const filteredRequirements = requirements.filter(req =>
+      !req.course || req.course.length === 0 || (course && req.course.includes(course))
+    );
+
+    res.json(filteredRequirements);
   } catch (err) {
     console.error("Error fetching student requirements:", err);
     res.status(500).json({ error: "Failed to fetch requirements." });
@@ -46,10 +50,16 @@ router.post("/upload", upload.single("file"), async (req, res) => {
     }
 
     // Use a stream to upload the buffer to Cloudinary
+    const fileExtension = req.file.originalname.split('.').pop().toLowerCase();
+    const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension);
+
     const streamUpload = (fileBuffer) => {
       return new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
-          { resource_type: "auto", folder: "internship_submissions" },
+          {
+            resource_type: isImage ? "image" : "raw",
+            folder: "internship_submissions"
+          },
           (error, result) => {
             if (result) {
               resolve(result);
@@ -94,7 +104,7 @@ router.post("/submissions", async (req, res) => {
       course,
       fileName,
       fileUrl,
-      status: "pending",
+      status: "submitted",
       submittedAt: new Date(),
       updatedAt: new Date()
     };
@@ -141,9 +151,49 @@ router.get("/my-submissions", async (req, res) => {
 });
 
 // -----------------------------------------------
-// GET /api/student/college-settings
-// Fetches settings (like required hours) for the student's college
+// GET /api/student/pending-requirements-count
+// Returns how many requirements the student needs to upload or fix
 // -----------------------------------------------
+router.get("/pending-requirements-count", async (req, res) => {
+  try {
+    const { studentId, college, course } = req.query;
+    if (!studentId || !college) {
+      return res.status(400).json({ error: "studentId and college are required." });
+    }
+
+    const db = await connectDB();
+
+    // 1. Fetch all requirements for the college
+    const requirements = await db.collection("requirements")
+      .find({ college })
+      .toArray();
+
+    // 2. Filter requirements specifically for their course (if criteria exists)
+    const relevantRequirements = requirements.filter(req =>
+      !req.course || req.course.length === 0 || (course && req.course.includes(course))
+    );
+
+    // 3. Fetch student's submissions
+    const submissions = await db.collection("submissions")
+      .find({ studentId: new ObjectId(studentId) })
+      .toArray();
+
+    // 4. Count "To Do" items: No submission OR status is 'rejected'
+    let count = 0;
+    relevantRequirements.forEach(req => {
+      const sub = submissions.find(s => s.requirementId.toString() === req._id.toString());
+      if (!sub || sub.status === "rejected") {
+        count++;
+      }
+    });
+
+    res.json({ count });
+  } catch (err) {
+    console.error("Error fetching pending requirements count:", err);
+    res.status(500).json({ error: "Failed to fetch count." });
+  }
+});
+
 router.get("/college-settings", async (req, res) => {
   try {
     const { college } = req.query;

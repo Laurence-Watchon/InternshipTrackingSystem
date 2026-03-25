@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { FileText, Image, Paperclip, FileStack, ExternalLink, X, UploadCloud, CheckCircle, Clock } from 'lucide-react'
 import Dialog from './Dialog'
 import Loading from './Loading'
 
@@ -16,10 +17,19 @@ function getAcceptString(types) {
 
 function getFileIcon(fileName) {
   const ext = fileName?.split('.').pop()?.toLowerCase()
-  if (ext === 'pdf') return { icon: '📄', label: 'PDF', color: 'text-red-500' }
-  if (ext === 'docx') return { icon: '📝', label: 'DOCX', color: 'text-blue-500' }
-  if (['png', 'jpg', 'jpeg'].includes(ext)) return { icon: '🖼️', label: ext?.toUpperCase(), color: 'text-purple-500' }
-  return { icon: '📎', label: ext?.toUpperCase(), color: 'text-gray-500' }
+  if (ext === 'pdf') return { icon: <FileText className="w-8 h-8 text-red-500" />, label: 'PDF' }
+  if (ext === 'docx') return { icon: <FileText className="w-8 h-8 text-blue-500" />, label: 'DOCX' }
+  if (['png', 'jpg', 'jpeg'].includes(ext)) return { icon: <Image className="w-8 h-8 text-purple-500" />, label: ext?.toUpperCase() }
+  return { icon: <Paperclip className="w-8 h-8 text-gray-500" />, label: ext?.toUpperCase() }
+}
+
+function getViewerUrl(url, fileName) {
+  if (!url) return '#'
+  const ext = fileName?.split('.').pop()?.toLowerCase()
+  if (['pdf', 'docx'].includes(ext)) {
+    return `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`
+  }
+  return url
 }
 
 function statusStyles(status) {
@@ -74,6 +84,7 @@ export default function ClickableCard({ req, state, isOpen, onToggle, onChange }
   // uploading  = file picked, simulating upload to DB
   // uploaded   = upload done, preview ready, awaiting submit
   const [uploading, setUploading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploadedFile, setUploadedFile] = useState(null)   // { name, url, size, ext }
   const [dialogOpen, setDialogOpen] = useState(false)
 
@@ -97,7 +108,7 @@ export default function ClickableCard({ req, state, isOpen, onToggle, onChange }
           name: data.fileName,
           url: data.secure_url,
           // size can be added if backend returns it, but for now we'll keep the local one or skip
-          size: file.size, 
+          size: file.size,
           ext: data.fileName.split('.').pop()?.toLowerCase(),
         })
       } else {
@@ -116,11 +127,17 @@ export default function ClickableCard({ req, state, isOpen, onToggle, onChange }
     setDialogOpen(true)
   }
 
-  function handleConfirm() {
+  async function handleConfirm() {
+    setIsSubmitting(true)
+    setDialogOpen(false)
+
+    // Wait for at least 2 seconds
+    await new Promise(resolve => setTimeout(resolve, 2000))
+
     if (req.inputType === 'link') {
-      onChange({ status: 'submitted', fileName: '', fileUrl: '', linkValue })
+      await onChange({ status: 'submitted', fileName: '', fileUrl: '', linkValue })
     } else {
-      onChange({
+      await onChange({
         status: 'submitted',
         fileName: uploadedFile.name,
         fileUrl: uploadedFile.url,
@@ -128,7 +145,7 @@ export default function ClickableCard({ req, state, isOpen, onToggle, onChange }
       })
       setUploadedFile(null)
     }
-    setDialogOpen(false)
+    setIsSubmitting(false)
   }
 
   function handleDialogCancel() {
@@ -168,12 +185,7 @@ export default function ClickableCard({ req, state, isOpen, onToggle, onChange }
           </div>
           <div className="flex-shrink-0 flex items-center gap-2">
             <StatusBadge status={status} />
-            <svg
-              className={`w-4 h-4 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
-              fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+            <Clock className={`w-4 h-4 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
           </div>
         </button>
 
@@ -206,25 +218,18 @@ export default function ClickableCard({ req, state, isOpen, onToggle, onChange }
                 ) : fileName ? (
                   <div className="mx-auto" style={{ maxWidth: '340px' }}>
                     <a
-                      href={fileUrl || '#'}
+                      href={getViewerUrl(fileUrl, fileName)}
                       target="_blank"
                       rel="noreferrer"
                       className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3 group"
                       title="Click to view your submitted file"
                     >
-                      <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
+                      <FileText className="w-5 h-5 text-green-500 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
                         <p className="text-xs text-green-700 font-semibold truncate group-hover:underline">{fileName}</p>
                         <p className="text-xs text-green-500 mt-0.5">Submitted · Click to view</p>
                       </div>
-                      {/* External link icon */}
-                      <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
+                      <ExternalLink className="w-4 h-4 text-green-400 flex-shrink-0" />
                     </a>
                   </div>
 
@@ -233,24 +238,20 @@ export default function ClickableCard({ req, state, isOpen, onToggle, onChange }
                   <div className="flex flex-col gap-3 mx-auto" style={{ maxWidth: '340px' }}>
                     {/* Clickable file preview */}
                     <a
-                      href={uploadedFile.url}
+                      href={getViewerUrl(uploadedFile.url, uploadedFile.name)}
                       target="_blank"
                       rel="noreferrer"
                       className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 group"
                       title="Click to preview your file"
                     >
-                      <span className="text-2xl">{fileInfo?.icon}</span>
+                      {fileInfo?.icon}
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-gray-800 truncate group-hover:underline">{uploadedFile.name}</p>
                         <p className="text-xs text-gray-500 mt-0.5">
                           {fileInfo?.label} &nbsp;·&nbsp; {(uploadedFile.size / 1024).toFixed(1)} KB
                         </p>
                       </div>
-                      {/* External link icon */}
-                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
+                      <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     </a>
                     <p className="text-xs text-gray-400 text-center">Click the file to preview it before submitting.</p>
                     {/* Actions */}
@@ -263,9 +264,16 @@ export default function ClickableCard({ req, state, isOpen, onToggle, onChange }
                       </button>
                       <button
                         onClick={handleSubmitClick}
-                        className="flex-1 py-2 text-sm font-semibold text-white bg-green-500 rounded-lg focus:outline-none"
+                        disabled={isSubmitting}
+                        className={`flex-1 py-2 text-sm font-semibold text-white rounded-lg focus:outline-none transition-all
+                          ${isSubmitting ? 'bg-green-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'}`}
                       >
-                        Submit
+                        {isSubmitting ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            Submitting...
+                          </span>
+                        ) : 'Submit'}
                       </button>
                     </div>
                   </div>
@@ -278,13 +286,9 @@ export default function ClickableCard({ req, state, isOpen, onToggle, onChange }
                       ${status === 'rejected' ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-gray-50'}`}
                     style={{ height: '150px', maxWidth: '340px' }}
                   >
-                    <svg
+                    <UploadCloud
                       className={`w-8 h-8 ${status === 'rejected' ? 'text-red-400' : 'text-green-400'}`}
-                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
+                    />
                     <p className="text-sm font-medium text-gray-600">
                       {status === 'rejected' ? 'Re-upload your file' : 'Click to upload'}
                     </p>
@@ -321,10 +325,7 @@ export default function ClickableCard({ req, state, isOpen, onToggle, onChange }
                         <p className="text-xs text-green-700 font-semibold truncate group-hover:underline">{linkValue}</p>
                         <p className="text-xs text-green-500 mt-0.5">Submitted · Click to open</p>
                       </div>
-                      <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
+                      <ExternalLink className="w-4 h-4 text-green-400 flex-shrink-0" />
                     </a>
                   </div>
                 ) : (
@@ -365,9 +366,16 @@ export default function ClickableCard({ req, state, isOpen, onToggle, onChange }
                     {linkValue && (
                       <button
                         onClick={handleSubmitClick}
-                        className="w-full py-2 text-sm font-semibold text-white bg-green-500 rounded-lg focus:outline-none"
+                        disabled={isSubmitting}
+                        className={`w-full py-2 text-sm font-semibold text-white rounded-lg focus:outline-none transition-all
+                          ${isSubmitting ? 'bg-green-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'}`}
                       >
-                        Submit
+                        {isSubmitting ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            Submitting...
+                          </span>
+                        ) : 'Submit'}
                       </button>
                     )}
                   </>

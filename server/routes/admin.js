@@ -166,7 +166,7 @@ router.get("/requirements", async (req, res) => {
     const db = await connectDB();
     const requirements = await db.collection("requirements")
       .find({ college })
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: 1 })
       .toArray();
     
     res.json(requirements);

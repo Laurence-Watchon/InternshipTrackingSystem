@@ -140,6 +140,7 @@ function LoginForm() {
         lastName: data.lastName,
         email: data.email,
         college: data.college,
+        course: data.course,
         isVerified: data.isVerified
       })
 

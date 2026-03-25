@@ -157,18 +157,12 @@ function OTPVerificationForm() {
         return
       }
 
-      // Auto log the user in using global context
-      login({
-        role: data.role,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email
-      })
+      // Removed auto-login to wait for admin approval
 
-      // Success — show flash screen then redirect to user home
+      // Success — show flash screen then redirect to landing page (home)
       sessionStorage.removeItem(OTP_EXPIRY_KEY)
       setIsVerified(true)
-      setTimeout(() => navigate('/user/home'), 3000)
+      setTimeout(() => navigate('/', { replace: true }), 3000)
     } catch {
       setError('Cannot connect to server. Please try again later.')
     } finally {
@@ -233,9 +227,10 @@ function OTPVerificationForm() {
                 </svg>
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">OTP Verified!</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Registration Complete!</h2>
             <p className="text-gray-500 text-sm mb-1">Your email has been verified successfully.</p>
-            <p className="text-green-600 font-medium text-sm">Redirecting to homepage...</p>
+            <p className="text-yellow-600 font-medium text-sm mb-4">Pending admin approval. Please wait for your account to be verified.</p>
+            <p className="text-green-600 font-medium text-sm">Redirecting to home...</p>
             {/* Progress bar that shrinks over 3 seconds */}
             <div className="mt-6 w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
               <div

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import SchoolLogo from '../../../assets/Schoollogo.png'
 import GoogleLogo from '../../../assets/google.png'
@@ -26,6 +26,19 @@ function SignupForm() {
   const [passwordStrength, setPasswordStrength] = useState('')
   const [showTerms, setShowTerms] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
+  
+  // Refs for scrolling to errors
+  const studentNumberRef = useRef(null)
+  const emailRef = useRef(null)
+
+  // Scroll to error effect
+  useEffect(() => {
+    if (errors.studentNumber) {
+      studentNumberRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    } else if (errors.email) {
+      emailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [errors])
 
   // College options
   const collegeOptions = [
@@ -431,6 +444,7 @@ function SignupForm() {
             {errors.studentNumber && (
               <p className="mt-1 text-sm text-red-600">{errors.studentNumber}</p>
             )}
+            <div ref={studentNumberRef} />
           </div>
 
           {/* Phone Number */}
@@ -475,6 +489,7 @@ function SignupForm() {
             {errors.email && (
               <p className="mt-1 text-sm text-red-600">{errors.email}</p>
             )}
+            <div ref={emailRef} />
           </div>
 
           {/* College */}
