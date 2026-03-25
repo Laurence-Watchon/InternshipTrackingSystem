@@ -30,11 +30,10 @@ function UserRequirements() {
   }, [user])
 
   const fetchData = async () => {
-    setIsLoading(true)
     const minLoadingTime = new Promise(resolve => setTimeout(resolve, 800))
     try {
       // 1. Fetch requirements for the college
-      const reqRes = await fetch(`http://localhost:3001/api/student/requirements?college=${encodeURIComponent(user.college)}`)
+      const reqRes = await fetch(`http://localhost:3001/api/student/requirements?college=${encodeURIComponent(user.college)}&course=${encodeURIComponent(user.course || '')}`)
       const reqData = await reqRes.json()
 
       // 2. Fetch student's submissions
@@ -93,6 +92,8 @@ function UserRequirements() {
           setStates(prev => ({ ...prev, [id]: newState }))
           // Refresh data to be sure
           fetchData()
+          // Notify sidebar to refresh count
+          window.dispatchEvent(new Event('userRequirementsUpdated'))
         } else {
           const errorData = await response.json()
           alert(errorData.error || 'Failed to submit document')
