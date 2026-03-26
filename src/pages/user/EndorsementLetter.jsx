@@ -46,7 +46,7 @@ function UserEndorsement() {
   ])
 
   useEffect(() => {
-    if (user?.college) {
+    if (user?.college && (user?._id || user?.id)) {
       fetchData()
     }
   }, [user])
@@ -55,11 +55,28 @@ function UserEndorsement() {
     setIsLoading(true)
     const minLoadingTime = new Promise(resolve => setTimeout(resolve, 800))
     try {
-      // TODO: Replace with real API fetch for endorsement status and requirement submissions
-      // const res = await fetch(`http://localhost:3001/api/student/endorsement-status?studentId=${user.id}`)
-      // const data = await res.json()
-      // setEndorsement(data.endorsement)
-      // setRequirements(data.requirements)
+      // 1. Fetch all requirements for the student's college and course
+      const reqResponse = await fetch(`http://localhost:3001/api/student/requirements?college=${encodeURIComponent(user.college)}${user.course ? `&course=${encodeURIComponent(user.course)}` : ''}`)
+      const requirementsData = await reqResponse.json()
+
+      // 2. Fetch the student's submissions
+      const subResponse = await fetch(`http://localhost:3001/api/student/my-submissions?studentId=${user._id || user.id}`)
+      const submissionsData = await subResponse.json()
+
+      if (reqResponse.ok && subResponse.ok) {
+        // 3. Merge data: check status for each requirement
+        const mergedReqs = requirementsData.map(req => {
+          const submission = submissionsData.find(sub => sub.requirementId === req._id)
+          return {
+            name: req.title,
+            status: submission ? submission.status : 'pending'
+          }
+        })
+        setRequirements(mergedReqs)
+        
+        // TODO: In the future, fetch real endorsement status from an API
+        // For now, we still use the mock state for endorsement.status etc.
+      }
     } catch (err) {
       console.error('Error fetching endorsement data:', err)
     } finally {
@@ -68,7 +85,7 @@ function UserEndorsement() {
     }
   }
 
-  const allSubmitted = requirements.every(r => r.status === 'submitted')
+  const allSubmitted = requirements.length > 0 && requirements.every(r => r.status === 'verified' || r.status === 'submitted')
 
   // Called by EndorsementCard with company details — 1.5s simulated API delay
   async function handleRequest(companyInfo) {
