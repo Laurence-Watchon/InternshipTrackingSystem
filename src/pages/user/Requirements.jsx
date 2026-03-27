@@ -5,6 +5,7 @@ import Skeleton from '../../components/ui/Skeleton'
 import { useAuth } from '../../context/AuthContext'
 import PendingApprovalDialog from '../../components/custom/dialog/PendingApprovalDialog'
 import { useNavigate } from 'react-router-dom'
+import Toast from '../../components/ui/Toast'
 
 const collegeMapping = {
   'CAS': 'COLLEGE OF ARTS AND SCIENCES',
@@ -22,6 +23,9 @@ function UserRequirements() {
   const [isLoading, setIsLoading] = useState(true)
   const [states, setStates] = useState({})
   const [openId, setOpenId] = useState(null)
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  const [toastType, setToastType] = useState('success')
 
   useEffect(() => {
     if (user?.college) {
@@ -94,13 +98,22 @@ function UserRequirements() {
           fetchData()
           // Notify sidebar to refresh count
           window.dispatchEvent(new Event('userRequirementsUpdated'))
+
+          setToastMessage('Requirement submitted successfully!')
+          setToastType('success')
+          setShowToast(true)
+          setOpenId(null) // Close the card on success
         } else {
           const errorData = await response.json()
-          alert(errorData.error || 'Failed to submit document')
+          setToastMessage(errorData.error || 'Failed to submit document')
+          setToastType('error')
+          setShowToast(true)
         }
       } catch (err) {
         console.error('Error submitting document:', err)
-        alert('An error occurred during submission.')
+        setToastMessage('An error occurred during submission.')
+        setToastType('error')
+        setShowToast(true)
       }
     } else {
       setStates(prev => ({ ...prev, [id]: newState }))
@@ -258,6 +271,14 @@ function UserRequirements() {
           )}
         </div>
       </AppLayout>
+
+      {showToast && (
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          onClose={() => setShowToast(false)}
+        />
+      )}
     </>
   )
 }

@@ -77,7 +77,7 @@ function StudentDetailsModal({ isOpen, onClose, student }) {
                 </span>
               </h4>
               <div className="space-y-2">
-                {student.completedRequirements.map((req, index) => (
+                {(student.completedRequirements || []).map((req, index) => (
                   <div key={index} className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg border border-green-200">
                     <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -100,7 +100,7 @@ function StudentDetailsModal({ isOpen, onClose, student }) {
                       Company Name
                     </label>
                     <p className="text-sm font-medium text-gray-900">
-                      {student.companyName || 'Not assigned'}
+                      {student.companyName || 'Not yet assigned'}
                     </p>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg">
@@ -108,7 +108,7 @@ function StudentDetailsModal({ isOpen, onClose, student }) {
                       Company Address
                     </label>
                     <p className="text-sm font-medium text-gray-900">
-                      {student.companyAddress || 'Not assigned'}
+                      {student.companyAddress || 'Not yet assigned'}
                     </p>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg">
@@ -116,7 +116,7 @@ function StudentDetailsModal({ isOpen, onClose, student }) {
                       Supervisor
                     </label>
                     <p className="text-sm font-medium text-gray-900">
-                      {student.supervisor || 'Not assigned'}
+                      {student.supervisor || 'Not yet assigned'}
                     </p>
                   </div>
                 </div>

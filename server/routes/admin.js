@@ -43,11 +43,11 @@ router.put("/approve/:id", async (req, res) => {
       { _id: new ObjectId(id) },
       { $set: { isVerified: true, updatedAt: new Date() } }
     );
-    
+
     if (result.matchedCount === 0) {
       return res.status(404).json({ error: "Student not found." });
     }
-    
+
     res.json({ message: "Student approved successfully." });
   } catch (err) {
     console.error("Error approving student:", err);
@@ -63,7 +63,7 @@ router.put("/reject/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
-    
+
     if (!reason) {
       return res.status(400).json({ error: "Rejection reason is required." });
     }
@@ -71,17 +71,19 @@ router.put("/reject/:id", async (req, res) => {
     const db = await connectDB();
     const result = await db.collection("users").updateOne(
       { _id: new ObjectId(id) },
-      { $set: { 
-          isRejected: true, 
+      {
+        $set: {
+          isRejected: true,
           rejectionReason: reason,
-          updatedAt: new Date() 
-      } }
+          updatedAt: new Date()
+        }
+      }
     );
-    
+
     if (result.matchedCount === 0) {
       return res.status(404).json({ error: "Student not found." });
     }
-    
+
     res.json({ message: "Student registration softly rejected." });
   } catch (err) {
     console.error("Error rejecting student:", err);
@@ -132,12 +134,14 @@ router.put("/requirements/:id", async (req, res) => {
     const db = await connectDB();
     const result = await db.collection("requirements").updateOne(
       { _id: new ObjectId(id) },
-      { $set: { 
-          title, 
-          description, 
-          acceptedFileTypes: acceptedFileTypes || [], 
-          updatedAt: new Date() 
-      } }
+      {
+        $set: {
+          title,
+          description,
+          acceptedFileTypes: acceptedFileTypes || [],
+          updatedAt: new Date()
+        }
+      }
     );
 
     if (result.matchedCount === 0) {
@@ -168,7 +172,7 @@ router.get("/requirements", async (req, res) => {
       .find({ college })
       .sort({ createdAt: 1 })
       .toArray();
-    
+
     res.json(requirements);
   } catch (err) {
     console.error("Error fetching requirements:", err);
@@ -209,15 +213,56 @@ router.get("/students", async (req, res) => {
       return res.status(400).json({ error: "College is required." });
     }
 
-    const query = {
+    const db = await connectDB();
+
+    // 1. Fetch all verified students in the college
+    const students = await db.collection("users").find({
       role: "student",
       isVerified: true,
       college: college
-    };
+    }).toArray();
 
-    const db = await connectDB();
-    const students = await db.collection("users").find(query).toArray();
-    res.json(students);
+    // 2. Fetch all requirements for the college
+    const requirements = await db.collection("requirements")
+      .find({ college })
+      .toArray();
+
+    // 3. Fetch all submissions for the college
+    const submissions = await db.collection("submissions")
+      .find({ college })
+      .toArray();
+
+    // 4. Map students to include requirement stats
+    const studentsWithStats = students.map(student => {
+      // Filter requirements that apply to this specific student's course
+      const relevantRequirements = requirements.filter(req =>
+        !req.course || req.course.length === 0 || (student.course && req.course.includes(student.course))
+      );
+
+      // Count non-rejected submissions
+      const studentSubmissions = submissions.filter(s =>
+        s.studentId.toString() === student._id.toString()
+      );
+
+      const completedRequirementsEntries = relevantRequirements.filter(req => {
+        const sub = studentSubmissions.find(s => s.requirementId.toString() === req._id.toString());
+        return sub && sub.status !== "rejected";
+      });
+
+      const requirementsCompleted = completedRequirementsEntries.length;
+      const completedRequirementsTitles = completedRequirementsEntries.map(req => req.title);
+
+      return {
+        ...student,
+        id: student._id,
+        fullName: `${student.firstName} ${student.lastName}`,
+        requirementsCompleted,
+        totalRequirements: relevantRequirements.length,
+        completedRequirements: completedRequirementsTitles
+      };
+    });
+
+    res.json(studentsWithStats);
   } catch (err) {
     console.error("Error fetching students:", err);
     res.status(500).json({ error: "Failed to fetch students." });
@@ -285,7 +330,7 @@ router.get("/students-monitoring", async (req, res) => {
     }
 
     const db = await connectDB();
-    
+
     // 1. Fetch all verified students in the college
     const students = await db.collection("users")
       .find({ role: "student", isVerified: true, college })
@@ -304,13 +349,13 @@ router.get("/students-monitoring", async (req, res) => {
     // Map data for monitoring
     const monitoringData = students.map(student => {
       // Filter requirements that apply to this specific student
-      const relevantRequirements = requirements.filter(req => 
+      const relevantRequirements = requirements.filter(req =>
         !req.course || req.course.length === 0 || req.course.includes(student.course)
       );
 
       const studentSubmissions = relevantRequirements.map(req => {
-        const submission = submissions.find(s => 
-          s.studentId.toString() === student._id.toString() && 
+        const submission = submissions.find(s =>
+          s.studentId.toString() === student._id.toString() &&
           s.requirementId.toString() === req._id.toString()
         );
         return {
@@ -326,6 +371,7 @@ router.get("/students-monitoring", async (req, res) => {
         firstName: student.firstName,
         lastName: student.lastName,
         studentNumber: student.studentNumber,
+        email: student.email,
         course: student.course,
         submissions: studentSubmissions
       };
@@ -348,10 +394,10 @@ router.get("/college-settings", async (req, res) => {
     if (!college) return res.status(400).json({ error: "College is required." });
 
     const db = await connectDB();
-    const settings = await db.collection("college_settings").findOne({ 
-      college: { $regex: new RegExp(`^${college.trim()}$`, "i") } 
+    const settings = await db.collection("college_settings").findOne({
+      college: { $regex: new RegExp(`^${college.trim()}$`, "i") }
     });
-    
+
     // Return empty object if no settings found yet
     res.json(settings || { college, requiredHours: {} });
   } catch (err) {
@@ -372,11 +418,11 @@ router.put("/college-settings", async (req, res) => {
     const db = await connectDB();
     await db.collection("college_settings").updateOne(
       { college },
-      { 
-        $set: { 
+      {
+        $set: {
           requiredHours: requiredHours || {},
-          updatedAt: new Date() 
-        } 
+          updatedAt: new Date()
+        }
       },
       { upsert: true }
     );

@@ -45,10 +45,10 @@ function StudentManagement() {
         // Map database fields to mock fields if needed
         const mappedData = data.map(student => ({
           ...student,
-          fullName: `${student.firstName} ${student.lastName}`,
-          id: student._id,
-          requirementsCompleted: student.requirementsCompleted || 0,
-          totalRequirements: student.totalRequirements || 7,
+          fullName: student.fullName || `${student.firstName} ${student.lastName}`,
+          id: student.id || student._id,
+          requirementsCompleted: student.requirementsCompleted,
+          totalRequirements: student.totalRequirements,
           isDeployed: student.isDeployed || false,
           completedRequirements: student.completedRequirements || []
         }))

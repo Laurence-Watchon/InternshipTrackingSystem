@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react'
-import { FileText, Image, Paperclip, FileStack, ExternalLink, X, UploadCloud, CheckCircle, Clock } from 'lucide-react'
+import { useRef, useState, useEffect } from 'react'
+import { FileText, Image, Paperclip, FileStack, ExternalLink, X, UploadCloud, CheckCircle, ChevronDown } from 'lucide-react'
 import Dialog from './Dialog'
 import Loading from './Loading'
 
@@ -77,9 +77,21 @@ function StatusBadge({ status }) {
  *   4. Confirmed → marked as submitted
  */
 export default function ClickableCard({ req, state, isOpen, onToggle, onChange }) {
+  const containerRef = useRef(null)
   const fileRef = useRef()
   const { status, fileName, linkValue, fileUrl } = state
   const styles = statusStyles(status)
+
+  // Scroll to top when opened
+  useEffect(() => {
+    if (isOpen) {
+      // Delay slightly to wait for the accordion animation to start/finish
+      const timer = setTimeout(() => {
+        containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [isOpen])
 
   // uploading  = file picked, simulating upload to DB
   // uploaded   = upload done, preview ready, awaiting submit
@@ -168,7 +180,8 @@ export default function ClickableCard({ req, state, isOpen, onToggle, onChange }
   return (
     <>
       <div
-        className={`bg-white rounded-xl shadow-sm border-l-4 ${styles.border} transition-all duration-300 ${isOpen ? 'bg-green-100' : ''}`}
+        ref={containerRef}
+        className={`bg-white rounded-xl shadow-sm border-l-4 ${styles.border} transition-all duration-300 scroll-mt-20 ${isOpen ? 'bg-green-100' : ''}`}
         style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}
       >
         {/* ── Header row ── */}
@@ -185,7 +198,7 @@ export default function ClickableCard({ req, state, isOpen, onToggle, onChange }
           </div>
           <div className="flex-shrink-0 flex items-center gap-2">
             <StatusBadge status={status} />
-            <Clock className={`w-4 h-4 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
           </div>
         </button>
 
