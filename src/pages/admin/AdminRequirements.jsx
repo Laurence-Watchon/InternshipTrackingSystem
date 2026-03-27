@@ -271,6 +271,7 @@ function RequirementsManagement() {
         setShowHoursConfirmDialog(false)
         setToastMessage("Required hours updated successfully!")
         setShowToast(true)
+        window.dispatchEvent(new CustomEvent('collegeSettingsUpdated'))
         // Reset/Collapse the card by changing its key
         setHoursCardKey(prev => prev + 1)
       } else {

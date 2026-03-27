@@ -25,30 +25,30 @@ function AdminStudentRequirements() {
 
   const coursesByCollege = {
     'COLLEGE OF ARTS AND SCIENCES': [
-      { id: 'BAComm', name: 'BA Communication' },
-      { id: 'BA-Psych', name: 'BA Psychology' },
-      { id: 'BS-Psych', name: 'BS Psychology' }
+      { value: 'BAComm', label: 'BA Communication' },
+      { value: 'BA-Psych', label: 'BA Psychology' },
+      { value: 'BS-Psych', label: 'BS Psychology' }
     ],
     'COLLEGE OF BUSINESS ADMINISTRATION AND ACCOUNTANCY': [
-      { id: 'BSA', name: 'BS Accountancy' },
-      { id: 'BSAIS', name: 'BS Accounting Information System' },
-      { id: 'BSEntrep', name: 'BS Entrepreneurship' },
-      { id: 'BSTM', name: 'BS Tourism Management' }
+      { value: 'BSA', label: 'BS Accountancy' },
+      { value: 'BSAIS', label: 'BS Accounting Information System' },
+      { value: 'BSEntrep', label: 'BS Entrepreneurship' },
+      { value: 'BSTM', label: 'BS Tourism Management' }
     ],
     'COLLEGE OF COMPUTING STUDIES': [
-      { id: 'bscs-ds', name: 'BS Computer Science - Data Science' },
-      { id: 'bsit-ba', name: 'BS Information Technology - Business Analytics' },
-      { id: 'bsit-sd', name: 'BS Information Technology - Software Development' }
+      { value: 'BSCS-DS', label: 'BS Computer Science - Data Science' },
+      { value: 'BSIT-BA', label: 'BS Information Technology - Business Analytics' },
+      { value: 'BSIT-SD', label: 'BS Information Technology - Software Development' }
     ],
     'COLLEGE OF ENGINEERING': [
-      { id: 'BSME', name: 'BS Mechanical Engineering' }
+      { value: 'BSME', label: 'BS Mechanical Engineering' }
     ],
     'COLLEGE OF EDUCATION': [
-      { id: 'BEED', name: 'Bachelor of Elementary Education' },
-      { id: 'BPEd', name: 'Bachelor of Physical Education' },
-      { id: 'BSED-English', name: 'BS Education (Major in English)' },
-      { id: 'BSED-Math', name: 'BS Education (Major in Mathematics)' },
-      { id: 'BSED-Science', name: 'BS Education (Major in Science)' }
+      { value: 'BEED', label: 'Bachelor of Elementary Education' },
+      { value: 'BPEd', label: 'Bachelor of Physical Education' },
+      { value: 'BSED-English', label: 'BS Education (Major in English)' },
+      { value: 'BSED-Math', label: 'BS Education (Major in Mathematics)' },
+      { value: 'BSED-Science', label: 'BS Education (Major in Science)' }
     ]
   }
 
@@ -72,7 +72,7 @@ function AdminStudentRequirements() {
 
   useEffect(() => {
     if (currentCollegeCourses.length > 0 && !activeTab) {
-      setActiveTab(currentCollegeCourses[0].id.toLowerCase())
+      setActiveTab(currentCollegeCourses[0].value.toLowerCase())
     }
   }, [currentCollegeCourses, activeTab])
 
@@ -93,9 +93,9 @@ function AdminStudentRequirements() {
 
   // Courses with dynamic counts from data
   const courses = currentCollegeCourses.map(course => ({
-    id: course.id.toLowerCase(),
-    name: course.id,
-    count: studentsData.filter(s => s.course === course.id).length
+    id: course.value.toLowerCase(),
+    name: course.value,
+    count: studentsData.filter(s => s.course === course.value).length
   }))
 
   const filteredByCourse = studentsData.filter(student => {

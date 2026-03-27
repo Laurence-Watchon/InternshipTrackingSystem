@@ -2,12 +2,58 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
 import SchoolLogo from '../../../assets/Schoollogo.png'
-import { House, NotebookText, CircleCheckBig, Clock, BookOpen, User, Users, File, UserRoundPlus } from 'lucide-react';
+import { House, NotebookText, CircleCheckBig, Clock, BookOpen, User, Users, File, UserRoundPlus, Check } from 'lucide-react';
+
+const collegeMapping = {
+  'CAS': 'COLLEGE OF ARTS AND SCIENCES',
+  'CBAA': 'COLLEGE OF BUSINESS ADMINISTRATION AND ACCOUNTANCY',
+  'CCS': 'COLLEGE OF COMPUTING STUDIES',
+  'COE': 'COLLEGE OF ENGINEERING',
+  'COED': 'COLLEGE OF EDUCATION'
+}
+
+const coursesByCollege = {
+  'COLLEGE OF ARTS AND SCIENCES': [
+    { value: 'BAComm', label: 'BA Communication' },
+    { value: 'BA-Psych', label: 'BA Psychology' },
+    { value: 'BS-Psych', label: 'BS Psychology' }
+  ],
+  'COLLEGE OF BUSINESS ADMINISTRATION AND ACCOUNTANCY': [
+    { value: 'BSA', label: 'BS Accountancy' },
+    { value: 'BSAIS', label: 'BS Accounting Information System' },
+    { value: 'BSEntrep', label: 'BS Entrepreneurship' },
+    { value: 'BSTM', label: 'BS Tourism Management' }
+  ],
+  'COLLEGE OF COMPUTING STUDIES': [
+    { value: 'BSCS-DS', label: 'BS Computer Science - Data Science' },
+    { value: 'BSIT-BA', label: 'BS Information Technology - Business Analytics' },
+    { value: 'BSIT-SD', label: 'BS Information Technology - Software Development' }
+  ],
+  'COLLEGE OF ENGINEERING': [
+    { value: 'BSME', label: 'BS Mechanical Engineering' }
+  ],
+  'COLLEGE OF EDUCATION': [
+    { value: 'BEED', label: 'Bachelor of Elementary Education' },
+    { value: 'BPEd', label: 'Bachelor of Physical Education' },
+    { value: 'BSED-English', label: 'BS Education (Major in English)' },
+    { value: 'BSED-Math', label: 'BS Education (Major in Mathematics)' },
+    { value: 'BSED-Science', label: 'BS Education (Major in Science)' }
+  ]
+}
+
+const getFullCollegeName = (name) => {
+  if (!name) return 'COLLEGE OF COMPUTING STUDIES'
+  const upper = name.toUpperCase()
+  if (collegeMapping[upper]) return collegeMapping[upper]
+  return upper
+}
 
 function AppSidebar({ isOpen, onClose, role = 'user' }) {
   const location = useLocation()
   const { user } = useAuth()
   const [pendingCount, setPendingCount] = useState(0)
+  const [requirementStats, setRequirementStats] = useState({ count: 0, total: 0 })
+  const [hasMissingHours, setHasMissingHours] = useState(false)
 
   // Fetch strictly for Admin whenever route changes
   useEffect(() => {
@@ -23,10 +69,33 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
           console.error("Failed to fetch pending count", err)
         }
       }
+
+      const fetchAdminCollegeSettings = async () => {
+        try {
+          const res = await fetch(`http://localhost:3001/api/admin/college-settings?college=${user.college}`)
+          if (res.ok) {
+            const data = await res.json()
+            const resolvedCollegeName = getFullCollegeName(user.college)
+            const collegeCourses = coursesByCollege[resolvedCollegeName] || []
+            const requiredHours = data.requiredHours || {}
+            
+            const missing = collegeCourses.some(c => !requiredHours[c.value] || parseInt(requiredHours[c.value]) <= 0)
+            setHasMissingHours(missing)
+          }
+        } catch (err) {
+          console.error("Failed to fetch college settings", err)
+        }
+      }
+
       fetchAdminPendingCount()
+      fetchAdminCollegeSettings()
 
       window.addEventListener('pendingCountUpdated', fetchAdminPendingCount)
-      return () => window.removeEventListener('pendingCountUpdated', fetchAdminPendingCount)
+      window.addEventListener('collegeSettingsUpdated', fetchAdminCollegeSettings)
+      return () => {
+        window.removeEventListener('pendingCountUpdated', fetchAdminPendingCount)
+        window.removeEventListener('collegeSettingsUpdated', fetchAdminCollegeSettings)
+      }
     }
 
     // Handle Student Pending Requirements Count
@@ -36,7 +105,7 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
           const res = await fetch(`http://localhost:3001/api/student/pending-requirements-count?studentId=${user.id}&college=${user.college}&course=${user.course || ''}`)
           if (res.ok) {
             const data = await res.json()
-            setPendingCount(data.count)
+            setRequirementStats({ count: data.count, total: data.total })
           }
         } catch (err) {
           console.error("Failed to fetch user pending count", err)
@@ -191,51 +260,69 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
         <nav className="flex-1 overflow-y-auto py-4 h-[calc(100vh-4rem)]">
           <ul className="space-y-1 px-3">
             {currentMenuItems.map((item) => (
-                <li key={item.path}>
-                  <Link
-                    to={item.path}
-                    className={`
+              <li key={item.path}>
+                <Link
+                  to={item.path}
+                  className={`
                       flex items-center justify-between px-4 py-3 rounded-lg transition-colors group
                       ${isActive(item.path)
-                        ? 'bg-green-50 text-green-600 font-medium'
-                        : 'text-gray-700 hover:bg-gray-50 hover:text-green-600'
-                      }
+                      ? 'bg-green-50 text-green-600 font-medium'
+                      : 'text-gray-700 hover:bg-gray-50 hover:text-green-600'
+                    }
                     `}
-                    onClick={(e) => {
-                      const currentPath = location.pathname
-                      const targetPath = item.path
+                  onClick={(e) => {
+                    const currentPath = location.pathname
+                    const targetPath = item.path
 
-                      // If already inside students-requirements details, prevent navigation
-                      if (
-                        targetPath === '/admin/students-requirements' &&
-                        currentPath.startsWith('/admin/students-requirements/')
-                      ) {
-                        e.preventDefault()
-                        return
-                      }
+                    // If already inside students-requirements details, prevent navigation
+                    if (
+                      targetPath === '/admin/students-requirements' &&
+                      currentPath.startsWith('/admin/students-requirements/')
+                    ) {
+                      e.preventDefault()
+                      return
+                    }
 
-                      // Close sidebar on mobile
-                      if (window.innerWidth < 1024) onClose()
-                    }}
-                  >
-                    <div className="flex items-center space-x-3">
-                      {item.icon}
-                      <span className="text-sm">{item.title}</span>
-                    </div>
+                    // Close sidebar on mobile
+                    if (window.innerWidth < 1024) onClose()
+                  }}
+                >
+                  <div className="flex items-center space-x-3">
+                    {item.icon}
+                    <span className="text-sm">{item.title}</span>
+                  </div>
 
-                    {/* Pending Approvals / User Requirements Badge */}
-                    {((role === 'admin' && item.title === 'Pending Approvals') || 
-                      (role === 'user' && item.title === 'Requirements')) && pendingCount > 0 && (
+                  {/* Pending Approvals / User Requirements Badge */}
+                  {((role === 'admin' && item.title === 'Pending Approvals') ||
+                    (role === 'user' && item.title === 'Requirements')) && (role === 'admin' ? pendingCount : requirementStats.count) > 0 && (
                       <div className="ml-auto flex items-center">
                         <span className="flex items-center justify-center h-5 min-w-[1.25rem] px-1.5 text-[11px] font-bold text-white bg-red-500 rounded-full shadow-sm">
-                          {pendingCount}
+                          {role === 'admin' ? pendingCount : requirementStats.count}
                         </span>
                       </div>
                     )}
 
-                  </Link>
-                </li>
-              ))}
+                  {/* Admin Requirements Missing Hours Alert */}
+                  {role === 'admin' && item.title === 'Requirements' && hasMissingHours && (
+                    <div className="ml-auto flex items-center pr-0.5">
+                      <span className="flex items-center justify-center h-5 w-5 bg-red-500 text-white rounded-full shadow-sm text-[12px] font-bold">
+                        !
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Endorsement Letter Notification Dot */}
+                  {role === 'user' && item.title === 'Endorsement Letter' && requirementStats.count === 0 && requirementStats.total > 0 && (
+                    <div className="ml-auto flex items-center pr-0.5">
+                      <span className="flex items-center justify-center h-5 w-5 bg-red-500 text-white rounded-full shadow-sm text-[12px] font-bold">
+                        !
+                      </span>
+                    </div>
+                  )}
+
+                </Link>
+              </li>
+            ))}
           </ul>
         </nav>
       </aside>

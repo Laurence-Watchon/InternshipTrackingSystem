@@ -187,7 +187,7 @@ router.get("/pending-requirements-count", async (req, res) => {
       }
     });
 
-    res.json({ count });
+    res.json({ count, total: relevantRequirements.length });
   } catch (err) {
     console.error("Error fetching pending requirements count:", err);
     res.status(500).json({ error: "Failed to fetch count." });
