@@ -17,8 +17,8 @@ export default function EndorsementCard({
   allSubmitted = false,
   onRequest,
 }) {
-  const [form, setForm]       = useState({ companyName: '', address: '', supervisorName: '' })
-  const [errors, setErrors]   = useState({})
+  const [form, setForm] = useState({ companyName: '', address: '', supervisorName: '' })
+  const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
 
   const fmt = (d) => d
@@ -32,8 +32,8 @@ export default function EndorsementCard({
 
   function validate() {
     const e = {}
-    if (!form.companyName.trim())    e.companyName    = 'Company name is required.'
-    if (!form.address.trim())        e.address        = 'Company address is required.'
+    if (!form.companyName.trim()) e.companyName = 'Company name is required.'
+    if (!form.address.trim()) e.address = 'Company address is required.'
     if (!form.supervisorName.trim()) e.supervisorName = 'Supervisor full name is required.'
     return e
   }
@@ -285,7 +285,7 @@ export default function EndorsementCard({
           <div>
             <h4 className="text-sm font-bold text-blue-900 mb-2">Important Information</h4>
             <ul className="text-sm text-blue-800 space-y-1.5">
-              <li><span className="font-semibold">Step 1:</span> Submit all 9 required documents under the Requirements page.</li>
+              <li><span className="font-semibold">Step 1:</span> Submit all required documents under the Requirements page.</li>
               <li><span className="font-semibold">Step 2:</span> Once all documents are submitted, fill in your company details and submit the endorsement request.</li>
               <li><span className="font-semibold">Step 3:</span> Processing takes <span className="font-semibold">3–5 business days</span>.</li>
               <li><span className="font-semibold">Step 4:</span> Once ready, visit the OJT Coordinator's office to pick up your endorsement letter with wet signature.</li>

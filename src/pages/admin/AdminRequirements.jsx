@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
-import AlertDialog from '../../components/ui/AlertDialog'
 import Dialog from '../../components/ui/Dialog'
 import AdminRequirementsModal from '../../components/custom/dialog/AdminRequirementsModal'
 import RequiredHoursCard from '../../components/ui/RequiredHoursCard'
@@ -374,8 +373,8 @@ function RequirementsManagement() {
                   {/* Left Side - Order Number and Content */}
                   <div className="flex items-start space-x-4 flex-1 min-w-0">
                     {/* Order Number */}
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-orange-100">
-                      <span className="font-bold text-orange-600">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-green-100">
+                      <span className="font-bold text-green-600">
                         {index + 1}
                       </span>
                     </div>

@@ -4,6 +4,7 @@ import AppLayout from '../../components/custom/global/AppLayout'
 import AdminHomeCourses from '../../components/ui/AdminHomeCourses'
 import StudentRequirementsTable from '../../components/ui/StudentRequirementsTable'
 import Pagination from '../../components/ui/Pagination'
+import Skeleton from '../../components/ui/Skeleton'
 import { useAuth } from '../../context/AuthContext'
 
 function AdminStudentRequirements() {
@@ -78,15 +79,22 @@ function AdminStudentRequirements() {
 
   const fetchMonitoringData = async () => {
     setIsLoading(true)
+    const minLoadingTime = new Promise(resolve => setTimeout(resolve, 800))
     try {
       const response = await fetch(`http://localhost:3001/api/admin/students-monitoring?college=${encodeURIComponent(user.college)}`)
       const data = await response.json()
       if (response.ok) {
-        setStudentsData(data)
+        // Format names and sort alphabetically by last name
+        const sortedData = data.map(student => ({
+          ...student,
+          fullName: `${student.lastName}, ${student.firstName}`
+        })).sort((a, b) => a.fullName.localeCompare(b.fullName))
+        setStudentsData(sortedData)
       }
     } catch (err) {
       console.error('Error fetching monitoring data:', err)
     } finally {
+      await minLoadingTime
       setIsLoading(false)
     }
   }
@@ -104,6 +112,7 @@ function AdminStudentRequirements() {
 
   // Filter by search query
   const filteredStudents = filteredByCourse.filter(student =>
+    student.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     `${student.firstName} ${student.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
     student.studentNumber.toLowerCase().includes(searchQuery.toLowerCase())
   )
@@ -126,8 +135,8 @@ function AdminStudentRequirements() {
     setCurrentPage(1)
   }
 
-  const handleRowClick = (studentId) => {
-    navigate(`/admin/students-requirements/${studentId}`)
+  const handleRowClick = (student) => {
+    navigate(`/admin/students-requirements/${student.studentId}`, { state: { student } })
   }
 
   return (
@@ -167,10 +176,46 @@ function AdminStudentRequirements() {
         </div>
       </div>
 
-      {/* Students Table */}
+      {/* Students Table or Skeleton */}
       {isLoading ? (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Full Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Number</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email Address</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Requirements</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {[...Array(6)].map((_, i) => (
+                  <tr key={i}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="ml-3 flex-1">
+                          <Skeleton variant="text" width={140} height={20} />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Skeleton variant="text" width={100} height={20} />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Skeleton variant="text" width={180} height={20} />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <div className="flex items-center justify-center">
+                        <Skeleton variant="text" width={40} height={20} className="mr-2" />
+                        <div className="h-5 w-5 rounded-full bg-gray-100"></div>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         <StudentRequirementsTable

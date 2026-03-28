@@ -361,8 +361,14 @@ router.get("/students-monitoring", async (req, res) => {
         return {
           requirementId: req._id,
           requirementTitle: req.title,
+          requirementDescription: req.description || "No description provided.",
           status: submission ? submission.status : "not-submitted",
-          submissionId: submission ? submission._id : null
+          submissionId: submission ? submission._id : null,
+          fileUrl: submission ? submission.fileUrl : null,
+          fileName: submission ? submission.fileName : null,
+          submittedAt: submission ? submission.submittedAt : null,
+          feedback: submission ? submission.feedback : null,
+          updatedAt: submission ? submission.updatedAt : null
         };
       });
 
