@@ -31,7 +31,7 @@ function StudentManagement() {
         setIsLoading(false)
         return
       }
-      
+
       try {
         setIsLoading(true)
         const fetchData = fetch(`http://localhost:3001/api/admin/students?college=${encodeURIComponent(authUser.college)}`)
@@ -41,18 +41,18 @@ function StudentManagement() {
           })
 
         const [data] = await Promise.all([fetchData, minLoadingTime])
-        
+
         // Map database fields to mock fields if needed
         const mappedData = data.map(student => ({
           ...student,
-          fullName: student.fullName || `${student.firstName} ${student.lastName}`,
+          fullName: `${student.lastName}, ${student.firstName}`,
           id: student.id || student._id,
           requirementsCompleted: student.requirementsCompleted,
           totalRequirements: student.totalRequirements,
           isDeployed: student.isDeployed || false,
           completedRequirements: student.completedRequirements || []
-        }))
-        
+        })).sort((a, b) => a.fullName.localeCompare(b.fullName))
+
         setAllStudents(mappedData)
       } catch (err) {
         console.error('Error fetching students:', err)
@@ -110,7 +110,7 @@ function StudentManagement() {
   }
 
   const resolvedCollegeName = getFullCollegeName(authUser?.college)
-  
+
   // Derive courses counts dynamically based on admin's college
   const currentCollegeCourses = coursesByCollege[resolvedCollegeName] || []
   const courses = [
@@ -133,6 +133,7 @@ function StudentManagement() {
   // Filter by search query
   const filteredStudents = filteredByCourse.filter(student =>
     student.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    `${student.firstName} ${student.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
     student.studentNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
     student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
     student.course.toLowerCase().includes(searchQuery.toLowerCase()) ||

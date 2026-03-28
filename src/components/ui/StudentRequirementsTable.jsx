@@ -24,7 +24,7 @@ function StudentRequirementsTable({ students, onRowClick }) {
               students.map((student) => (
                 <tr
                   key={student.studentId}
-                  onClick={() => onRowClick(student.studentId)}
+                  onClick={() => onRowClick(student)}
                   className="hover:bg-gray-50 cursor-pointer transition"
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -42,14 +42,13 @@ function StudentRequirementsTable({ students, onRowClick }) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center justify-center">
-                      <span className={`text-sm font-medium ${
-                        student.submissions.filter(s => s.status === 'verified').length === student.submissions.length && student.submissions.length > 0
-                          ? 'text-green-600'
-                          : 'text-gray-900'
-                      }`}>
+                      <span className={`text-sm font-medium ${student.submissions.length > 0 && student.submissions.filter(s => s.status === 'submitted' || s.status === 'verified').length === student.submissions.length
+                        ? 'text-green-600'
+                        : 'text-gray-900'
+                        }`}>
                         {student.submissions.filter(s => s.status === 'submitted' || s.status === 'verified').length}/{student.submissions.length}
                       </span>
-                      {student.submissions.length > 0 && student.submissions.filter(s => s.status === 'verified').length === student.submissions.length ? (
+                      {student.submissions.length > 0 && student.submissions.filter(s => s.status === 'submitted' || s.status === 'verified').length === student.submissions.length ? (
                         <svg className="w-5 h-5 text-green-500 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
