@@ -151,6 +151,100 @@ router.get("/my-submissions", async (req, res) => {
 });
 
 // -----------------------------------------------
+// DELETE /api/student/submissions
+// Deletes a specific submission (usually for re-uploading)
+// -----------------------------------------------
+router.delete("/submissions", async (req, res) => {
+  try {
+    const { studentId, requirementId } = req.query;
+
+    if (!studentId || !requirementId) {
+      return res.status(400).json({ error: "studentId and requirementId are required." });
+    }
+
+    const db = await connectDB();
+    const result = await db.collection("submissions").deleteOne({
+      studentId: new ObjectId(studentId),
+      requirementId: new ObjectId(requirementId)
+    });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: "Submission not found." });
+    }
+
+    res.json({ message: "Submission deleted successfully." });
+  } catch (err) {
+    console.error("Error deleting submission:", err);
+    res.status(500).json({ error: "Failed to delete submission." });
+  }
+});
+
+// -----------------------------------------------
+// POST /api/student/endorsement-request
+// Creates or updates an endorsement letter request
+// -----------------------------------------------
+router.post("/endorsement-request", async (req, res) => {
+  try {
+    const { studentId, companyName, companyAddress, supervisorFullName } = req.body;
+
+    if (!studentId || !companyName || !companyAddress || !supervisorFullName) {
+      return res.status(400).json({ error: "All fields are required." });
+    }
+
+    const db = await connectDB();
+    const request = {
+      studentId: new ObjectId(studentId),
+      companyName,
+      companyAddress,
+      supervisorFullName,
+      status: "in_process",
+      dateRequested: new Date(),
+      updatedAt: new Date()
+    };
+
+    // Upsert the request for this student
+    await db.collection("endorsement_requests").updateOne(
+      { studentId: new ObjectId(studentId) },
+      { $set: request },
+      { upsert: true }
+    );
+
+    res.status(201).json({ message: "Endorsement request submitted successfully." });
+  } catch (err) {
+    console.error("Error creating endorsement request:", err);
+    res.status(500).json({ error: "Failed to submit endorsement request." });
+  }
+});
+
+// -----------------------------------------------
+// GET /api/student/endorsement-status
+// Fetches the current endorsement request status for a student
+// -----------------------------------------------
+router.get("/endorsement-status", async (req, res) => {
+  try {
+    const { studentId } = req.query;
+
+    if (!studentId) {
+      return res.status(400).json({ error: "studentId is required." });
+    }
+
+    const db = await connectDB();
+    const request = await db.collection("endorsement_requests").findOne({
+      studentId: new ObjectId(studentId)
+    });
+
+    if (!request) {
+      return res.json({ status: "unavailable" });
+    }
+
+    res.json(request);
+  } catch (err) {
+    console.error("Error fetching endorsement status:", err);
+    res.status(500).json({ error: "Failed to fetch endorsement status." });
+  }
+});
+
+// -----------------------------------------------
 // GET /api/student/pending-requirements-count
 // Returns how many requirements the student needs to upload or fix
 // -----------------------------------------------

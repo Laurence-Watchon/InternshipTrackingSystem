@@ -3,9 +3,10 @@ import AppLayout from '../../components/custom/global/AppLayout'
 import EndorsementCard from '../../components/ui/EndorsementCard'
 import RequirementsChecklist from '../../components/ui/RequirementsChecklist'
 import EndorsementHelp from '../../components/custom/dialog/EndorsementHelp'
-import AlertDialog from '../../components/ui/AlertDialog'
 import Skeleton from '../../components/ui/Skeleton'
 import PendingApprovalDialog from '../../components/custom/dialog/PendingApprovalDialog'
+import Dialog from '../../components/ui/Dialog'
+import Toast from '../../components/ui/Toast'
 import { useAuth } from '../../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 
@@ -21,8 +22,17 @@ function UserEndorsement() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [helpOpen, setHelpOpen] = useState(false)
-  const [successOpen, setSuccessOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+
+  // Request Confirmation UI States
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [tempCompanyInfo, setTempCompanyInfo] = useState(null)
+
+  // Toast States
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  const [toastType, setToastType] = useState('success')
 
   // Replace with real API data
   const [endorsement, setEndorsement] = useState({
@@ -63,8 +73,12 @@ function UserEndorsement() {
       const subResponse = await fetch(`http://localhost:3001/api/student/my-submissions?studentId=${user._id || user.id}`)
       const submissionsData = await subResponse.json()
 
-      if (reqResponse.ok && subResponse.ok) {
-        // 3. Merge data: check status for each requirement
+      // 3. Fetch endorsement status
+      const endResponse = await fetch(`http://localhost:3001/api/student/endorsement-status?studentId=${user._id || user.id}`)
+      const endData = await endResponse.json()
+
+      if (reqResponse.ok && subResponse.ok && endResponse.ok) {
+        // 4. Merge data: check status for each requirement
         const mergedReqs = requirementsData.map(req => {
           const submission = submissionsData.find(sub => sub.requirementId === req._id)
           return {
@@ -73,9 +87,15 @@ function UserEndorsement() {
           }
         })
         setRequirements(mergedReqs)
-        
-        // TODO: In the future, fetch real endorsement status from an API
-        // For now, we still use the mock state for endorsement.status etc.
+
+        if (endData && endData.status !== 'unavailable') {
+          setEndorsement({
+            status: endData.status,
+            dateRequested: endData.dateRequested,
+            dateApproved: endData.dateApproved,
+            downloadUrl: endData.downloadUrl,
+          })
+        }
       }
     } catch (err) {
       console.error('Error fetching endorsement data:', err)
@@ -87,17 +107,61 @@ function UserEndorsement() {
 
   const allSubmitted = requirements.length > 0 && requirements.every(r => r.status === 'verified' || r.status === 'submitted')
 
-  // Called by EndorsementCard with company details — 1.5s simulated API delay
-  async function handleRequest(companyInfo) {
-    // TODO: replace with real API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    console.log('Endorsement request submitted:', companyInfo)
-    setEndorsement(prev => ({
-      ...prev,
-      status: 'in_process',
-      dateRequested: new Date().toISOString().split('T')[0],
-    }))
-    setSuccessOpen(true)
+  // Called by EndorsementCard when the user clicks 'Request'
+  function handleRequest(companyInfo) {
+    setTempCompanyInfo(companyInfo)
+    setIsConfirmOpen(true)
+  }
+
+  // Called after the user confirms in the Dialog
+  async function confirmRequest() {
+    setIsConfirmOpen(false)
+    setIsSubmitting(true)
+
+    // Ensure at least 1 second of loading state as requested
+    const minWait = new Promise(resolve => setTimeout(resolve, 1000))
+
+    try {
+      const response = await fetch('http://localhost:3001/api/student/endorsement-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          studentId: user._id || user.id,
+          companyName: tempCompanyInfo.companyName,
+          companyAddress: tempCompanyInfo.address,
+          supervisorFullName: tempCompanyInfo.supervisorName,
+        }),
+      })
+
+      // Wait for at least 1 second total
+      await minWait
+
+      if (response.ok) {
+        setEndorsement(prev => ({
+          ...prev,
+          status: 'in_process',
+          dateRequested: new Date().toISOString(),
+        }))
+        setToastMessage('Successfully requested endorsement letter')
+        setToastType('success')
+        setShowToast(true)
+        window.dispatchEvent(new Event('endorsementStatusUpdated'))
+      } else {
+        const errorData = await response.json()
+        setToastMessage(errorData.error || 'Failed to submit request.')
+        setToastType('error')
+        setShowToast(true)
+      }
+    } catch (err) {
+      console.error('Error submitting endorsement request:', err)
+      setToastMessage('An error occurred. Please try again.')
+      setToastType('error')
+      setShowToast(true)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   function handleDownload() {
@@ -146,6 +210,7 @@ function UserEndorsement() {
                 allSubmitted={allSubmitted}
                 onRequest={handleRequest}
                 onDownload={handleDownload}
+                isSubmitting={isSubmitting}
               />
             )}
           </div>
@@ -187,14 +252,25 @@ function UserEndorsement() {
           onClose={() => setHelpOpen(false)}
         />
 
-        {/* Success AlertDialog */}
-        <AlertDialog
-          isOpen={successOpen}
-          onClose={() => setSuccessOpen(false)}
-          type="success"
-          title="Request Submitted!"
-          description="Your endorsement letter request has been sent to the coordinator. Please wait 3–5 business days for processing. You will be notified once your letter is ready."
+        {/* Confirmation Dialog */}
+        <Dialog
+          isOpen={isConfirmOpen}
+          onClose={() => setIsConfirmOpen(false)}
+          onConfirm={confirmRequest}
+          title="Confirm Request"
+          message={`Are you sure you want to request your endorsement letter for ${tempCompanyInfo?.companyName}? Please ensure all details are correct.`}
+          confirmLabel="Yes, Request"
+          cancelLabel="No, Cancel"
         />
+
+        {/* Toast Notification */}
+        {showToast && (
+          <Toast
+            message={toastMessage}
+            type={toastType}
+            onClose={() => setShowToast(false)}
+          />
+        )}
       </AppLayout>
     </>
   )

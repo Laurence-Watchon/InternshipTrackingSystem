@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { FileText, Clock, CheckCircle, Building2, Send, Loader2, AlertCircle, Info, FileQuestion } from 'lucide-react'
 
 /**
  * EndorsementCard
@@ -16,6 +17,7 @@ export default function EndorsementCard({
   dateApproved = null,
   allSubmitted = false,
   onRequest,
+  isSubmitting = false,
 }) {
   const [form, setForm] = useState({ companyName: '', address: '', supervisorName: '' })
   const [errors, setErrors] = useState({})
@@ -41,9 +43,7 @@ export default function EndorsementCard({
   async function handleSubmit() {
     const e = validate()
     if (Object.keys(e).length > 0) { setErrors(e); return }
-    setLoading(true)
     await onRequest({ ...form })
-    setLoading(false)
   }
 
   // Show form when all requirements submitted but letter not yet requested
@@ -51,34 +51,19 @@ export default function EndorsementCard({
 
   const config = {
     unavailable: {
-      icon: (
-        <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      ),
+      icon: <FileQuestion className="w-16 h-16 text-gray-400" />,
       badge: 'bg-gray-100 text-gray-600',
       title: 'Not Available',
       description: 'You have not yet submitted all the required documents. Please submit all requirements before you can request your endorsement letter.',
     },
     in_process: {
-      icon: (
-        <svg className="w-16 h-16 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
+      icon: <Clock className="w-16 h-16 text-yellow-500" />,
       badge: 'bg-yellow-100 text-yellow-700',
       title: 'In Process',
       description: 'Your request has been received. The coordinator is currently reviewing and preparing your endorsement letter. This usually takes 3–5 business days.',
     },
     ready: {
-      icon: (
-        <svg className="w-16 h-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
+      icon: <CheckCircle className="w-16 h-16 text-green-500" />,
       badge: 'bg-green-100 text-green-700',
       title: 'Ready for Pickup',
     },
@@ -93,10 +78,7 @@ export default function EndorsementCard({
       <div className="text-center mb-6">
         <div className="flex justify-center mb-4">
           {showForm ? (
-            <svg className="w-16 h-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-            </svg>
+            <CheckCircle className="w-16 h-16 text-green-500" />
           ) : current.icon}
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -131,10 +113,7 @@ export default function EndorsementCard({
       {showForm && (
         <div className="border-t border-gray-100 pt-5 space-y-4">
           <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-            <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
+            <Building2 className="w-4 h-4 text-green-500" />
             Internship Company Details
           </h3>
 
@@ -189,24 +168,17 @@ export default function EndorsementCard({
           {/* Submit */}
           <button
             onClick={handleSubmit}
-            disabled={loading}
+            disabled={loading || isSubmitting}
             className="w-full py-3 rounded-lg font-semibold bg-green-500 text-white flex items-center justify-center gap-2 focus:outline-none disabled:opacity-70 disabled:cursor-not-allowed transition"
           >
-            {loading ? (
+            {isSubmitting ? (
               <>
-                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                Sending Request...
+                <Loader2 className="animate-spin h-4 w-4" />
+                Submitting...
               </>
             ) : (
               <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
+                <Send className="w-4 h-4" />
                 Request Endorsement Letter
               </>
             )}
@@ -218,11 +190,7 @@ export default function EndorsementCard({
       {status === 'in_process' && (
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-2 text-yellow-600">
-            <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-            </svg>
+            <Loader2 className="animate-spin h-5 w-5" />
             <span className="font-semibold">Processing your request...</span>
           </div>
           {dateRequested && (
@@ -237,10 +205,7 @@ export default function EndorsementCard({
           {/* Main Message Box */}
           <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6">
             <div className="flex items-start gap-3">
-              <svg className="w-6 h-6 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <CheckCircle className="w-6 h-6 text-green-600 mt-0.5 flex-shrink-0" />
               <div className="flex-1">
                 <h4 className="text-base font-bold text-green-900 mb-2">
                   Endorsement Letter Ready for Pickup
@@ -263,10 +228,7 @@ export default function EndorsementCard({
           {/* Important Reminder */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <div className="flex items-start gap-2">
-              <svg className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
+              <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
               <p className="text-xs text-yellow-800">
                 <span className="font-semibold">Note:</span> The physical document must be presented to your internship company. Digital copies are not accepted.
               </p>
@@ -278,10 +240,7 @@ export default function EndorsementCard({
       {/* ── Important Information ── */}
       <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <svg className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <Info className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
           <div>
             <h4 className="text-sm font-bold text-blue-900 mb-2">Important Information</h4>
             <ul className="text-sm text-blue-800 space-y-1.5">

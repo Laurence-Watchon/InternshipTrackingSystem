@@ -54,6 +54,7 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
   const [pendingCount, setPendingCount] = useState(0)
   const [requirementStats, setRequirementStats] = useState({ count: 0, total: 0 })
   const [hasMissingHours, setHasMissingHours] = useState(false)
+  const [endorsementStatus, setEndorsementStatus] = useState('unavailable')
 
   // Fetch strictly for Admin whenever route changes
   useEffect(() => {
@@ -78,7 +79,7 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
             const resolvedCollegeName = getFullCollegeName(user.college)
             const collegeCourses = coursesByCollege[resolvedCollegeName] || []
             const requiredHours = data.requiredHours || {}
-            
+
             const missing = collegeCourses.some(c => !requiredHours[c.value] || parseInt(requiredHours[c.value]) <= 0)
             setHasMissingHours(missing)
           }
@@ -111,10 +112,28 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
           console.error("Failed to fetch user pending count", err)
         }
       }
+
+      const fetchEndorsementStatus = async () => {
+        try {
+          const res = await fetch(`http://localhost:3001/api/student/endorsement-status?studentId=${user.id}`)
+          if (res.ok) {
+            const data = await res.json()
+            setEndorsementStatus(data.status || 'unavailable')
+          }
+        } catch (err) {
+          console.error("Failed to fetch endorsement status", err)
+        }
+      }
+
       fetchUserPendingCount()
+      fetchEndorsementStatus()
 
       window.addEventListener('userRequirementsUpdated', fetchUserPendingCount)
-      return () => window.removeEventListener('userRequirementsUpdated', fetchUserPendingCount)
+      window.addEventListener('endorsementStatusUpdated', fetchEndorsementStatus)
+      return () => {
+        window.removeEventListener('userRequirementsUpdated', fetchUserPendingCount)
+        window.removeEventListener('endorsementStatusUpdated', fetchEndorsementStatus)
+      }
     }
   }, [role, location.pathname, user])
 
@@ -312,7 +331,11 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
                   )}
 
                   {/* Endorsement Letter Notification Dot */}
-                  {role === 'user' && item.title === 'Endorsement Letter' && requirementStats.count === 0 && requirementStats.total > 0 && (
+                  {role === 'user' && 
+                   item.title === 'Endorsement Letter' && 
+                   requirementStats.count === 0 && 
+                   requirementStats.total > 0 && 
+                   endorsementStatus === 'unavailable' && (
                     <div className="ml-auto flex items-center pr-0.5">
                       <span className="flex items-center justify-center h-5 w-5 bg-red-500 text-white rounded-full shadow-sm text-[12px] font-bold">
                         !
