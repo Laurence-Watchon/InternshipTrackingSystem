@@ -76,10 +76,10 @@ function StatusBadge({ status }) {
  *   3. User clicks Submit → Dialog confirms
  *   4. Confirmed → marked as submitted
  */
-export default function ClickableCard({ req, state, isOpen, onToggle, onChange }) {
+export default function ClickableCard({ req, state, isOpen, onToggle, onChange, onDelete }) {
   const containerRef = useRef(null)
   const fileRef = useRef()
-  const { status, fileName, linkValue, fileUrl } = state
+  const { status, fileName, linkValue, fileUrl, rejectionReason } = state
   const styles = statusStyles(status)
 
   // Scroll to top when opened
@@ -398,13 +398,27 @@ export default function ClickableCard({ req, state, isOpen, onToggle, onChange }
 
             {/* Rejection note */}
             {status === 'rejected' && !uploading && (
-              <p className="mt-3 text-xs text-red-500 flex items-center justify-center gap-1">
-                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Your submission was rejected. Please re-upload the correct file.
-              </p>
+              <div className="mt-4 flex flex-col gap-3 items-center mx-auto" style={{ maxWidth: '340px' }}>
+                <div className="bg-red-50 border border-red-100 rounded-xl p-3 w-full">
+                  <p className="text-xs text-red-600 font-bold flex items-center gap-1.5 mb-1.5 uppercase tracking-wider">
+                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5}
+                        d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Rejection Reason
+                  </p>
+                  <p className="text-xs text-red-500 leading-relaxed font-medium">
+                    {rejectionReason || "No specific reason provided. Please re-upload the correct file."}
+                  </p>
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                  className="w-full py-2.5 text-sm font-bold text-red-600 bg-white hover:bg-red-50 border-2 border-red-200 hover:border-red-300 rounded-xl focus:outline-none transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95"
+                >
+                  <X className="w-4 h-4 stroke-[3]" />
+                  Delete Rejected File
+                </button>
+              </div>
             )}
           </div>
         </div>

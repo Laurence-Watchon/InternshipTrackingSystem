@@ -56,7 +56,8 @@ function UserRequirements() {
             status: sub ? sub.status : 'pending',
             fileName: sub ? sub.fileName : '',
             fileUrl: sub ? sub.fileUrl : '',
-            linkValue: (r.acceptedFileTypes.includes('url') && sub) ? sub.fileUrl : ''
+            linkValue: (r.acceptedFileTypes.includes('url') && sub) ? sub.fileUrl : '',
+            rejectionReason: sub ? sub.feedback : ''
           }
         })
         setStates(newStates)
@@ -117,6 +118,33 @@ function UserRequirements() {
       }
     } else {
       setStates(prev => ({ ...prev, [id]: newState }))
+    }
+  }
+
+  const handleDeleteSubmission = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/student/submissions?studentId=${user.id}&requirementId=${id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        setToastMessage('Submission deleted successfully!')
+        setToastType('success')
+        setShowToast(true)
+        fetchData()
+        // Notify sidebar to refresh count
+        window.dispatchEvent(new Event('userRequirementsUpdated'))
+      } else {
+        const errorData = await response.json()
+        setToastMessage(errorData.error || 'Failed to delete submission')
+        setToastType('error')
+        setShowToast(true)
+      }
+    } catch (err) {
+      console.error('Error deleting submission:', err)
+      setToastMessage('An error occurred while deleting.')
+      setToastType('error')
+      setShowToast(true)
     }
   }
 
@@ -262,10 +290,11 @@ function UserRequirements() {
                   acceptedTypes: req.acceptedFileTypes,
                   inputType: req.acceptedFileTypes.includes('url') ? 'link' : 'file'
                 }}
-                state={states[req._id] || { status: 'pending', fileName: '', fileUrl: '', linkValue: '' }}
+                state={states[req._id] || { status: 'pending', fileName: '', fileUrl: '', linkValue: '', rejectionReason: '' }}
                 isOpen={openId === req._id}
                 onToggle={() => handleToggle(req._id)}
                 onChange={(newState) => handleStatusChange(req._id, newState)}
+                onDelete={() => handleDeleteSubmission(req._id)}
               />
             ))
           )}

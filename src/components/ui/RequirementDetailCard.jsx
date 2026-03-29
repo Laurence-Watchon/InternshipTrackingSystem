@@ -145,7 +145,7 @@ function RequirementDetailCard({ requirement, index, onFileClick, onVerify, onRe
                             setFeedback('')
                             setShowRejectInput(true)
                           }}
-                          className="px-6 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition shadow-sm hover:shadow-md"
+                          className="px-6 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 focus:outline-none transition shadow-sm hover:shadow-md"
                         >
                           Reject Submission
                         </button>
@@ -163,7 +163,7 @@ function RequirementDetailCard({ requirement, index, onFileClick, onVerify, onRe
                           <button
                             onClick={() => setIsConfirmOpen(true)}
                             disabled={!feedback.trim() || isRejecting}
-                            className="flex-1 py-2.5 bg-red-600 text-white text-sm font-bold rounded-lg hover:bg-red-700 transition disabled:opacity-50 flex items-center justify-center space-x-2"
+                            className="flex-1 py-2.5 bg-red-600 text-white text-sm font-bold rounded-lg hover:bg-red-700 focus:outline-none transition disabled:opacity-50 flex items-center justify-center space-x-2"
                           >
                             {isRejecting ? (
                               <>
@@ -176,7 +176,7 @@ function RequirementDetailCard({ requirement, index, onFileClick, onVerify, onRe
                           </button>
                           <button
                             onClick={() => setShowRejectInput(false)}
-                            className="px-6 py-2.5 bg-white text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-50 transition border border-gray-200"
+                            className="px-6 py-2.5 bg-white text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-50 focus:outline-none transition border border-gray-200"
                           >
                             Cancel
                           </button>
