@@ -440,4 +440,125 @@ router.put("/college-settings", async (req, res) => {
   }
 });
 
+// -----------------------------------------------
+// GET /api/admin/endorsements
+// Fetches all endorsement requests for a specific college
+// -----------------------------------------------
+router.get("/endorsements", async (req, res) => {
+  try {
+    const { college } = req.query;
+    if (!college) return res.status(400).json({ error: "College is required." });
+
+    const db = await connectDB();
+
+    // Aggregation to join endorsement_requests with users
+    const requests = await db.collection("endorsement_requests").aggregate([
+      {
+        // Ensure studentId is an ObjectId for lookup
+        $addFields: {
+          studentIdObj: {
+            $cond: {
+              if: { $eq: [{ $type: "$studentId" }, "string"] },
+              then: { $toObjectId: "$studentId" },
+              else: "$studentId"
+            }
+          }
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "studentIdObj",
+          foreignField: "_id",
+          as: "studentInfo"
+        }
+      },
+      { $unwind: "$studentInfo" },
+      {
+        $match: {
+          $or: [
+            { "studentInfo.college": college },
+            { "studentInfo.college": { $regex: new RegExp(`^${college}$`, "i") } } // Case insensitive
+          ]
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          studentId: 1,
+          fullName: { $concat: ["$studentInfo.firstName", " ", "$studentInfo.lastName"] },
+          studentNumber: "$studentInfo.studentNumber",
+          course: "$studentInfo.course",
+          companyName: 1,
+          companyAddress: 1,
+          supervisor: "$supervisorFullName",
+          status: 1,
+          dateRequested: 1,
+          updatedAt: 1
+        }
+      }
+    ]).toArray();
+
+    // Map DB status to frontend status if needed
+    // DB uses 'in_process', Frontend uses 'pending'
+    const mappedRequests = requests.map(req => ({
+      ...req,
+      id: req._id,
+      status: req.status === 'in_process' ? 'pending' : req.status
+    }));
+
+    res.json(mappedRequests);
+  } catch (err) {
+    console.error("Error fetching endorsement requests:", err);
+    res.status(500).json({ error: "Failed to fetch endorsement requests." });
+  }
+});
+
+// -----------------------------------------------
+// PATCH /api/admin/endorsements/:id
+// Updates an endorsement request status
+// -----------------------------------------------
+router.patch("/endorsements/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, rejectionReason } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ error: "Status is required." });
+    }
+
+    const db = await connectDB();
+    
+    // Map frontend 'pending' back to 'in_process' if updating to that (unlikely from admin but good for consistency)
+    const dbStatus = status === 'pending' ? 'in_process' : status;
+    
+    const updateData = { 
+      status: dbStatus, 
+      updatedAt: new Date() 
+    };
+
+    if (status === 'ready') {
+      updateData.dateApproved = new Date();
+    }
+
+    if (status === 'rejected' && rejectionReason) {
+      updateData.rejectionReason = rejectionReason;
+    }
+
+    const result = await db.collection("endorsement_requests").updateOne(
+      { _id: new ObjectId(id) },
+      { $set: updateData }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "Endorsement request not found." });
+    }
+
+    res.json({ message: "Endorsement request updated successfully." });
+  } catch (err) {
+    console.error("Error updating endorsement request:", err);
+    res.status(500).json({ error: "Failed to update endorsement request." });
+  }
+});
+
 export default router;
