@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import AdminHomeCourses from '../../components/ui/AdminHomeCourses'
 import AdminEndorsementTable from '../../components/ui/AdminEndorsementTable'
 import Pagination from '../../components/ui/Pagination'
-import AlertDialog from '../../components/ui/AlertDialog'
 import Dialog from '../../components/ui/Dialog'
+import Toast from '../../components/ui/Toast'
 import RejectEndorsementModal from '../../components/custom/dialog/RejectEndorsementModal'
 import { useAuth } from '../../context/AuthContext'
 
@@ -14,11 +14,16 @@ function AdminEndorsements() {
   const [currentPage, setCurrentPage] = useState(1)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [showRejectDialog, setShowRejectDialog] = useState(false)
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
-  const [showRejectedDialog, setShowRejectedDialog] = useState(false)
   const [showCompleteDialog, setShowCompleteDialog] = useState(false)
-  const [showCompletedDialog, setShowCompletedDialog] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState(null)
+  const [endorsementRequests, setEndorsementRequests] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isApproving, setIsApproving] = useState(false)
+  
+  // Toast State
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  const [toastType, setToastType] = useState('success')
 
   const itemsPerPage = 10
 
@@ -66,146 +71,44 @@ function AdminEndorsements() {
     return upper
   }
 
+
   const resolvedCollegeName = getFullCollegeName(user?.college)
+
+  const fetchEndorsements = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`http://localhost:3001/api/admin/endorsements?college=${encodeURIComponent(user?.college || 'CCS')}`)
+      if (response.ok) {
+        const data = await response.json()
+        setEndorsementRequests(data)
+      }
+    } catch (err) {
+      console.error('Error fetching endorsements:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (user?.college) {
+      fetchEndorsements()
+    }
+  }, [user])
 
   // Mock data for courses
   const courses = [
-    { id: 'all', name: 'All', count: 25 },
+    { id: 'all', name: 'All', count: endorsementRequests.length },
     ...(coursesByCollege[resolvedCollegeName] || []).map(c => ({
       id: c.value.toLowerCase(),
       name: c.value,
-      count: 0 // In real app, this would be dynamic
+      count: endorsementRequests.filter(req => req.course === c.value).length
     }))
-  ]
-
-  // Mock data - students requesting endorsement
-  const allStudents = [
-    {
-      id: 1,
-      fullName: 'Juan Dela Cruz',
-      studentNumber: '221-1234',
-      course: 'BSIT-SD',
-      companyName: 'Tech Solutions Inc.',
-      companyAddress: 'Makati City, Metro Manila',
-      supervisor: 'John Smith',
-      status: 'ready'
-    },
-    {
-      id: 2,
-      fullName: 'Maria Santos',
-      studentNumber: '221-2345',
-      course: 'BSCS-DS',
-      companyName: 'Data Analytics Corp.',
-      companyAddress: 'BGC, Taguig City',
-      supervisor: 'Jane Doe',
-      status: 'pending'
-    },
-    {
-      id: 3,
-      fullName: 'Anna Garcia',
-      studentNumber: '221-4567',
-      course: 'BSIT-SD',
-      companyName: 'Software Innovations',
-      companyAddress: 'Alabang, Muntinlupa City',
-      supervisor: 'Emily Brown',
-      status: 'completed'
-    },
-    {
-      id: 4,
-      fullName: 'Sofia Rodriguez',
-      studentNumber: '221-6789',
-      course: 'BSIT-BA',
-      companyName: 'Cloud Computing Inc.',
-      companyAddress: 'Mandaluyong City',
-      supervisor: 'Sarah Wilson',
-      status: 'ready'
-    },
-    {
-      id: 5,
-      fullName: 'Miguel Torres',
-      studentNumber: '221-7890',
-      course: 'BSCS-DS',
-      companyName: 'Machine Learning Studio',
-      companyAddress: 'Quezon City',
-      supervisor: 'David Martinez',
-      status: 'pending'
-    },
-    {
-      id: 6,
-      fullName: 'Isabella Cruz',
-      studentNumber: '221-8901',
-      course: 'BSIT-BA',
-      companyName: 'Digital Marketing Hub',
-      companyAddress: 'Pasig City',
-      supervisor: 'Robert Lee',
-      status: 'completed'
-    },
-    {
-      id: 7,
-      fullName: 'Gabriel Ramos',
-      studentNumber: '221-9012',
-      course: 'BSIT-SD',
-      companyName: 'Web Development Co.',
-      companyAddress: 'Taguig City',
-      supervisor: 'Linda Chen',
-      status: 'ready'
-    },
-    {
-      id: 8,
-      fullName: 'Sophia Hernandez',
-      studentNumber: '221-0123',
-      course: 'BSCS-DS',
-      companyName: 'AI Research Institute',
-      companyAddress: 'BGC, Taguig City',
-      supervisor: 'Thomas Anderson',
-      status: 'pending'
-    },
-    {
-      id: 9,
-      fullName: 'Lucas Fernandez',
-      studentNumber: '221-1235',
-      course: 'BSIT-BA',
-      companyName: 'Business Analytics Ltd.',
-      companyAddress: 'Makati City',
-      supervisor: 'Patricia Moore',
-      status: 'completed'
-    },
-    {
-      id: 10,
-      fullName: 'Emma Gonzales',
-      studentNumber: '221-2346',
-      course: 'BSIT-SD',
-      companyName: 'Software Engineering Corp.',
-      companyAddress: 'Ortigas Center',
-      supervisor: 'Mark Johnson',
-      status: 'ready'
-    },
-    {
-      id: 11,
-      fullName: 'Daniel Rivera',
-      studentNumber: '221-3457',
-      course: 'BSCS-DS',
-      companyName: 'Data Science Solutions',
-      companyAddress: 'Quezon City',
-      supervisor: 'Jessica Taylor',
-      status: 'pending'
-    },
-    {
-      id: 12,
-      fullName: 'Olivia Pascual',
-      studentNumber: '221-4568',
-      course: 'BSIT-BA',
-      companyName: 'Business Intelligence Inc.',
-      companyAddress: 'Mandaluyong City',
-      supervisor: 'Christopher White',
-      status: 'completed'
-    }
   ]
 
   // Filter by course
   const filteredByCourse = activeTab === 'all'
-    ? allStudents
-    : allStudents.filter(student => {
+    ? endorsementRequests
+    : endorsementRequests.filter(student => {
         return student.course.toLowerCase() === activeTab.toLowerCase()
       })
 
@@ -232,11 +135,31 @@ function AdminEndorsements() {
     setShowConfirmDialog(true)
   }
 
-  const handleConfirmEndorsement = () => {
-    // TODO: API call to approve endorsement
-    console.log('Endorsement approved for:', selectedStudent)
-    setShowConfirmDialog(false)
-    setShowSuccessDialog(true)
+  const handleConfirmEndorsement = async () => {
+    setIsApproving(true)
+    const minWait = new Promise(resolve => setTimeout(resolve, 1000))
+    
+    try {
+      const response = await fetch(`http://localhost:3001/api/admin/endorsements/${selectedStudent.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'ready' })
+      })
+      
+      await minWait
+      
+      if (response.ok) {
+        setShowConfirmDialog(false)
+        setToastMessage('Endorsement letter successfully generated and sent to the student.')
+        setToastType('success')
+        setShowToast(true)
+        fetchEndorsements()
+      }
+    } catch (err) {
+      console.error('Error approving endorsement:', err)
+    } finally {
+      setIsApproving(false)
+    }
   }
 
   const handleRejectClick = (student) => {
@@ -244,10 +167,23 @@ function AdminEndorsements() {
     setShowRejectDialog(true)
   }
 
-  const handleConfirmReject = (reason) => {
-    // TODO: API call to reject endorsement with reason
-    console.log('Endorsement rejected for:', selectedStudent, 'Reason:', reason)
-    setShowRejectedDialog(true)
+  const handleConfirmReject = async (reason) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/admin/endorsements/${selectedStudent.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'rejected', rejectionReason: reason })
+      })
+      if (response.ok) {
+        setShowRejectDialog(false)
+        setToastMessage('The endorsement request has been rejected.')
+        setToastType('error')
+        setShowToast(true)
+        fetchEndorsements()
+      }
+    } catch (err) {
+      console.error('Error rejecting endorsement:', err)
+    }
   }
 
   const handleCompleteClick = (student) => {
@@ -255,11 +191,23 @@ function AdminEndorsements() {
     setShowCompleteDialog(true)
   }
 
-  const handleConfirmComplete = () => {
-    // TODO: API call to mark as completed
-    console.log('Endorsement completed for:', selectedStudent)
-    setShowCompleteDialog(false)
-    setShowCompletedDialog(true)
+  const handleConfirmComplete = async () => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/admin/endorsements/${selectedStudent.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'completed' })
+      })
+      if (response.ok) {
+        setShowCompleteDialog(false)
+        setToastMessage('The endorsement has been marked as completed successfully.')
+        setToastType('success')
+        setShowToast(true)
+        fetchEndorsements()
+      }
+    } catch (err) {
+      console.error('Error completing endorsement:', err)
+    }
   }
 
   return (
@@ -313,9 +261,11 @@ function AdminEndorsements() {
         onClose={() => setShowConfirmDialog(false)}
         onConfirm={handleConfirmEndorsement}
         title="Confirm Endorsement"
-        description={`Are you sure the endorsement letter information for ${selectedStudent?.fullName} is correct?`}
-        confirmText="Confirm"
-        cancelText="Cancel"
+        message={`Are you sure the endorsement letter information for ${selectedStudent?.fullName} is correct?`}
+        confirmLabel="Yes"
+        cancelLabel="No"
+        isLoading={isApproving}
+        loadingLabel="Processing..."
       />
 
       {/* Reject Endorsement Dialog */}
@@ -326,43 +276,25 @@ function AdminEndorsements() {
         studentName={selectedStudent?.fullName}
       />
 
-      {/* Success Dialog */}
-      <AlertDialog
-        isOpen={showSuccessDialog}
-        onClose={() => setShowSuccessDialog(false)}
-        type="success"
-        title="Endorsement Complete"
-        description="The endorsement letter has been successfully generated and sent to the student."
-      />
-
-      {/* Rejected Dialog */}
-      <AlertDialog
-        isOpen={showRejectedDialog}
-        onClose={() => setShowRejectedDialog(false)}
-        type="error"
-        title="Endorsement Rejected"
-        description="The endorsement request has been rejected. The student will be notified with the reason."
-      />
-
       {/* Complete Confirmation Dialog */}
       <Dialog
         isOpen={showCompleteDialog}
         onClose={() => setShowCompleteDialog(false)}
         onConfirm={handleConfirmComplete}
         title="Confirm Completion"
-        description={`Are you sure ${selectedStudent?.fullName} has picked up the endorsement letter from the faculty?`}
-        confirmText="Confirm"
-        cancelText="Cancel"
+        message={`Are you sure ${selectedStudent?.fullName} has picked up the endorsement letter from the faculty?`}
+        confirmLabel="Confirm"
+        cancelLabel="Cancel"
       />
 
-      {/* Completed Success Dialog */}
-      <AlertDialog
-        isOpen={showCompletedDialog}
-        onClose={() => setShowCompletedDialog(false)}
-        type="success"
-        title="Endorsement Completed"
-        description="The endorsement has been marked as completed successfully."
-      />
+      {/* Toast Notification */}
+      {showToast && (
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          onClose={() => setShowToast(false)}
+        />
+      )}
     </AppLayout>
   )
 }
