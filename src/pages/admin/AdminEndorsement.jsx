@@ -19,6 +19,8 @@ function AdminEndorsements() {
   const [endorsementRequests, setEndorsementRequests] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [isApproving, setIsApproving] = useState(false)
+  const [isRejecting, setIsRejecting] = useState(false)
+  const [isCompleting, setIsCompleting] = useState(false)
   
   // Toast State
   const [showToast, setShowToast] = useState(false)
@@ -112,10 +114,12 @@ function AdminEndorsements() {
         return student.course.toLowerCase() === activeTab.toLowerCase()
       })
 
-  // Sort by status: ready first, then pending, then completed
+  // Sort by status: ready first, then pending, then rejected, then completed
   const sortedStudents = [...filteredByCourse].sort((a, b) => {
-    const statusOrder = { ready: 1, pending: 2, completed: 3 }
-    return statusOrder[a.status] - statusOrder[b.status]
+    const statusOrder = { ready: 1, pending: 2, rejected: 3, completed: 4 }
+    const orderA = statusOrder[a.status] || 99
+    const orderB = statusOrder[b.status] || 99
+    return orderA - orderB
   })
 
   // Pagination
@@ -168,12 +172,18 @@ function AdminEndorsements() {
   }
 
   const handleConfirmReject = async (reason) => {
+    setIsRejecting(true)
+    const minWait = new Promise(resolve => setTimeout(resolve, 1000))
+
     try {
       const response = await fetch(`http://localhost:3001/api/admin/endorsements/${selectedStudent.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'rejected', rejectionReason: reason })
       })
+
+      await minWait
+
       if (response.ok) {
         setShowRejectDialog(false)
         setToastMessage('The endorsement request has been rejected.')
@@ -183,6 +193,8 @@ function AdminEndorsements() {
       }
     } catch (err) {
       console.error('Error rejecting endorsement:', err)
+    } finally {
+      setIsRejecting(false)
     }
   }
 
@@ -192,12 +204,18 @@ function AdminEndorsements() {
   }
 
   const handleConfirmComplete = async () => {
+    setIsCompleting(true)
+    const minWait = new Promise(resolve => setTimeout(resolve, 1000))
+
     try {
       const response = await fetch(`http://localhost:3001/api/admin/endorsements/${selectedStudent.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'completed' })
       })
+
+      await minWait
+
       if (response.ok) {
         setShowCompleteDialog(false)
         setToastMessage('The endorsement has been marked as completed successfully.')
@@ -207,6 +225,8 @@ function AdminEndorsements() {
       }
     } catch (err) {
       console.error('Error completing endorsement:', err)
+    } finally {
+      setIsCompleting(false)
     }
   }
 
@@ -274,6 +294,7 @@ function AdminEndorsements() {
         onClose={() => setShowRejectDialog(false)}
         onConfirm={handleConfirmReject}
         studentName={selectedStudent?.fullName}
+        isLoading={isRejecting}
       />
 
       {/* Complete Confirmation Dialog */}
@@ -285,6 +306,8 @@ function AdminEndorsements() {
         message={`Are you sure ${selectedStudent?.fullName} has picked up the endorsement letter from the faculty?`}
         confirmLabel="Confirm"
         cancelLabel="Cancel"
+        isLoading={isCompleting}
+        loadingLabel="Completing..."
       />
 
       {/* Toast Notification */}

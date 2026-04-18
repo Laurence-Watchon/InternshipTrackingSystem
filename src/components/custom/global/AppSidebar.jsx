@@ -55,6 +55,7 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
   const [requirementStats, setRequirementStats] = useState({ count: 0, total: 0 })
   const [hasMissingHours, setHasMissingHours] = useState(false)
   const [endorsementStatus, setEndorsementStatus] = useState('unavailable')
+  const [scannedFileUrl, setScannedFileUrl] = useState(null)
 
   // Fetch strictly for Admin whenever route changes
   useEffect(() => {
@@ -119,6 +120,7 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
           if (res.ok) {
             const data = await res.json()
             setEndorsementStatus(data.status || 'unavailable')
+            setScannedFileUrl(data.scannedFileUrl || null)
           }
         } catch (err) {
           console.error("Failed to fetch endorsement status", err)
@@ -128,11 +130,27 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
       fetchUserPendingCount()
       fetchEndorsementStatus()
 
+      // Auto-poll for status updates every 5 seconds
+      const pollInterval = setInterval(() => {
+        fetchUserPendingCount()
+        fetchEndorsementStatus()
+      }, 5000)
+
       window.addEventListener('userRequirementsUpdated', fetchUserPendingCount)
       window.addEventListener('endorsementStatusUpdated', fetchEndorsementStatus)
+
+      // BroadcastChannel for cross-tab synchronization
+      const bc = new BroadcastChannel('endorsement_updates')
+      bc.onmessage = () => {
+        fetchUserPendingCount()
+        fetchEndorsementStatus()
+      }
+
       return () => {
+        clearInterval(pollInterval)
         window.removeEventListener('userRequirementsUpdated', fetchUserPendingCount)
         window.removeEventListener('endorsementStatusUpdated', fetchEndorsementStatus)
+        bc.close()
       }
     }
   }, [role, location.pathname, user])
@@ -332,10 +350,12 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
 
                   {/* Endorsement Letter Notification Dot */}
                   {role === 'user' && 
-                   item.title === 'Endorsement Letter' && 
-                   requirementStats.count === 0 && 
-                   requirementStats.total > 0 && 
-                   endorsementStatus === 'unavailable' && (
+                   item.title === 'Endorsement Letter' && (
+                    (requirementStats.count === 0 && requirementStats.total > 0 && endorsementStatus === 'unavailable') ||
+                    (endorsementStatus === 'rejected') ||
+                    (endorsementStatus === 'ready') ||
+                    (endorsementStatus === 'completed' && !scannedFileUrl)
+                   ) && (
                     <div className="ml-auto flex items-center pr-0.5">
                       <span className="flex items-center justify-center h-5 w-5 bg-red-500 text-white rounded-full shadow-sm text-[12px] font-bold">
                         !

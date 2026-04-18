@@ -305,4 +305,39 @@ router.get("/college-settings", async (req, res) => {
   }
 });
 
+// -----------------------------------------------
+// PATCH /api/student/endorsement-scanned
+// Updates the endorsement request with scanned file info
+// -----------------------------------------------
+router.patch("/endorsement-scanned", async (req, res) => {
+  try {
+    const { studentId, fileName, fileUrl } = req.body;
+
+    if (!studentId || !fileName || !fileUrl) {
+      return res.status(400).json({ error: "studentId, fileName, and fileUrl are required." });
+    }
+
+    const db = await connectDB();
+    const result = await db.collection("endorsement_requests").updateOne(
+      { studentId: new ObjectId(studentId) },
+      { 
+        $set: { 
+          scannedFileName: fileName, 
+          scannedFileUrl: fileUrl,
+          updatedAt: new Date()
+        } 
+      }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "Endorsement request not found." });
+    }
+
+    res.json({ message: "Scanned endorsement letter uploaded successfully." });
+  } catch (err) {
+    console.error("Error updating scanned endorsement:", err);
+    res.status(500).json({ error: "Failed to update scanned endorsement." });
+  }
+});
+
 export default router;
