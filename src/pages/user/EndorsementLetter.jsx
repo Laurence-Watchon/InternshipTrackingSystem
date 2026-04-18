@@ -36,10 +36,13 @@ function UserEndorsement() {
 
   // Replace with real API data
   const [endorsement, setEndorsement] = useState({
-    status: 'unavailable',   // 'unavailable' | 'in_process' | 'ready'
+    status: 'unavailable',   // 'unavailable' | 'in_process' | 'ready' | 'rejected'
     dateRequested: null,
     dateApproved: null,
     downloadUrl: null,
+    rejectionReason: null,
+    scannedFileName: null,
+    scannedFileUrl: null,
   })
 
   // Mock requirements status - in a real app, you'd fetch this from the API
@@ -58,12 +61,24 @@ function UserEndorsement() {
   useEffect(() => {
     if (user?.college && (user?._id || user?.id)) {
       fetchData()
+      
+      // Auto-poll for status updates every 5 seconds
+      const pollInterval = setInterval(() => fetchData(true), 5000)
+
+      // BroadcastChannel for cross-tab synchronization
+      const bc = new BroadcastChannel('endorsement_updates')
+      bc.onmessage = () => fetchData(true)
+
+      return () => {
+        clearInterval(pollInterval)
+        bc.close()
+      }
     }
   }, [user])
 
-  const fetchData = async () => {
-    setIsLoading(true)
-    const minLoadingTime = new Promise(resolve => setTimeout(resolve, 800))
+  const fetchData = async (isSilent = false) => {
+    if (!isSilent) setIsLoading(true)
+    const minLoadingTime = isSilent ? Promise.resolve() : new Promise(resolve => setTimeout(resolve, 800))
     try {
       // 1. Fetch all requirements for the student's college and course
       const reqResponse = await fetch(`http://localhost:3001/api/student/requirements?college=${encodeURIComponent(user.college)}${user.course ? `&course=${encodeURIComponent(user.course)}` : ''}`)
@@ -94,6 +109,9 @@ function UserEndorsement() {
             dateRequested: endData.dateRequested,
             dateApproved: endData.dateApproved,
             downloadUrl: endData.downloadUrl,
+            rejectionReason: endData.rejectionReason,
+            scannedFileName: endData.scannedFileName,
+            scannedFileUrl: endData.scannedFileUrl,
           })
         }
       }
@@ -143,11 +161,13 @@ function UserEndorsement() {
           ...prev,
           status: 'in_process',
           dateRequested: new Date().toISOString(),
+          rejectionReason: null, // Clear rejection reason on new request
         }))
         setToastMessage('Successfully requested endorsement letter')
         setToastType('success')
         setShowToast(true)
         window.dispatchEvent(new Event('endorsementStatusUpdated'))
+        new BroadcastChannel('endorsement_updates').postMessage('refresh')
       } else {
         const errorData = await response.json()
         setToastMessage(errorData.error || 'Failed to submit request.')
@@ -157,6 +177,45 @@ function UserEndorsement() {
     } catch (err) {
       console.error('Error submitting endorsement request:', err)
       setToastMessage('An error occurred. Please try again.')
+      setToastType('error')
+      setShowToast(true)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleUploadScanned = async (fileData) => {
+    setIsSubmitting(true)
+    const minWait = new Promise(resolve => setTimeout(resolve, 1000))
+
+    try {
+      const response = await fetch('http://localhost:3001/api/student/endorsement-scanned', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: user._id || user.id,
+          fileName: fileData.name,
+          fileUrl: fileData.url
+        })
+      })
+
+      await minWait
+
+      if (response.ok) {
+        setToastMessage('Scanned endorsement letter uploaded successfully!')
+        setToastType('success')
+        setShowToast(true)
+        fetchData(true)
+        new BroadcastChannel('endorsement_updates').postMessage('refresh')
+      } else {
+        const errorData = await response.json()
+        setToastMessage(errorData.error || 'Failed to upload scanned copy')
+        setToastType('error')
+        setShowToast(true)
+      }
+    } catch (err) {
+      console.error('Error uploading scanned letter:', err)
+      setToastMessage('An error occurred during upload.')
       setToastType('error')
       setShowToast(true)
     } finally {
@@ -207,6 +266,10 @@ function UserEndorsement() {
                 dateRequested={endorsement.dateRequested}
                 dateApproved={endorsement.dateApproved}
                 downloadUrl={endorsement.downloadUrl}
+                rejectionReason={endorsement.rejectionReason}
+                scannedFileName={endorsement.scannedFileName}
+                scannedFileUrl={endorsement.scannedFileUrl}
+                onUploadScanned={handleUploadScanned}
                 allSubmitted={allSubmitted}
                 onRequest={handleRequest}
                 onDownload={handleDownload}

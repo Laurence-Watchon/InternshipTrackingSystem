@@ -19,7 +19,7 @@ const REASONS = [
   { value: 'other',                     label: 'Other reason'                      },
 ]
 
-function RejectEndorsementModalContent({ onClose, onConfirm, studentName }) {
+function RejectEndorsementModalContent({ onClose, onConfirm, studentName, isLoading = false, loadingLabel = 'Rejecting...' }) {
   const [selected, setSelected]   = useState('')
   const [otherText, setOtherText] = useState('')
   const [error, setError]         = useState('')
@@ -31,6 +31,7 @@ function RejectEndorsementModalContent({ onClose, onConfirm, studentName }) {
   }, [onClose])
 
   function handleConfirm() {
+    if (isLoading) return
     if (!selected) {
       setError('Please select a reason for rejection.')
       return
@@ -46,7 +47,7 @@ function RejectEndorsementModalContent({ onClose, onConfirm, studentName }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-50 flex items-center justify-center pointer-events-auto"
       style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
     >
       <div
@@ -72,15 +73,17 @@ function RejectEndorsementModalContent({ onClose, onConfirm, studentName }) {
                 )}
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition focus:outline-none"
-              aria-label="Close modal"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            {!isLoading && (
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600 transition focus:outline-none"
+                aria-label="Close modal"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
 
@@ -97,13 +100,15 @@ function RejectEndorsementModalContent({ onClose, onConfirm, studentName }) {
                 className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition
                   ${selected === reason.value
                     ? 'border-red-400 bg-red-50'
-                    : 'border-gray-200 hover:border-red-200 hover:bg-gray-50'}`}
+                    : 'border-gray-200 hover:border-red-200 hover:bg-gray-50'}
+                  ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
               >
                 <input
                   type="radio"
                   name="rejection_reason"
                   value={reason.value}
                   checked={selected === reason.value}
+                  disabled={isLoading}
                   onChange={() => { setSelected(reason.value); setError('') }}
                   className="mt-0.5 accent-red-500 flex-shrink-0"
                 />
@@ -118,8 +123,9 @@ function RejectEndorsementModalContent({ onClose, onConfirm, studentName }) {
               rows={2}
               placeholder="Please specify the reason..."
               value={otherText}
+              disabled={isLoading}
               onChange={e => { setOtherText(e.target.value); setError('') }}
-              className="mt-3 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-400 transition bg-gray-50 resize-none"
+              className="mt-3 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-400 transition bg-gray-50 resize-none disabled:opacity-60"
             />
           )}
 
@@ -137,17 +143,30 @@ function RejectEndorsementModalContent({ onClose, onConfirm, studentName }) {
 
         {/* Footer */}
         <div className="px-6 pb-6 pt-2 flex items-center justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-5 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition focus:outline-none"
-          >
-            Cancel
-          </button>
+          {!isLoading && (
+            <button
+              onClick={onClose}
+              className="px-5 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition focus:outline-none"
+            >
+              Cancel
+            </button>
+          )}
           <button
             onClick={handleConfirm}
-            className="px-5 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition focus:outline-none"
+            disabled={isLoading}
+            className="px-5 py-2 min-w-[140px] text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition focus:outline-none disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Reject Endorsement
+            {isLoading ? (
+              <>
+                <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {loadingLabel}
+              </>
+            ) : (
+              'Reject Endorsement'
+            )}
           </button>
         </div>
       </div>
@@ -156,7 +175,7 @@ function RejectEndorsementModalContent({ onClose, onConfirm, studentName }) {
 }
 
 // Wrapper component that handles remounting
-export default function RejectEndorsementModal({ isOpen, onClose, onConfirm, studentName }) {
+export default function RejectEndorsementModal({ isOpen, onClose, onConfirm, studentName, isLoading, loadingLabel }) {
   if (!isOpen) return null
 
   // Use a key that changes when modal opens to force remount and reset state
@@ -169,6 +188,8 @@ export default function RejectEndorsementModal({ isOpen, onClose, onConfirm, stu
       onClose={onClose}
       onConfirm={onConfirm}
       studentName={studentName}
+      isLoading={isLoading}
+      loadingLabel={loadingLabel}
     />
   )
 }
