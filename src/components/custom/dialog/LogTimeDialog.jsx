@@ -208,7 +208,7 @@ export default function LogTimeDialog({ isOpen, onClose, onConfirm, editLog = nu
   return (
     <>
       <div
-        className="fixed inset-0 z-40 flex items-center justify-center"
+        className="fixed inset-0 z-[100] flex items-center justify-center"
         style={{ backgroundColor: confirmOpen ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.4)' }}
         onClick={confirmOpen ? undefined : onClose}
       >

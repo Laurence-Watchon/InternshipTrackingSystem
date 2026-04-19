@@ -1,25 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import Card from '../../components/ui/Card'
 import TimeTable from '../../components/ui/TimeTable'
 import LogTimeDialog from '../../components/custom/dialog/LogTimeDialog'
+import { useAuth } from '../../context/AuthContext'
 
-const REQUIRED_HOURS = 500
-
-const INITIAL_LOGS = [
-  { id: 1,  date: '2026-02-20', timeIn: '8:00 AM',  timeOut: '12:00 PM', hours: 4,   shift: 'morning',   description: 'Frontend development',       status: 'approved' },
-  { id: 2,  date: '2026-02-20', timeIn: '1:00 PM',  timeOut: '5:00 PM',  hours: 4,   shift: 'afternoon', description: 'API integration testing',     status: 'approved' },
-  { id: 3,  date: '2026-02-19', timeIn: '8:30 AM',  timeOut: '12:00 PM', hours: 3.5, shift: 'morning',   description: 'Stand-up and code review',    status: 'approved' },
-  { id: 4,  date: '2026-02-19', timeIn: '1:00 PM',  timeOut: '5:30 PM',  hours: 4.5, shift: 'afternoon', description: 'Backend API development',      status: 'pending'  },
-  { id: 5,  date: '2026-02-18', timeIn: '8:00 AM',  timeOut: '12:00 PM', hours: 4,   shift: 'morning',   description: 'UI/UX design review',         status: 'approved' },
-  { id: 6,  date: '2026-02-18', timeIn: '1:00 PM',  timeOut: '5:00 PM',  hours: 4,   shift: 'afternoon', description: 'Database schema planning',     status: 'approved' },
-  { id: 7,  date: '2026-02-17', timeIn: '8:00 AM',  timeOut: '12:00 PM', hours: 4,   shift: 'morning',   description: 'Team sprint planning',        status: 'rejected' },
-  { id: 8,  date: '2026-02-14', timeIn: '1:00 PM',  timeOut: '5:00 PM',  hours: 4,   shift: 'afternoon', description: 'Feature implementation',       status: 'approved' },
-  { id: 9,  date: '2026-02-13', timeIn: '8:00 AM',  timeOut: '12:00 PM', hours: 4,   shift: 'morning',   description: 'Bug fixing and QA',           status: 'approved' },
-  { id: 10, date: '2026-02-13', timeIn: '1:00 PM',  timeOut: '5:00 PM',  hours: 4,   shift: 'afternoon', description: 'Documentation update',         status: 'approved' },
-  { id: 11, date: '2026-02-12', timeIn: '8:00 AM',  timeOut: '12:00 PM', hours: 4,   shift: 'morning',   description: 'Code refactoring',            status: 'approved' },
-  { id: 12, date: '2026-02-11', timeIn: '1:00 PM',  timeOut: '5:00 PM',  hours: 4,   shift: 'afternoon', description: 'User testing session',         status: 'approved' },
-]
+const DEFAULT_REQUIRED_HOURS = 500
 
 function sortLogs(logs) {
   return [...logs].sort((a, b) => {
@@ -31,35 +17,104 @@ function sortLogs(logs) {
 }
 
 export default function UserTimeTracking() {
-  const [logs, setLogs]               = useState(sortLogs(INITIAL_LOGS))
+  const { user } = useAuth()
+  const [logs, setLogs]               = useState([])
   const [dialogOpen, setDialogOpen]   = useState(false)
   const [editLog, setEditLog]         = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
+  const [requiredHours, setRequiredHours] = useState(DEFAULT_REQUIRED_HOURS)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user?.id) return
+
+      try {
+        const [logsRes, settingsRes] = await Promise.all([
+          fetch(`http://localhost:3001/api/student/time-logs?studentId=${user.id}`),
+          fetch(`http://localhost:3001/api/student/college-settings?college=${encodeURIComponent(user.college)}`)
+        ])
+
+        if (logsRes.ok) {
+          const fetchedLogs = await logsRes.json()
+          // Map _id to id for component compatibility
+          setLogs(sortLogs(fetchedLogs.map(l => ({ ...l, id: l._id }))))
+        }
+
+        if (settingsRes.ok) {
+          const settings = await settingsRes.json()
+          const courseHours = (settings.requiredHours && settings.requiredHours[user.course]) || DEFAULT_REQUIRED_HOURS
+          setRequiredHours(courseHours)
+        }
+      } catch (error) {
+        console.error("Error fetching time tracking data:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [user])
 
   const approvedHours = logs
     .filter(l => l.status === 'approved')
     .reduce((s, l) => s + l.hours, 0)
 
-  const remaining = Math.max(0, REQUIRED_HOURS - approvedHours)
+  const remaining = Math.max(0, requiredHours - approvedHours)
 
   const daysOnDuty = new Set(
     logs.filter(l => l.status === 'approved').map(l => l.date)
   ).size
 
   // ── Add new log
-  function handleAddLog(entry) {
-    setLogs(prev => sortLogs([entry, ...prev]))
-    setCurrentPage(1)
+  async function handleAddLog(entry) {
+    try {
+      const response = await fetch('http://localhost:3001/api/student/time-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...entry, studentId: user.id })
+      })
+
+      if (response.ok) {
+        const newLog = await response.json()
+        setLogs(prev => sortLogs([{ ...newLog, id: newLog._id }, ...prev]))
+        setCurrentPage(1)
+      }
+    } catch (error) {
+      console.error("Error adding log:", error)
+    }
   }
 
   // ── Save edited log
-  function handleSaveEdit(updatedEntry) {
-    setLogs(prev => sortLogs(prev.map(l => l.id === updatedEntry.id ? updatedEntry : l)))
+  async function handleSaveEdit(updatedEntry) {
+    try {
+      const response = await fetch(`http://localhost:3001/api/student/time-logs/${updatedEntry.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedEntry)
+      })
+
+      if (response.ok) {
+        setLogs(prev => sortLogs(prev.map(l => l.id === updatedEntry.id ? updatedEntry : l)))
+      }
+    } catch (error) {
+      console.error("Error updating log:", error)
+    }
   }
 
   // ── Delete log
-  function handleDelete(id) {
-    setLogs(prev => prev.filter(l => l.id !== id))
+  async function handleDelete(id) {
+    try {
+      const response = await fetch(`http://localhost:3001/api/student/time-logs/${id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        setLogs(prev => prev.filter(l => l.id !== id))
+      }
+    } catch (error) {
+      console.error("Error deleting log:", error)
+    }
   }
 
   // ── Open edit dialog
@@ -86,7 +141,9 @@ export default function UserTimeTracking() {
   return (
     <AppLayout>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">College of Computing Studies- BSCS-DS</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {user?.college || 'College'} - {user?.course || 'Course'}
+        </h1>
         <p className="text-gray-600 mt-1">Log and monitor your internship hours.</p>
       </div>
 
@@ -95,7 +152,7 @@ export default function UserTimeTracking() {
         <Card
           title="Total Hours Completed"
           value={`${approvedHours} hrs`}
-          sub={`out of ${REQUIRED_HOURS} required hours`}
+          sub={`out of ${requiredHours} required hours`}
           color="bg-green-500"
           icon={
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">

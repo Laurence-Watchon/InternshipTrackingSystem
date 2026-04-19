@@ -340,4 +340,120 @@ router.patch("/endorsement-scanned", async (req, res) => {
   }
 });
 
+// -----------------------------------------------
+// GET /api/student/time-logs
+// Fetches all time logs for a specific student
+// -----------------------------------------------
+router.get("/time-logs", async (req, res) => {
+  try {
+    const { studentId } = req.query;
+
+    if (!studentId) {
+      return res.status(400).json({ error: "studentId is required." });
+    }
+
+    const db = await connectDB();
+    const logs = await db.collection("time_logs")
+      .find({ studentId: new ObjectId(studentId) })
+      .sort({ date: -1, shift: -1 })
+      .toArray();
+
+    res.json(logs);
+  } catch (err) {
+    console.error("Error fetching time logs:", err);
+    res.status(500).json({ error: "Failed to fetch time logs." });
+  }
+});
+
+// -----------------------------------------------
+// POST /api/student/time-logs
+// Adds a new time log entry
+// -----------------------------------------------
+router.post("/time-logs", async (req, res) => {
+  try {
+    const { studentId, date, timeIn, timeOut, hours, shift, description } = req.body;
+
+    if (!studentId || !date || !timeIn || !timeOut || !hours || !shift) {
+      return res.status(400).json({ error: "Missing required fields." });
+    }
+
+    const db = await connectDB();
+    const newLog = {
+      studentId: new ObjectId(studentId),
+      date, // Format: YYYY-MM-DD
+      timeIn,
+      timeOut,
+      hours: parseFloat(hours),
+      shift,
+      description: description || "",
+      status: "pending", // Default to pending
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    const result = await db.collection("time_logs").insertOne(newLog);
+    res.status(201).json({ ...newLog, id: result.insertedId, _id: result.insertedId });
+  } catch (err) {
+    console.error("Error creating time log:", err);
+    res.status(500).json({ error: "Failed to create time log." });
+  }
+});
+
+// -----------------------------------------------
+// PUT /api/student/time-logs/:id
+// Updates an existing time log entry
+// -----------------------------------------------
+router.put("/time-logs/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { date, timeIn, timeOut, hours, shift, description } = req.body;
+
+    const db = await connectDB();
+    const result = await db.collection("time_logs").updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          date,
+          timeIn,
+          timeOut,
+          hours: parseFloat(hours),
+          shift,
+          description: description || "",
+          updatedAt: new Date()
+        }
+      }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "Time log not found." });
+    }
+
+    res.json({ message: "Time log updated successfully." });
+  } catch (err) {
+    console.error("Error updating time log:", err);
+    res.status(500).json({ error: "Failed to update time log." });
+  }
+});
+
+// -----------------------------------------------
+// DELETE /api/student/time-logs/:id
+// Deletes a time log entry
+// -----------------------------------------------
+router.delete("/time-logs/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = await connectDB();
+    const result = await db.collection("time_logs").deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: "Time log not found." });
+    }
+
+    res.json({ message: "Time log deleted successfully." });
+  } catch (err) {
+    console.error("Error deleting time log:", err);
+    res.status(500).json({ error: "Failed to delete time log." });
+  }
+});
+
 export default router;
