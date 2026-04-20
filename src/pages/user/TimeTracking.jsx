@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import Card from '../../components/ui/Card'
 import TimeTable from '../../components/ui/TimeTable'
+import Toast from '../../components/ui/Toast'
 import LogTimeDialog from '../../components/custom/dialog/LogTimeDialog'
 import { useAuth } from '../../context/AuthContext'
 
@@ -24,6 +25,7 @@ export default function UserTimeTracking() {
   const [currentPage, setCurrentPage] = useState(1)
   const [requiredHours, setRequiredHours] = useState(DEFAULT_REQUIRED_HOURS)
   const [isLoading, setIsLoading] = useState(true)
+  const [toast, setToast]             = useState(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -79,9 +81,12 @@ export default function UserTimeTracking() {
         const newLog = await response.json()
         setLogs(prev => sortLogs([{ ...newLog, id: newLog._id }, ...prev]))
         setCurrentPage(1)
+        return true
       }
+      return false
     } catch (error) {
       console.error("Error adding log:", error)
+      return false
     }
   }
 
@@ -96,9 +101,12 @@ export default function UserTimeTracking() {
 
       if (response.ok) {
         setLogs(prev => sortLogs(prev.map(l => l.id === updatedEntry.id ? updatedEntry : l)))
+        return true
       }
+      return false
     } catch (error) {
       console.error("Error updating log:", error)
+      return false
     }
   }
 
@@ -130,11 +138,11 @@ export default function UserTimeTracking() {
   }
 
   // ── Confirm (add or edit)
-  function handleConfirm(entry) {
+  async function handleConfirm(entry) {
     if (editLog) {
-      handleSaveEdit(entry)
+      return await handleSaveEdit(entry)
     } else {
-      handleAddLog(entry)
+      return await handleAddLog(entry)
     }
   }
 
@@ -221,7 +229,17 @@ export default function UserTimeTracking() {
         onClose={handleClose}
         onConfirm={handleConfirm}
         editLog={editLog}
+        existingLogs={logs}
+        onSuccessAction={(msg) => setToast({ message: msg, type: 'success' })}
       />
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </AppLayout>
   )
 }

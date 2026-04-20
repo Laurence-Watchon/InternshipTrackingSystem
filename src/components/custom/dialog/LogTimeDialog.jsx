@@ -116,10 +116,11 @@ function TimePicker({ label, hour, minute, onHourChange, onMinuteChange, hours, 
   )
 }
 
-export default function LogTimeDialog({ isOpen, onClose, onConfirm, editLog = null }) {
+export default function LogTimeDialog({ isOpen, onClose, onConfirm, editLog = null, existingLogs = [], onSuccessAction }) {
   const [form, setForm]               = useState(emptyForm)
   const [errors, setErrors]           = useState({})
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const isEditMode = !!editLog
 
@@ -144,18 +145,24 @@ export default function LogTimeDialog({ isOpen, onClose, onConfirm, editLog = nu
       }
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setErrors({})
+      setIsSubmitting(false)
     }
   }, [isOpen, editLog])
 
   function setField(key, val) {
     setForm(prev => ({ ...prev, [key]: val }))
-    setErrors(prev => ({ ...prev, [key]: '' }))
+    setErrors(prev => {
+      const newErr = { ...prev, [key]: '', submit: '' }
+      if (key === 'inH' || key === 'inM') newErr.timeIn = ''
+      if (key === 'outH' || key === 'outM') newErr.timeOut = ''
+      return newErr
+    })
   }
 
   function handleShiftChange(shift) {
     // Reset times when shift changes
     setForm(prev => ({ ...prev, shift, inH: '', inM: '00', outH: '', outM: '00' }))
-    setErrors(prev => ({ ...prev, shift: '', timeIn: '', timeOut: '' }))
+    setErrors(prev => ({ ...prev, shift: '', timeIn: '', timeOut: '', submit: '' }))
   }
 
   function validate() {
@@ -170,6 +177,19 @@ export default function LogTimeDialog({ isOpen, onClose, onConfirm, editLog = nu
     const hours   = calcHours(timeIn, timeOut)
     if (form.inH !== '' && form.outH !== '' && hours <= 0)
       e.timeOut = 'Time Out must be after Time In.'
+
+    // Check for duplicate date/shift
+    if (form.date && form.shift && !e.date && !e.shift) {
+      const isDuplicate = existingLogs.some(log => 
+        log.date === form.date && 
+        log.shift === form.shift &&
+        (!isEditMode || log.id !== editLog.id)
+      )
+      if (isDuplicate) {
+        e.submit = `You already have a ${form.shift === 'morning' ? 'Morning' : 'Afternoon'} log for this date.`
+      }
+    }
+
     return e
   }
 
@@ -180,24 +200,41 @@ export default function LogTimeDialog({ isOpen, onClose, onConfirm, editLog = nu
     setConfirmOpen(true)
   }
 
-  function handleFinalConfirm() {
+  async function handleFinalConfirm() {
     const timeIn  = buildTime(form.inH, form.inM)
     const timeOut = buildTime(form.outH, form.outM)
     const hours   = calcHours(timeIn, timeOut)
-    onConfirm({
-      id:          isEditMode ? editLog.id : Date.now(),
-      date:        form.date,
-      shift:       form.shift,
-      timeIn:      to12Display(timeIn),
-      timeOut:     to12Display(timeOut),
-      hours,
-      description: form.description.trim(),
-      status:      isEditMode ? editLog.status : 'pending',
-    })
-    setConfirmOpen(false)
-    setForm(emptyForm)
-    setErrors({})
-    onClose()
+
+    setIsSubmitting(true)
+    
+    // Add at least 1 second delay as requested
+    const minDelay = new Promise(resolve => setTimeout(resolve, 1000))
+    
+    const [success] = await Promise.all([
+      onConfirm({
+        id:          isEditMode ? editLog.id : Date.now(),
+        date:        form.date,
+        shift:       form.shift,
+        timeIn:      to12Display(timeIn),
+        timeOut:     to12Display(timeOut),
+        hours,
+        description: form.description.trim(),
+        status:      isEditMode ? editLog.status : 'pending',
+      }),
+      minDelay
+    ])
+
+    if (success) {
+      setConfirmOpen(false)
+      setForm(emptyForm)
+      setErrors({})
+      onClose()
+      if (onSuccessAction) onSuccessAction(isEditMode ? 'Time log successfully updated!' : 'Time log successfully submitted!')
+    } else {
+      setErrors(prev => ({ ...prev, submit: 'Failed to save time log. Please try again.' }))
+      setConfirmOpen(false)
+    }
+    setIsSubmitting(false)
   }
 
   const shiftHours   = form.shift ? SHIFT_HOURS[form.shift] : []
@@ -214,7 +251,7 @@ export default function LogTimeDialog({ isOpen, onClose, onConfirm, editLog = nu
       >
         <div
           className={`bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden transition-opacity duration-200
-            ${confirmOpen ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}
+            ${confirmOpen ? 'pointer-events-none' : ''}`}
           onClick={e => e.stopPropagation()}
         >
           {/* Header */}
@@ -380,6 +417,16 @@ export default function LogTimeDialog({ isOpen, onClose, onConfirm, editLog = nu
               )}
             </div>
 
+            {/* General API Error */}
+            {errors.submit && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-start gap-3">
+                <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm font-medium">{errors.submit}</p>
+              </div>
+            )}
+
           </div>
 
           {/* Footer */}
@@ -406,6 +453,7 @@ export default function LogTimeDialog({ isOpen, onClose, onConfirm, editLog = nu
         isOpen={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={handleFinalConfirm}
+        isLoading={isSubmitting}
         title={isEditMode ? 'Save Changes' : 'Submit Time Log'}
         message={isEditMode ? 'Are you sure you want to save these changes?' : 'Are you sure you want to submit this time entry?'}
         confirmLabel={isEditMode ? 'Yes, Save' : 'Yes, Submit'}
