@@ -58,14 +58,15 @@ export default function UserTimeTracking() {
     fetchData()
   }, [user])
 
-  const approvedHours = logs
+  const totalLoggedHours = logs.reduce((s, l) => s + l.hours, 0)
+  const approvedOnlyHours = logs
     .filter(l => l.status === 'approved')
     .reduce((s, l) => s + l.hours, 0)
 
-  const remaining = Math.max(0, requiredHours - approvedHours)
+  const remaining = Math.max(0, requiredHours - totalLoggedHours)
 
   const daysOnDuty = new Set(
-    logs.filter(l => l.status === 'approved').map(l => l.date)
+    logs.map(l => l.date)
   ).size
 
   // ── Add new log
@@ -159,8 +160,8 @@ export default function UserTimeTracking() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <Card
           title="Total Hours Completed"
-          value={`${approvedHours} hrs`}
-          sub={`out of ${requiredHours} required hours`}
+          value={`${totalLoggedHours} hrs`}
+          sub={`${approvedOnlyHours} hrs approved / ${requiredHours} required`}
           color="bg-green-500"
           icon={
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -170,9 +171,9 @@ export default function UserTimeTracking() {
           }
         />
         <Card
-          title="Remaining Hours"
+          title="Hours Left"
           value={`${remaining} hrs`}
-          sub="hours still needed"
+          sub={`out of ${requiredHours} required hours`}
           color="bg-blue-500"
           icon={
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,7 +185,7 @@ export default function UserTimeTracking() {
         <Card
           title="Total Days on Duty"
           value={`${daysOnDuty} days`}
-          sub="unique approved duty days"
+          sub="total logged duty days"
           color="bg-purple-500"
           icon={
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
