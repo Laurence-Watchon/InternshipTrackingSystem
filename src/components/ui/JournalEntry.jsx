@@ -5,14 +5,16 @@
  *   entry      – { id, date, hours, mood, tasksDone, learnings, challenges }
  *   isOpen     – boolean
  *   onToggle   – () => void
+ *   onEdit     – (entry) => void
+ *   onDelete   – (id) => void
  */
 
 const MOOD_CONFIG = {
-  great:     { emoji: '😄', label: 'Great',     color: 'bg-green-100 text-green-700'  },
-  good:      { emoji: '🙂', label: 'Good',      color: 'bg-blue-100 text-blue-700'   },
+  great:     { emoji: '🤩', label: 'Great',     color: 'bg-green-100 text-green-700'  },
+  good:      { emoji: '😊', label: 'Good',      color: 'bg-blue-100 text-blue-700'   },
   okay:      { emoji: '😐', label: 'Okay',      color: 'bg-yellow-100 text-yellow-700'},
-  difficult: { emoji: '😓', label: 'Difficult', color: 'bg-orange-100 text-orange-700'},
-  tough:     { emoji: '😔', label: 'Tough',     color: 'bg-red-100 text-red-700'     },
+  difficult: { emoji: '😰', label: 'Difficult', color: 'bg-orange-100 text-orange-700'},
+  tough:     { emoji: '😫', label: 'Tough',     color: 'bg-red-100 text-red-700'     },
 }
 
 function fmtDate(dateStr) {
@@ -20,7 +22,7 @@ function fmtDate(dateStr) {
   return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
 }
 
-export default function JournalEntry({ entry, isOpen, onToggle }) {
+export default function JournalEntry({ entry, isOpen, onToggle, onEdit, onDelete }) {
   const mood = MOOD_CONFIG[entry.mood] || MOOD_CONFIG.okay
 
   return (
@@ -119,6 +121,28 @@ export default function JournalEntry({ entry, isOpen, onToggle }) {
               </div>
               <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{entry.challenges}</p>
             </div>
+          </div>
+
+          {/* Action Footer */}
+          <div className="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-gray-50">
+            <button
+              onClick={(e) => { e.stopPropagation(); onEdit(entry); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Edit
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onDelete(entry.id); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Delete
+            </button>
           </div>
         </div>
       )}

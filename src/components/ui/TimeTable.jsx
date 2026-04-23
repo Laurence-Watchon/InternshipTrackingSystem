@@ -24,10 +24,15 @@ export default function TimeTable({ logs = [], pageSize = 10, currentPage = 1, o
   const paginated  = logs.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   const [deleteTarget, setDeleteTarget] = useState(null) // log object to delete
+  const [isDeleting, setIsDeleting] = useState(false)
 
-  function handleDeleteConfirm() {
+  async function handleDeleteConfirm() {
     if (deleteTarget) {
-      onDelete(deleteTarget.id)
+      setIsDeleting(true)
+      // Enforce at least 1 second delay
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      await onDelete(deleteTarget.id)
+      setIsDeleting(false)
       setDeleteTarget(null)
     }
   }
@@ -113,7 +118,7 @@ export default function TimeTable({ logs = [], pageSize = 10, currentPage = 1, o
                       </td>
 
                       {/* Description */}
-                      <td className="px-5 py-3.5 text-gray-500 hidden md:table-cell max-w-xs truncate">
+                      <td className="px-5 py-3.5 text-gray-500 hidden md:table-cell max-w-[150px] truncate" title={log.description}>
                         {log.description || '—'}
                       </td>
 
@@ -173,8 +178,11 @@ export default function TimeTable({ logs = [], pageSize = 10, currentPage = 1, o
         onConfirm={handleDeleteConfirm}
         title="Delete Time Log"
         message={`Are you sure you want to delete the log for ${deleteTarget ? fmtDate(deleteTarget.date) : ''}? This cannot be undone.`}
-        confirmLabel="Confirm"
+        confirmLabel="Yes, Delete"
         cancelLabel="Cancel"
+        variant="danger"
+        isLoading={isDeleting}
+        loadingLabel="Deleting..."
       />
     </>
   )

@@ -4,9 +4,18 @@ import Card from '../../components/ui/Card'
 import TimeTable from '../../components/ui/TimeTable'
 import Toast from '../../components/ui/Toast'
 import LogTimeDialog from '../../components/custom/dialog/LogTimeDialog'
+import Skeleton from '../../components/ui/Skeleton'
 import { useAuth } from '../../context/AuthContext'
 
 const DEFAULT_REQUIRED_HOURS = 500
+
+const collegeMapping = {
+  'CAS': 'COLLEGE OF ARTS AND SCIENCES',
+  'CBAA': 'COLLEGE OF BUSINESS ADMINISTRATION AND ACCOUNTANCY',
+  'CCS': 'COLLEGE OF COMPUTING STUDIES',
+  'COE': 'COLLEGE OF ENGINEERING',
+  'COED': 'COLLEGE OF EDUCATION'
+}
 
 function sortLogs(logs) {
   return [...logs].sort((a, b) => {
@@ -19,13 +28,13 @@ function sortLogs(logs) {
 
 export default function UserTimeTracking() {
   const { user } = useAuth()
-  const [logs, setLogs]               = useState([])
-  const [dialogOpen, setDialogOpen]   = useState(false)
-  const [editLog, setEditLog]         = useState(null)
+  const [logs, setLogs] = useState([])
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editLog, setEditLog] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [requiredHours, setRequiredHours] = useState(DEFAULT_REQUIRED_HOURS)
   const [isLoading, setIsLoading] = useState(true)
-  const [toast, setToast]             = useState(null)
+  const [toast, setToast] = useState(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -34,7 +43,8 @@ export default function UserTimeTracking() {
       try {
         const [logsRes, settingsRes] = await Promise.all([
           fetch(`http://localhost:3001/api/student/time-logs?studentId=${user.id}`),
-          fetch(`http://localhost:3001/api/student/college-settings?college=${encodeURIComponent(user.college)}`)
+          fetch(`http://localhost:3001/api/student/college-settings?college=${encodeURIComponent(user.college)}`),
+          new Promise(resolve => setTimeout(resolve, 800)) // Min loading time for smoother transition
         ])
 
         if (logsRes.ok) {
@@ -120,9 +130,13 @@ export default function UserTimeTracking() {
 
       if (response.ok) {
         setLogs(prev => prev.filter(l => l.id !== id))
+        setToast({ message: 'Time log successfully deleted!', type: 'success' })
+      } else {
+        setToast({ message: 'Failed to delete time log. Please try again.', type: 'error' })
       }
     } catch (error) {
       console.error("Error deleting log:", error)
+      setToast({ message: 'An error occurred while deleting the log.', type: 'error' })
     }
   }
 
@@ -151,77 +165,114 @@ export default function UserTimeTracking() {
     <AppLayout>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">
-          {user?.college || 'College'} - {user?.course || 'Course'}
+          {collegeMapping[user?.college] || user?.college || 'College'}
         </h1>
         <p className="text-gray-600 mt-1">Log and monitor your internship hours.</p>
       </div>
 
       {/* 3 Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <Card
-          title="Total Hours Completed"
-          value={`${totalLoggedHours} hrs`}
-          sub={`${approvedOnlyHours} hrs approved / ${requiredHours} required`}
-          color="bg-green-500"
-          icon={
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
-        />
-        <Card
-          title="Hours Left"
-          value={`${remaining} hrs`}
-          sub={`out of ${requiredHours} required hours`}
-          color="bg-blue-500"
-          icon={
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
-        />
-        <Card
-          title="Total Days on Duty"
-          value={`${daysOnDuty} days`}
-          sub="total logged duty days"
-          color="bg-purple-500"
-          icon={
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          }
-        />
+        {isLoading ? (
+          [...Array(3)].map((_, i) => (
+            <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-32 flex flex-col justify-center">
+              <div className="flex items-center gap-4">
+                <Skeleton variant="circular" width={48} height={48} />
+                <div className="flex-1">
+                  <Skeleton variant="text" width="60%" className="mb-2" />
+                  <Skeleton variant="text" width="40%" height={32} />
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <>
+            <Card
+              title="Total Hours Completed"
+              value={`${totalLoggedHours} hrs`}
+              sub={`${approvedOnlyHours} hrs approved / ${requiredHours} required`}
+              color="bg-green-500"
+              icon={
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              }
+            />
+            <Card
+              title="Hours Left"
+              value={`${remaining} hrs`}
+              sub={`out of ${requiredHours} required hours`}
+              color="bg-blue-500"
+              icon={
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              }
+            />
+            <Card
+              title="Total Days on Duty"
+              value={`${daysOnDuty} days`}
+              sub="total logged duty days"
+              color="bg-purple-500"
+              icon={
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              }
+            />
+          </>
+        )}
       </div>
 
       {/* Table card */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 border-b border-gray-100">
-          <div>
-            <h2 className="text-base font-semibold text-gray-900">Time Logs</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Your submitted time entries, latest to oldest</p>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        {isLoading ? (
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-8">
+              <div className="space-y-2">
+                <Skeleton variant="text" width={150} height={24} />
+                <Skeleton variant="text" width={250} />
+              </div>
+              <Skeleton variant="rectangular" width={120} height={40} className="rounded-lg" />
+            </div>
+            <div className="space-y-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="flex gap-4">
+                  <Skeleton variant="rectangular" width="100%" height={40} className="rounded-lg" />
+                </div>
+              ))}
+            </div>
           </div>
-          <button
-            onClick={() => { setEditLog(null); setDialogOpen(true) }}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-green-500 rounded-lg focus:outline-none self-start sm:self-auto"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Log Time
-          </button>
-        </div>
+        ) : (
+          <>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 border-b border-gray-100">
+              <div>
+                <h2 className="text-base font-semibold text-gray-900">Time Logs</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Your submitted time entries, latest to oldest</p>
+              </div>
+              <button
+                onClick={() => { setEditLog(null); setDialogOpen(true) }}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-green-500 rounded-lg focus:outline-none self-start sm:self-auto"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Log Time
+              </button>
+            </div>
 
-        <TimeTable
-          logs={logs}
-          pageSize={10}
-          currentPage={currentPage}
-          onPageChange={setCurrentPage}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+            <TimeTable
+              logs={logs}
+              pageSize={10}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          </>
+        )}
       </div>
 
       {/* Add / Edit dialog */}
