@@ -456,4 +456,119 @@ router.delete("/time-logs/:id", async (req, res) => {
   }
 });
 
+// -----------------------------------------------
+// GET /api/student/journals
+// Fetches all journal entries for a specific student
+// -----------------------------------------------
+router.get("/journals", async (req, res) => {
+  try {
+    const { studentId } = req.query;
+
+    if (!studentId) {
+      return res.status(400).json({ error: "studentId is required." });
+    }
+
+    const db = await connectDB();
+    const journals = await db.collection("journals")
+      .find({ studentId: new ObjectId(studentId) })
+      .sort({ date: -1 })
+      .toArray();
+
+    res.json(journals);
+  } catch (err) {
+    console.error("Error fetching journals:", err);
+    res.status(500).json({ error: "Failed to fetch journals." });
+  }
+});
+
+// -----------------------------------------------
+// POST /api/student/journals
+// Adds a new journal entry
+// -----------------------------------------------
+router.post("/journals", async (req, res) => {
+  try {
+    const { studentId, date, hours, mood, tasksDone, learnings, challenges } = req.body;
+
+    if (!studentId || !date || !hours || !mood || !tasksDone || !learnings || !challenges) {
+      return res.status(400).json({ error: "Missing required fields." });
+    }
+
+    const db = await connectDB();
+    const newJournal = {
+      studentId: new ObjectId(studentId),
+      date, // Format: YYYY-MM-DD
+      hours: parseFloat(hours),
+      mood,
+      tasksDone,
+      learnings,
+      challenges,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    const result = await db.collection("journals").insertOne(newJournal);
+    res.status(201).json({ ...newJournal, id: result.insertedId, _id: result.insertedId });
+  } catch (err) {
+    console.error("Error creating journal:", err);
+    res.status(500).json({ error: "Failed to create journal." });
+  }
+});
+
+// -----------------------------------------------
+// PUT /api/student/journals/:id
+// Updates an existing journal entry
+// -----------------------------------------------
+router.put("/journals/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { date, hours, mood, tasksDone, learnings, challenges } = req.body;
+
+    const db = await connectDB();
+    const result = await db.collection("journals").updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          date,
+          hours: parseFloat(hours),
+          mood,
+          tasksDone,
+          learnings,
+          challenges,
+          updatedAt: new Date()
+        }
+      }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "Journal entry not found." });
+    }
+
+    res.json({ message: "Journal entry updated successfully." });
+  } catch (err) {
+    console.error("Error updating journal:", err);
+    res.status(500).json({ error: "Failed to update journal." });
+  }
+});
+
+// -----------------------------------------------
+// DELETE /api/student/journals/:id
+// Deletes a journal entry
+// -----------------------------------------------
+router.delete("/journals/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = await connectDB();
+    const result = await db.collection("journals").deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: "Journal entry not found." });
+    }
+
+    res.json({ message: "Journal entry deleted successfully." });
+  } catch (err) {
+    console.error("Error deleting journal:", err);
+    res.status(500).json({ error: "Failed to delete journal." });
+  }
+});
+
 export default router;

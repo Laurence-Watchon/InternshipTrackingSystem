@@ -21,7 +21,8 @@ export default function Dialog({
   confirmLabel = 'Yes',
   cancelLabel = 'No',
   isLoading = false,
-  loadingLabel = 'Processing...'
+  loadingLabel = 'Processing...',
+  variant = 'primary' // 'primary' (green) or 'danger' (red)
 }) {
   useEffect(() => {
     if (!isOpen || isLoading) return
@@ -31,6 +32,10 @@ export default function Dialog({
   }, [isOpen, onClose, isLoading])
 
   if (!isOpen) return null
+
+  const confirmBtnClasses = variant === 'danger'
+    ? (isLoading ? 'bg-red-600 opacity-80 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600')
+    : (isLoading ? 'bg-green-600 opacity-80 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600')
 
   return (
     <div
@@ -69,10 +74,7 @@ export default function Dialog({
               onConfirm();
             }}
             disabled={isLoading}
-            className={`px-5 py-2 text-sm font-medium text-white rounded-lg focus:outline-none transition-all flex items-center justify-center min-w-[100px] ${isLoading
-                ? 'bg-green-600 opacity-80 cursor-not-allowed'
-                : 'bg-green-500 hover:bg-green-600'
-              }`}
+            className={`px-5 py-2 text-sm font-medium text-white rounded-lg focus:outline-none transition-all flex items-center justify-center min-w-[100px] ${confirmBtnClasses}`}
           >
             {isLoading ? (
               <div className="flex items-center space-x-2">
@@ -87,4 +89,4 @@ export default function Dialog({
       </div>
     </div>
   )
-}
+}
