@@ -16,7 +16,7 @@ function LoginForm() {
     email: '',
     password: ''
   })
-  
+
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
 
   const showGlobalToast = (message, type = 'success') => {
@@ -98,7 +98,7 @@ function LoginForm() {
     setIsLoading(true)
     setLoginError('')
 
-    const minLoadingTime = new Promise((resolve) => setTimeout(resolve, 1000))
+    const minLoadingTime = new Promise((resolve) => setTimeout(resolve, 800))
 
     try {
       const [res] = await Promise.all([
@@ -159,7 +159,7 @@ function LoginForm() {
 
   // Helper: determine border color for a field
   const getInputClass = (fieldName) => {
-    const hasError = errors[fieldName] || 
+    const hasError = errors[fieldName] ||
       ((loginError || rejectDialog.isOpen) && (fieldName === 'email' || fieldName === 'password'))
     return `w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${hasError
       ? 'border-red-500 focus:ring-red-500'
@@ -246,7 +246,7 @@ function LoginForm() {
                 Remember me
               </label>
             </div>
-            <button 
+            <button
               type="button"
               onClick={() => setForgotPasswordDialog(true)}
               className="text-sm text-green-600 hover:text-green-700 font-medium focus:outline-none"
@@ -314,18 +314,18 @@ function LoginForm() {
       />
 
       <PendingApprovalDialog isOpen={pendingDialog} onClose={() => setPendingDialog(false)} />
-      
-      <ForgotPasswordDialog 
-        isOpen={forgotPasswordDialog} 
-        onClose={() => setForgotPasswordDialog(false)} 
+
+      <ForgotPasswordDialog
+        isOpen={forgotPasswordDialog}
+        onClose={() => setForgotPasswordDialog(false)}
         showGlobalToast={showGlobalToast}
       />
 
       {toast.show && (
-        <Toast 
-          message={toast.message} 
-          type={toast.type} 
-          onClose={() => setToast({ ...toast, show: false })} 
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ ...toast, show: false })}
           duration={3000}
         />
       )}

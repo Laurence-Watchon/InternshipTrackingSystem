@@ -52,6 +52,7 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
   const location = useLocation()
   const { user } = useAuth()
   const [pendingCount, setPendingCount] = useState(0)
+  const [pendingEndorsementsCount, setPendingEndorsementsCount] = useState(0)
   const [requirementStats, setRequirementStats] = useState({ count: 0, total: 0 })
   const [hasMissingHours, setHasMissingHours] = useState(false)
   const [endorsementStatus, setEndorsementStatus] = useState('unavailable')
@@ -69,6 +70,20 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
           }
         } catch (err) {
           console.error("Failed to fetch pending count", err)
+        }
+      }
+
+      const fetchAdminPendingEndorsementsCount = async () => {
+        try {
+          const res = await fetch(`http://localhost:3001/api/admin/endorsements?college=${user.college}`)
+          if (res.ok) {
+            const data = await res.json()
+            // In the admin route, 'in_process' is mapped to 'pending'
+            const count = data.filter(req => req.status === 'pending').length
+            setPendingEndorsementsCount(count)
+          }
+        } catch (err) {
+          console.error("Failed to fetch pending endorsements count", err)
         }
       }
 
@@ -90,12 +105,23 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
       }
 
       fetchAdminPendingCount()
+      fetchAdminPendingEndorsementsCount()
       fetchAdminCollegeSettings()
 
+      const pollInterval = setInterval(() => {
+        fetchAdminPendingCount()
+        fetchAdminPendingEndorsementsCount()
+      }, 5000)
+
       window.addEventListener('pendingCountUpdated', fetchAdminPendingCount)
+      window.addEventListener('endorsementCountUpdated', fetchAdminPendingEndorsementsCount)
+      window.addEventListener('endorsementStatusUpdated', fetchAdminPendingEndorsementsCount)
       window.addEventListener('collegeSettingsUpdated', fetchAdminCollegeSettings)
       return () => {
+        clearInterval(pollInterval)
         window.removeEventListener('pendingCountUpdated', fetchAdminPendingCount)
+        window.removeEventListener('endorsementCountUpdated', fetchAdminPendingEndorsementsCount)
+        window.removeEventListener('endorsementStatusUpdated', fetchAdminPendingEndorsementsCount)
         window.removeEventListener('collegeSettingsUpdated', fetchAdminCollegeSettings)
       }
     }
@@ -338,6 +364,15 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
                         </span>
                       </div>
                     )}
+
+                  {/* Admin Endorsements Pending Badge */}
+                  {role === 'admin' && item.title === 'Endorsements Letter' && pendingEndorsementsCount > 0 && (
+                    <div className="ml-auto flex items-center">
+                      <span className="flex items-center justify-center h-5 min-w-[1.25rem] px-1.5 text-[11px] font-bold text-white bg-red-500 rounded-full shadow-sm">
+                        {pendingEndorsementsCount}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Admin Requirements Missing Hours Alert */}
                   {role === 'admin' && item.title === 'Requirements' && hasMissingHours && (

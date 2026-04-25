@@ -158,6 +158,7 @@ function AdminEndorsements() {
         setToastType('success')
         setShowToast(true)
         fetchEndorsements()
+        window.dispatchEvent(new Event('endorsementCountUpdated'))
       }
     } catch (err) {
       console.error('Error approving endorsement:', err)
@@ -190,6 +191,7 @@ function AdminEndorsements() {
         setToastType('error')
         setShowToast(true)
         fetchEndorsements()
+        window.dispatchEvent(new Event('endorsementCountUpdated'))
       }
     } catch (err) {
       console.error('Error rejecting endorsement:', err)
@@ -222,6 +224,7 @@ function AdminEndorsements() {
         setToastType('success')
         setShowToast(true)
         fetchEndorsements()
+        window.dispatchEvent(new Event('endorsementCountUpdated'))
       }
     } catch (err) {
       console.error('Error completing endorsement:', err)

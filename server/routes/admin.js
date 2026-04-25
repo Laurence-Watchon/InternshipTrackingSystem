@@ -232,7 +232,16 @@ router.get("/students", async (req, res) => {
       .find({ college })
       .toArray();
 
-    // 4. Map students to include requirement stats
+    // 4. Fetch endorsement requests for these students
+    const studentIds = students.map(s => s._id);
+    const endorsementRequests = await db.collection("endorsement_requests").find({
+      $or: [
+        { studentId: { $in: studentIds } },
+        { studentId: { $in: studentIds.map(id => id.toString()) } }
+      ]
+    }).toArray();
+
+    // 5. Map students to include requirement stats and endorsement status
     const studentsWithStats = students.map(student => {
       // Filter requirements that apply to this specific student's course
       const relevantRequirements = requirements.filter(req =>
@@ -252,13 +261,20 @@ router.get("/students", async (req, res) => {
       const requirementsCompleted = completedRequirementsEntries.length;
       const completedRequirementsTitles = completedRequirementsEntries.map(req => req.title);
 
+      // Find endorsement status and details for this student
+      const endorsement = endorsementRequests.find(er => er.studentId.toString() === student._id.toString());
+
       return {
         ...student,
         id: student._id,
         fullName: `${student.firstName} ${student.lastName}`,
         requirementsCompleted,
         totalRequirements: relevantRequirements.length,
-        completedRequirements: completedRequirementsTitles
+        completedRequirements: completedRequirementsTitles,
+        endorsementStatus: endorsement ? endorsement.status : 'unavailable',
+        companyName: endorsement ? endorsement.companyName : null,
+        companyAddress: endorsement ? endorsement.companyAddress : null,
+        supervisor: endorsement ? endorsement.supervisorFullName : null
       };
     });
 
@@ -301,6 +317,20 @@ router.patch("/submissions/:id", async (req, res) => {
     }
 
     const db = await connectDB();
+
+    // If status is rejected, we need to delete the endorsement request for this student
+    if (status === 'rejected') {
+      const submission = await db.collection("submissions").findOne({ _id: new ObjectId(id) });
+      if (submission) {
+        await db.collection("endorsement_requests").deleteOne({ 
+          $or: [
+            { studentId: submission.studentId },
+            { studentId: submission.studentId.toString() }
+          ]
+        });
+      }
+    }
+
     const result = await db.collection("submissions").updateOne(
       { _id: new ObjectId(id) },
       { $set: { status, feedback, updatedAt: new Date() } }
@@ -346,8 +376,23 @@ router.get("/students-monitoring", async (req, res) => {
       .find({ college })
       .toArray();
 
+    // 4. Fetch all endorsement requests for these students to get their status
+    const studentIds = students.map(s => s._id);
+    const endorsementRequests = await db.collection("endorsement_requests").find({
+      $or: [
+        { studentId: { $in: studentIds } },
+        { studentId: { $in: studentIds.map(id => id.toString()) } }
+      ]
+    }).toArray();
+
     // Map data for monitoring
     const monitoringData = students.map(student => {
+      // Find endorsement status for this student
+      const endorsement = endorsementRequests.find(er => 
+        er.studentId.toString() === student._id.toString()
+      );
+      const endorsementStatus = endorsement ? endorsement.status : 'unavailable';
+
       // Filter requirements that apply to this specific student
       const relevantRequirements = requirements.filter(req =>
         !req.course || req.course.length === 0 || req.course.includes(student.course)
@@ -379,6 +424,7 @@ router.get("/students-monitoring", async (req, res) => {
         studentNumber: student.studentNumber,
         email: student.email,
         course: student.course,
+        endorsementStatus,
         submissions: studentSubmissions
       };
     });

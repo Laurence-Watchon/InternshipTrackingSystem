@@ -62,6 +62,7 @@ function AdminStudentRequirementsDetail() {
             email: student.email || 'N/A',
             course: student.course,
             college: getFullCollegeName(user.college),
+            endorsementStatus: student.endorsementStatus || 'unavailable',
             requirementsCompleted: student.submissions.filter(s => s.status === 'verified' || s.status === 'submitted').length,
             totalRequirements: student.submissions.length
           })
@@ -77,7 +78,8 @@ function AdminStudentRequirementsDetail() {
             fileUrl: sub.fileUrl,
             fileName: sub.fileName,
             fileType: sub.fileName?.includes('http') || sub.fileUrl?.includes('http') ? (sub.fileName?.endsWith('.pdf') ? 'pdf' : 'url') : 'file',
-            feedback: sub.feedback
+            feedback: sub.feedback,
+            endorsementStatus: student.endorsementStatus || 'unavailable'
           }))
           setRequirements(transformedReqs)
         }
@@ -128,8 +130,14 @@ function AdminStudentRequirementsDetail() {
         } else if (status === 'rejected') {
           setStudentData(prev => ({
             ...prev,
-            requirementsCompleted: Math.max(0, prev.requirementsCompleted - (requirements.find(r => r.submissionId === submissionId)?.status === 'submitted' || requirements.find(r => r.submissionId === submissionId)?.status === 'verified' ? 1 : 0))
+            requirementsCompleted: Math.max(0, prev.requirementsCompleted - (requirements.find(r => r.submissionId === submissionId)?.status === 'submitted' || requirements.find(r => r.submissionId === submissionId)?.status === 'verified' ? 1 : 0)),
+            endorsementStatus: 'unavailable'
           }))
+          // Also update endorsement status for all requirements in state
+          setRequirements(prev => prev.map(req => ({
+            ...req,
+            endorsementStatus: 'unavailable'
+          })))
         }
 
         // Show toast
@@ -137,6 +145,10 @@ function AdminStudentRequirementsDetail() {
           message: status === 'rejected' ? 'deleting successfully' : 'Updated successfully',
           type: 'success'
         })
+
+        if (status === 'rejected') {
+          window.dispatchEvent(new Event('endorsementCountUpdated'))
+        }
 
         setExpandedId(null)
       } else {
