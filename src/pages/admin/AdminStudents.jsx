@@ -51,7 +51,24 @@ function StudentManagement() {
           totalRequirements: student.totalRequirements,
           isDeployed: student.isDeployed || false,
           completedRequirements: student.completedRequirements || []
-        })).sort((a, b) => a.fullName.localeCompare(b.fullName))
+        })).sort((a, b) => {
+          // Helper to get status priority
+          const getStatusPriority = (s) => {
+            if (s.requirementsCompleted !== s.totalRequirements || s.totalRequirements === 0) return 1; // Pending
+            if (s.endorsementStatus === 'completed') return 3; // Completed
+            return 2; // Reviewing
+          };
+
+          const priorityA = getStatusPriority(a);
+          const priorityB = getStatusPriority(b);
+
+          if (priorityA !== priorityB) {
+            return priorityA - priorityB;
+          }
+
+          // If same status, sort by date (oldest first)
+          return new Date(a.createdAt) - new Date(b.createdAt);
+        })
 
         setAllStudents(mappedData)
       } catch (err) {

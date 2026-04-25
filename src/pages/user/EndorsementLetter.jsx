@@ -167,6 +167,7 @@ function UserEndorsement() {
         setToastType('success')
         setShowToast(true)
         window.dispatchEvent(new Event('endorsementStatusUpdated'))
+        window.dispatchEvent(new Event('endorsementCountUpdated'))
         new BroadcastChannel('endorsement_updates').postMessage('refresh')
       } else {
         const errorData = await response.json()

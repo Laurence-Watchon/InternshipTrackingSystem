@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import AppLayout from '../../components/custom/global/AppLayout'
 import Dialog from '../../components/ui/Dialog'
 import { useAuth } from '../../context/AuthContext'
@@ -7,6 +8,7 @@ import Toast from '../../components/ui/Toast'
 
 function Profile() {
   const { user: authUser } = useAuth()
+  const navigate = useNavigate()
   const [originalData, setOriginalData] = useState(null)
   const [formData, setFormData] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -25,11 +27,17 @@ function Profile() {
       }
 
       try {
-        const response = await fetch(`http://localhost:3001/api/auth/profile/${authUser.id}`)
-        if (!response.ok) {
+        const [profileRes, endorsementRes] = await Promise.all([
+          fetch(`http://localhost:3001/api/auth/profile/${authUser.id}`),
+          fetch(`http://localhost:3001/api/student/endorsement-status?studentId=${authUser.id}`)
+        ])
+
+        if (!profileRes.ok) {
           throw new Error('Failed to fetch profile data')
         }
-        const data = await response.json()
+        
+        const data = await profileRes.json()
+        const endorsementData = endorsementRes.ok ? await endorsementRes.json() : null
 
         // Map database fields to profile fields if necessary
         const profileData = {
@@ -39,12 +47,12 @@ function Profile() {
           phoneNumber: data.phoneNumber || '',
           email: data.email || '',
           college: data.college || '',
-          collegeName: data.college || 'Not specified', // Might need mapping if acronym
+          collegeName: data.college || 'Not specified',
           course: data.course || '',
-          courseName: data.course || 'Not specified',   // Might need mapping if acronym
-          company: data.company || 'Not specified',
-          supervisor: data.supervisor || 'Not specified',
-          startDate: data.startDate || ''
+          courseName: data.course || 'Not specified',
+          company: endorsementData?.companyName || 'Not specified',
+          companyAddress: endorsementData?.companyAddress || 'Not specified',
+          supervisor: endorsementData?.supervisorFullName || 'Not specified'
         }
 
         setOriginalData(profileData)
@@ -75,9 +83,6 @@ function Profile() {
     }
     if (name === 'phoneNumber') {
       processedValue = value.replace(/[^0-9]/g, '').slice(0, 11)
-    }
-    if (name === 'email') {
-      processedValue = value.replace(/\s/g, '')
     }
 
     setFormData(prev => ({ ...prev, [name]: processedValue }))
@@ -111,11 +116,6 @@ function Profile() {
     else if (!formData.phoneNumber.startsWith('09'))
       newErrors.phoneNumber = 'Phone number must start with 09'
 
-    if (!formData.email.trim())
-      newErrors.email = 'Email address is required'
-    else if (!formData.email.endsWith('@gmail.com'))
-      newErrors.email = 'Email must end with @gmail.com'
-
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -136,9 +136,9 @@ function Profile() {
     const minSavingTime = new Promise((resolve) => setTimeout(resolve, 2000))
 
     const updatedData = {
-      ...formData,
       firstName: capitalizeName(formData.firstName),
       lastName: capitalizeName(formData.lastName),
+      phoneNumber: formData.phoneNumber
     }
 
     try {
@@ -159,6 +159,11 @@ function Profile() {
 
       setToast({ show: true, message: 'Profile updated successfully!', type: 'success' })
       setOriginalData(updatedData)
+      
+      // Redirect to home after a brief delay so they can see the success message
+      setTimeout(() => {
+        navigate('/')
+      }, 1500)
     } catch (err) {
       console.error('Error updating profile:', err)
       setToast({ show: true, message: 'Failed to update profile. Please try again.', type: 'error' })
@@ -270,11 +275,10 @@ function Profile() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
                   <input
-                    type="email" name="email" value={formData.email} onChange={handleChange}
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition
-                      ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-green-500'}`}
+                    type="email" name="email" value={formData.email} readOnly
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
                   />
-                  {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+                  <p className="mt-1 text-xs text-gray-400">Email address cannot be changed.</p>
                 </div>
               </div>
             </div>
@@ -311,13 +315,13 @@ function Profile() {
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Supervisor Name</label>
-                  <input type="text" value={formData.supervisor} disabled
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Company Address</label>
+                  <input type="text" value={formData.companyAddress} disabled
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                  <input type="date" value={formData.startDate} disabled
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Supervisor Name</label>
+                  <input type="text" value={formData.supervisor} disabled
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed" />
                 </div>
               </div>

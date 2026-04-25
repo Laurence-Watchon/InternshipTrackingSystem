@@ -65,14 +65,15 @@ function AdminStudentsTable({ students, onViewDetails }) {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${student.isDeployed
-                        ? 'bg-green-100 text-green-800'
-                        : (student.requirementsCompleted === student.totalRequirements && student.totalRequirements > 0)
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-yellow-100 text-yellow-800'
+                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        (student.requirementsCompleted === student.totalRequirements && student.totalRequirements > 0 && student.endorsementStatus === 'completed')
+                          ? 'bg-green-100 text-green-800'
+                          : (student.requirementsCompleted === student.totalRequirements && student.totalRequirements > 0)
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-yellow-100 text-yellow-800'
                       }`}>
-                      {student.isDeployed
-                        ? 'Deployed'
+                      {(student.requirementsCompleted === student.totalRequirements && student.totalRequirements > 0 && student.endorsementStatus === 'completed')
+                        ? 'Completed'
                         : (student.requirementsCompleted === student.totalRequirements && student.totalRequirements > 0)
                           ? 'Reviewing'
                           : 'Pending'
