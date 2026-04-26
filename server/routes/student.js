@@ -386,7 +386,6 @@ router.post("/time-logs", async (req, res) => {
       hours: parseFloat(hours),
       shift,
       description: description || "",
-      status: "pending", // Default to pending
       createdAt: new Date(),
       updatedAt: new Date()
     };

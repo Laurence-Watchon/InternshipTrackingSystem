@@ -68,11 +68,7 @@ export default function UserTimeTracking() {
     fetchData()
   }, [user])
 
-  const totalLoggedHours = logs.reduce((s, l) => s + l.hours, 0)
-  const approvedOnlyHours = logs
-    .filter(l => l.status === 'approved')
-    .reduce((s, l) => s + l.hours, 0)
-
+  const totalLoggedHours = logs.reduce((s, l) => s + (l.hours || 0), 0)
   const remaining = Math.max(0, requiredHours - totalLoggedHours)
 
   const daysOnDuty = new Set(
@@ -189,7 +185,7 @@ export default function UserTimeTracking() {
             <Card
               title="Total Hours Completed"
               value={`${totalLoggedHours} hrs`}
-              sub={`${approvedOnlyHours} hrs approved / ${requiredHours} required`}
+              sub={`Progress towards ${requiredHours} required hours`}
               color="bg-green-500"
               icon={
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
