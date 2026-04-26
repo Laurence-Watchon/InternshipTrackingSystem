@@ -49,7 +49,6 @@ export default function TimeTable({ logs = [], pageSize = 10, currentPage = 1, o
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Time In</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Time Out</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Hours</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Description</th>
                 <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
               </tr>
@@ -57,7 +56,7 @@ export default function TimeTable({ logs = [], pageSize = 10, currentPage = 1, o
             <tbody className="divide-y divide-gray-50">
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={8}>
+                  <td colSpan={7}>
                     <div className="flex flex-col items-center justify-center py-16 text-gray-400">
                       <svg className="w-10 h-10 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -71,7 +70,6 @@ export default function TimeTable({ logs = [], pageSize = 10, currentPage = 1, o
               ) : (
                 paginated.map(log => {
                   const isAM = log.shift === 'morning'
-                  const status = log.status || 'pending'
                   return (
                     <tr key={log.id} className="hover:bg-gray-50 transition-colors">
                       {/* Date */}
@@ -106,16 +104,6 @@ export default function TimeTable({ logs = [], pageSize = 10, currentPage = 1, o
 
                       {/* Hours */}
                       <td className="px-5 py-3.5 font-semibold text-gray-900 whitespace-nowrap">{log.hours} hrs</td>
-
-                      {/* Status */}
-                      <td className="px-5 py-3.5 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                          ${status === 'approved' ? 'bg-green-100 text-green-800' : 
-                            status === 'rejected' ? 'bg-red-100 text-red-800' : 
-                            'bg-gray-100 text-gray-800'}`}>
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
-                        </span>
-                      </td>
 
                       {/* Description */}
                       <td className="px-5 py-3.5 text-gray-500 hidden md:table-cell max-w-[150px] truncate" title={log.description}>

@@ -243,7 +243,6 @@ export default function LogTimeDialog({ isOpen, onClose, onConfirm, editLog = nu
         timeOut:     to12Display(timeOut),
         hours,
         description: form.description.trim(),
-        status:      isEditMode ? editLog.status : 'pending',
       }),
       minDelay
     ])

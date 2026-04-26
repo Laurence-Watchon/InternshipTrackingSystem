@@ -16,22 +16,11 @@ const scrollbarStyle = `
   .custom-scroll { scrollbar-width: thin; scrollbar-color: #86efac transparent; }
 `
 
-// Replace with real API data
-const WEEKLY_DATA = [
-  { week: 'Week 1', hours: 20 },
-  { week: 'Week 2', hours: 25 },
-  { week: 'Week 3', hours: 28 },
-  { week: 'Week 4', hours: 22 },
-  { week: 'Week 5', hours: 25 },
-]
-
-const APPROVED_HOURS = 120
-// Removed hardcoded REQUIRED_HOURS as it's now dynamic
-
 function UserHome() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(true);
+  const [weeklyStats, setWeeklyStats] = useState([])
   const [studentStats, setStudentStats] = useState({
     requirements: '0 / 0',
     requirementsPercent: '0%',
@@ -39,27 +28,35 @@ function UserHome() {
     hoursPercent: '0%',
     requiredHours: 0,
     approvedHours: 0,
-    endorsementStatus: 'Pending'
+    endorsementStatus: 'Pending',
+    journalEntries: '0'
   })
 
   useEffect(() => {
     const loadData = async () => {
-      if (!user?.id) return
+      const studentId = user?.id || user?._id
+      if (!studentId) return
 
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 800));
 
       try {
         // Fetch all needed data in parallel
-        const [reqRes, subRes, settingsRes] = await Promise.all([
+        const [reqRes, subRes, settingsRes, logsRes, journalsRes, endRes] = await Promise.all([
           fetch(`http://localhost:3001/api/student/requirements?college=${encodeURIComponent(user.college)}`),
-          fetch(`http://localhost:3001/api/student/my-submissions?studentId=${user.id}`),
-          fetch(`http://localhost:3001/api/student/college-settings?college=${encodeURIComponent(user.college)}`)
+          fetch(`http://localhost:3001/api/student/my-submissions?studentId=${studentId}`),
+          fetch(`http://localhost:3001/api/student/college-settings?college=${encodeURIComponent(user.college)}`),
+          fetch(`http://localhost:3001/api/student/time-logs?studentId=${studentId}`),
+          fetch(`http://localhost:3001/api/student/journals?studentId=${studentId}`),
+          fetch(`http://localhost:3001/api/student/endorsement-status?studentId=${studentId}`)
         ])
 
-        const [reqs, subs, settings] = await Promise.all([
+        const [reqs, subs, settings, logs, journals, endData] = await Promise.all([
           reqRes.json(),
           subRes.json(),
-          settingsRes.json()
+          settingsRes.json(),
+          logsRes.json(),
+          journalsRes.json(),
+          endRes.json()
         ])
 
         if (reqRes.ok && subRes.ok && settingsRes.ok) {
@@ -70,16 +67,50 @@ function UserHome() {
 
           // Get required hours for this student's course
           const reqHours = (settings.requiredHours && settings.requiredHours[user.course]) || 0
-          // For now, approvedHours is placeholder until we have journal system
-          const appHours = 0
+
+          // Calculate total hours from time logs
+          const appHours = logsRes.ok ? logs
+            .reduce((sum, log) => sum + (log.hours || 0), 0) : 0
+          
           const hoursPercent = reqHours > 0 ? (appHours / reqHours) * 100 : 0
 
-          // Check for Endorsement status (it's one of the requirements usually, or derived)
-          // For now, we'll look for a submission with "endorsement" in title or just "Pending"
-          const endorsementSub = subs.find(s => s.fileName.toLowerCase().includes('endorsement'))
-          const endStatus = endorsementSub ?
-            (endorsementSub.status === 'verified' ? 'Ready' : 'In Process') :
-            'Pending'
+          // Calculate Weekly Stats
+          if (logsRes.ok && logs.length > 0) {
+            const sortedLogs = [...logs].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const startDate = new Date(sortedLogs[0].date);
+            const weeklyHoursMap = {};
+            
+            sortedLogs.forEach(log => {
+              const logDate = new Date(log.date);
+              const diffDays = Math.floor((logDate - startDate) / (1000 * 60 * 60 * 24));
+              const weekNum = Math.floor(diffDays / 7) + 1;
+              weeklyHoursMap[weekNum] = (weeklyHoursMap[weekNum] || 0) + (log.hours || 0);
+            });
+
+            const maxWeek = Math.max(...Object.keys(weeklyHoursMap).map(Number), 1);
+            const weeklyDataArr = [];
+            for (let i = 1; i <= maxWeek; i++) {
+              weeklyDataArr.push({
+                week: `Week ${i}`,
+                hours: weeklyHoursMap[i] || 0
+              });
+            }
+            setWeeklyStats(weeklyDataArr);
+          } else {
+            // Default to Week 1 with 0 hours if no logs yet
+            setWeeklyStats([{ week: 'Week 1', hours: 0 }]);
+          }
+
+          // Endorsement status from endorsement_requests collection
+          let endStatus = 'Pending'
+          if (endRes.ok && endData) {
+            // Check for explicit status or if a scanned file exists
+            if (endData.status === 'ready' || endData.status === 'completed' || endData.scannedFileUrl) {
+              endStatus = 'Deployed'
+            } else if (endData.status === 'in_process' || endData.status === 'pending') {
+              endStatus = 'In Process'
+            }
+          }
 
           setStudentStats({
             requirements: `${submittedCount} / ${totalReqs}`,
@@ -88,7 +119,8 @@ function UserHome() {
             hoursPercent: `${hoursPercent}%`,
             requiredHours: reqHours,
             approvedHours: appHours,
-            endorsementStatus: endStatus
+            endorsementStatus: endStatus,
+            journalEntries: journalsRes.ok ? journals.length.toString() : '0'
           })
         }
 
@@ -115,7 +147,7 @@ function UserHome() {
       title: 'Endorsement Letter',
       value: studentStats.endorsementStatus,
       icon: <CircleCheckBig />,
-      color: studentStats.endorsementStatus === 'Ready' ? 'bg-green-500' : 'bg-yellow-500',
+      color: studentStats.endorsementStatus === 'Deployed' ? 'bg-green-500' : 'bg-yellow-500',
     },
     {
       title: 'Total Hours',
@@ -126,7 +158,7 @@ function UserHome() {
     },
     {
       title: 'Journal Entries',
-      value: '0',
+      value: studentStats.journalEntries,
       icon: <BookOpen />,
       color: 'bg-purple-500',
     },
@@ -291,7 +323,7 @@ function UserHome() {
                 <Skeleton variant="rectangular" height="100%" />
               </div>
             ) : (
-              <WeeklyHours weeklyData={WEEKLY_DATA} target={40} />
+              <WeeklyHours weeklyData={weeklyStats} target={40} />
             )}
           </div>
           <div className="lg:col-span-1">
