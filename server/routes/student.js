@@ -4,6 +4,7 @@ import { ObjectId } from "mongodb";
 import multer from "multer";
 import cloudinary from "../config/cloudinary.js";
 import streamifier from "streamifier";
+import { logActivity } from "../utils/activityLogger.js";
 
 const router = express.Router();
 
@@ -116,6 +117,15 @@ router.post("/submissions", async (req, res) => {
       { upsert: true }
     );
 
+    // Log activity
+    await logActivity(studentId, {
+      type: "requirement_upload",
+      title: "Requirement uploaded",
+      description: `${fileName} submitted for review`,
+      icon: "📄",
+      color: "bg-yellow-100 text-yellow-600"
+    });
+
     res.status(201).json({
       message: "Submission successful.",
       id: result.upsertedId || result.matchedCount
@@ -208,6 +218,15 @@ router.post("/endorsement-request", async (req, res) => {
       { $set: request },
       { upsert: true }
     );
+
+    // Log activity
+    await logActivity(studentId, {
+      type: "endorsement_request",
+      title: "Endorsement requested",
+      description: `Request for ${companyName} submitted`,
+      icon: "✉️",
+      color: "bg-blue-100 text-blue-600"
+    });
 
     res.status(201).json({ message: "Endorsement request submitted successfully." });
   } catch (err) {
@@ -391,6 +410,16 @@ router.post("/time-logs", async (req, res) => {
     };
 
     const result = await db.collection("time_logs").insertOne(newLog);
+
+    // Log activity
+    await logActivity(studentId, {
+      type: "time_log",
+      title: "Time logged",
+      description: `You logged ${hours} hours for ${date}`,
+      icon: "⏰",
+      color: "bg-blue-100 text-blue-600"
+    });
+
     res.status(201).json({ ...newLog, id: result.insertedId, _id: result.insertedId });
   } catch (err) {
     console.error("Error creating time log:", err);
@@ -506,6 +535,16 @@ router.post("/journals", async (req, res) => {
     };
 
     const result = await db.collection("journals").insertOne(newJournal);
+
+    // Log activity
+    await logActivity(studentId, {
+      type: "journal_submission",
+      title: "Journal submitted",
+      description: `Daily journal for ${date} submitted`,
+      icon: "📝",
+      color: "bg-purple-100 text-purple-600"
+    });
+
     res.status(201).json({ ...newJournal, id: result.insertedId, _id: result.insertedId });
   } catch (err) {
     console.error("Error creating journal:", err);
@@ -567,6 +606,29 @@ router.delete("/journals/:id", async (req, res) => {
   } catch (err) {
     console.error("Error deleting journal:", err);
     res.status(500).json({ error: "Failed to delete journal." });
+  }
+});
+
+// -----------------------------------------------
+// GET /api/student/activities
+// Fetches recent activities for a student
+// -----------------------------------------------
+router.get("/activities", async (req, res) => {
+  try {
+    const { studentId } = req.query;
+    if (!studentId) return res.status(400).json({ error: "studentId is required." });
+
+    const db = await connectDB();
+    const activities = await db.collection("activities")
+      .find({ studentId: new ObjectId(studentId) })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .toArray();
+
+    res.json(activities);
+  } catch (err) {
+    console.error("Error fetching activities:", err);
+    res.status(500).json({ error: "Failed to fetch activities." });
   }
 });
 
