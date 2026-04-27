@@ -128,6 +128,12 @@ export default function LogTimeDialog({ isOpen, onClose, onConfirm, editLog = nu
 
   useEffect(() => {
     if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    
+    if (isOpen) {
       if (editLog) {
         const inParts  = to24Parts(editLog.timeIn)
         const outParts = to24Parts(editLog.timeOut)
@@ -148,6 +154,10 @@ export default function LogTimeDialog({ isOpen, onClose, onConfirm, editLog = nu
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setErrors({})
       setIsSubmitting(false)
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset'
     }
   }, [isOpen, editLog])
 

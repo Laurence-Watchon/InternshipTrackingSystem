@@ -3,7 +3,14 @@ import { TriangleAlert } from 'lucide-react'
 
 export default function RejectedDialog({ isOpen, onClose, reason, college }) {
   useEffect(() => {
-    // Disabled keyboard escape so the user must click "Understood"
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
   }, [isOpen])
 
   if (!isOpen) return null

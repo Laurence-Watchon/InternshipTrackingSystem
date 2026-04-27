@@ -33,6 +33,17 @@ const styles = `
 `
 
 export default function PendingApprovalDialog({ isOpen, onClose }) {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen])
+
   // Suppress keyboard Escape key so the dialog cannot be closed that way
   useEffect(() => {
     if (!isOpen) return

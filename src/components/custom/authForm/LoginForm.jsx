@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
 import SchoolLogo from '../../../assets/Schoollogo.png'
-import GoogleLogo from '../../../assets/google.png'
 import Loading from '../../ui/CenterLoading'
 import RejectedDialog from '../../ui/RejectedDialog'
 import PendingApprovalDialog from '../dialog/PendingApprovalDialog'
 import ForgotPasswordDialog from '../dialog/ForgotPasswordDialog'
 import Toast from '../../ui/Toast'
+import { Eye, EyeOff } from 'lucide-react'
 
 function LoginForm() {
   const navigate = useNavigate()
@@ -39,6 +39,7 @@ function LoginForm() {
 
   const [pendingDialog, setPendingDialog] = useState(false)
   const [forgotPasswordDialog, setForgotPasswordDialog] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -215,16 +216,25 @@ function LoginForm() {
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
               Password
             </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              autoComplete="current-password"
-              className={getInputClass('password')}
-              placeholder="Enter your password"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={handleChange}
+                autoComplete="current-password"
+                className={getInputClass('password')}
+                placeholder="Enter your password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
             {errors.password && (
               <p className="mt-1 text-sm text-red-600">{errors.password}</p>
             )}
@@ -264,30 +274,6 @@ function LoginForm() {
             Login
           </button>
 
-          {/* Divider */}
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500">Or continue with</span>
-            </div>
-          </div>
-
-          {/* Social Login Button */}
-          <div className="flex justify-center">
-            <button
-              type="button"
-              className="flex items-center justify-center px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition focus:outline-none focus:ring-2 focus:ring-green-500 min-w-[280px]"
-            >
-              <img
-                src={GoogleLogo}
-                alt="Google"
-                className="w-5 h-5 object-contain"
-              />
-              <span className="ml-2 text-sm font-medium text-gray-700">Continue with Google</span>
-            </button>
-          </div>
 
           {/* Sign Up Link */}
           <p className="text-center text-sm text-gray-600 mt-4">
