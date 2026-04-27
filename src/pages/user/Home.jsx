@@ -3,7 +3,23 @@ import AppLayout from '../../components/custom/global/AppLayout'
 import WeeklyHours from '../../components/ui/WeeklyHours'
 import CircularProgress from '../../components/ui/CircularProgress'
 import Skeleton from '../../components/ui/Skeleton'
-import { NotebookText, CircleCheckBig, Hourglass, BookOpen } from 'lucide-react'
+import { 
+  NotebookText, 
+  CircleCheckBig, 
+  Hourglass, 
+  BookOpen, 
+  Clock, 
+  FileText, 
+  Mail, 
+  PenTool, 
+  UserCheck, 
+  CheckCircle, 
+  XCircle, 
+  FileCheck, 
+  FileX,
+  Trophy,
+  MessageSquare
+} from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import PendingApprovalDialog from '../../components/custom/dialog/PendingApprovalDialog'
 import { useNavigate } from 'react-router-dom'
@@ -31,6 +47,8 @@ function UserHome() {
     endorsementStatus: 'Pending',
     journalEntries: '0'
   })
+  const [activities, setActivities] = useState([])
+  const [upcomingTasks, setUpcomingTasks] = useState([])
 
   useEffect(() => {
     const loadData = async () => {
@@ -41,22 +59,24 @@ function UserHome() {
 
       try {
         // Fetch all needed data in parallel
-        const [reqRes, subRes, settingsRes, logsRes, journalsRes, endRes] = await Promise.all([
+        const [reqRes, subRes, settingsRes, logsRes, journalsRes, endRes, activitiesRes] = await Promise.all([
           fetch(`http://localhost:3001/api/student/requirements?college=${encodeURIComponent(user.college)}`),
           fetch(`http://localhost:3001/api/student/my-submissions?studentId=${studentId}`),
           fetch(`http://localhost:3001/api/student/college-settings?college=${encodeURIComponent(user.college)}`),
           fetch(`http://localhost:3001/api/student/time-logs?studentId=${studentId}`),
           fetch(`http://localhost:3001/api/student/journals?studentId=${studentId}`),
-          fetch(`http://localhost:3001/api/student/endorsement-status?studentId=${studentId}`)
+          fetch(`http://localhost:3001/api/student/endorsement-status?studentId=${studentId}`),
+          fetch(`http://localhost:3001/api/student/activities?studentId=${studentId}`)
         ])
 
-        const [reqs, subs, settings, logs, journals, endData] = await Promise.all([
+        const [reqs, subs, settings, logs, journals, endData, activitiesData] = await Promise.all([
           reqRes.json(),
           subRes.json(),
           settingsRes.json(),
           logsRes.json(),
           journalsRes.json(),
-          endRes.json()
+          endRes.json(),
+          activitiesRes.json()
         ])
 
         if (reqRes.ok && subRes.ok && settingsRes.ok) {
@@ -122,6 +142,55 @@ function UserHome() {
             endorsementStatus: endStatus,
             journalEntries: journalsRes.ok ? journals.length.toString() : '0'
           })
+
+          // Set Activities
+          if (activitiesRes.ok) {
+            setActivities(activitiesData)
+          }
+
+          // Generate Upcoming Tasks
+          const tasks = []
+          
+          // 1. Pending Requirements
+          reqs.forEach(req => {
+            const sub = subs.find(s => s.requirementId === req._id || s.requirementId?.toString() === req._id?.toString())
+            if (!sub) {
+              tasks.push({
+                task: `Upload ${req.title}`,
+                deadline: 'Pending submission',
+                priority: 'high'
+              })
+            } else if (sub.status === 'rejected') {
+              tasks.push({
+                task: `Re-upload ${req.title}`,
+                deadline: 'Submission rejected',
+                priority: 'high'
+              })
+            }
+          })
+
+          // 2. Missing Journal for today
+          const today = new Date().toISOString().split('T')[0]
+          const journalToday = journals.find(j => j.date === today)
+          if (!journalToday) {
+            tasks.push({
+              task: 'Submit daily journal',
+              deadline: 'Today',
+              priority: 'high'
+            })
+          }
+
+          // 3. Hours Milestone
+          if (appHours < reqHours) {
+            const remaining = reqHours - appHours
+            tasks.push({
+              task: `Complete ${remaining} more hours`,
+              deadline: 'Internship goal',
+              priority: 'medium'
+            })
+          }
+
+          setUpcomingTasks(tasks)
         }
 
         await minLoadingTime;
@@ -164,27 +233,34 @@ function UserHome() {
     },
   ]
 
-  const recentActivities = [
-    { title: 'Time logged', description: 'You logged 8 hours today', time: '2 hours ago', icon: '⏰', color: 'bg-blue-100 text-blue-600' },
-    { title: 'Document approved', description: 'Your resume has been approved', time: '5 hours ago', icon: '✅', color: 'bg-green-100 text-green-600' },
-    { title: 'Journal submitted', description: 'Daily journal for Feb 15 submitted', time: '1 day ago', icon: '📝', color: 'bg-purple-100 text-purple-600' },
-    { title: 'Requirement uploaded', description: 'Medical certificate submitted for review', time: '2 days ago', icon: '📄', color: 'bg-yellow-100 text-yellow-600' },
-    { title: 'Hours milestone', description: 'You reached 100 hours!', time: '3 days ago', icon: '🏆', color: 'bg-orange-100 text-orange-600' },
-    { title: 'Supervisor comment', description: 'Your supervisor left a comment on your journal', time: '4 days ago', icon: '💬', color: 'bg-blue-100 text-blue-600' },
-    { title: 'Document rejected', description: 'Please re-upload your barangay clearance', time: '4 days ago', icon: '❌', color: 'bg-red-100 text-red-600' },
-    { title: 'Journal submitted', description: 'Daily journal for Feb 12 submitted', time: '5 days ago', icon: '📝', color: 'bg-purple-100 text-purple-600' },
-    { title: 'Time logged', description: 'You logged 7.5 hours', time: '5 days ago', icon: '⏰', color: 'bg-blue-100 text-blue-600' },
-    { title: 'Account verified', description: 'Your student account has been verified', time: '6 days ago', icon: '🎉', color: 'bg-green-100 text-green-600' },
-  ]
+  const formatTimeAgo = (dateString) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInSeconds = Math.floor((now - date) / 1000)
+    
+    if (diffInSeconds < 60) return 'just now'
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`
+    if (diffInSeconds < 172800) return 'yesterday'
+    return `${Math.floor(diffInSeconds / 86400)} days ago`
+  }
 
-  const upcomingTasks = [
-    { task: 'Submit Medical Certificate', deadline: 'Feb 20, 2026', priority: 'high' },
-    { task: 'Complete 40 more hours', deadline: 'Mar 15, 2026', priority: 'medium' },
-    { task: 'Upload daily journal', deadline: 'Today', priority: 'high' },
-    { task: 'Get supervisor signature', deadline: 'Feb 25, 2026', priority: 'high' },
-    { task: 'Submit weekly report', deadline: 'Feb 22, 2026', priority: 'medium' },
-    { task: 'Update endorsement letter', deadline: 'Mar 1, 2026', priority: 'medium' },
-  ]
+  const getActivityIcon = (type) => {
+    switch (type) {
+      case 'requirement_upload': return <FileText size={18} />
+      case 'endorsement_request': return <Mail size={18} />
+      case 'time_log': return <Clock size={18} />
+      case 'journal_submission': return <PenTool size={18} />
+      case 'account_verified': return <UserCheck size={18} />
+      case 'document_approved': return <CheckCircle size={18} />
+      case 'document_rejected': return <XCircle size={18} />
+      case 'endorsement_ready': return <FileCheck size={18} />
+      case 'endorsement_rejected': return <FileX size={18} />
+      case 'milestone': return <Trophy size={18} />
+      case 'comment': return <MessageSquare size={18} />
+      default: return <BookOpen size={18} />
+    }
+  }
 
   return (
     <>
@@ -259,19 +335,23 @@ function UserHome() {
                       </div>
                     </div>
                   ))
-                ) : (
-                  recentActivities.map((activity, index) => (
+                ) : activities.length > 0 ? (
+                  activities.map((activity, index) => (
                     <div key={index} className="flex items-start space-x-4">
                       <div className={`${activity.color} w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0`}>
-                        <span className="text-lg">{activity.icon}</span>
+                        {getActivityIcon(activity.type)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900">{activity.title}</p>
                         <p className="text-sm text-gray-600">{activity.description}</p>
-                        <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
+                        <p className="text-xs text-gray-500 mt-1">{formatTimeAgo(activity.createdAt)}</p>
                       </div>
                     </div>
                   ))
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+                    <p className="text-sm italic">No activities yet</p>
+                  </div>
                 )}
               </div>
             </div>
@@ -294,9 +374,9 @@ function UserHome() {
                       <Skeleton variant="text" width="30%" />
                     </div>
                   ))
-                ) : (
+                ) : upcomingTasks.length > 0 ? (
                   upcomingTasks.map((task, index) => (
-                    <div key={index} className="border-l-4 border-green-500 pl-4 py-2">
+                    <div key={index} className={`border-l-4 ${task.priority === 'high' ? 'border-red-500' : 'border-green-500'} pl-4 py-2`}>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <p className="text-sm font-medium text-gray-900">{task.task}</p>
@@ -309,6 +389,10 @@ function UserHome() {
                       </div>
                     </div>
                   ))
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+                    <p className="text-sm italic">All caught up!</p>
+                  </div>
                 )}
               </div>
             </div>

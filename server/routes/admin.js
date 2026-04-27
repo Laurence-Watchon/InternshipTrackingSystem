@@ -1,6 +1,7 @@
 import express from "express";
 import { connectDB } from "../db.js";
 import { ObjectId } from "mongodb";
+import { logActivity } from "../utils/activityLogger.js";
 
 const router = express.Router();
 
@@ -47,6 +48,15 @@ router.put("/approve/:id", async (req, res) => {
     if (result.matchedCount === 0) {
       return res.status(404).json({ error: "Student not found." });
     }
+
+    // Log activity
+    await logActivity(id, {
+      type: "account_verified",
+      title: "Account verified",
+      description: "Your student account has been verified",
+      icon: "🎉",
+      color: "bg-green-100 text-green-600"
+    });
 
     res.json({ message: "Student approved successfully." });
   } catch (err) {
@@ -340,6 +350,21 @@ router.patch("/submissions/:id", async (req, res) => {
       return res.status(404).json({ error: "Submission not found." });
     }
 
+    // Log activity
+    const submission = await db.collection("submissions").findOne({ _id: new ObjectId(id) });
+    if (submission) {
+      const requirement = await db.collection("requirements").findOne({ _id: submission.requirementId });
+      await logActivity(submission.studentId, {
+        type: status === "verified" ? "document_approved" : "document_rejected",
+        title: status === "verified" ? "Document approved" : "Document rejected",
+        description: status === "verified" 
+          ? `Your ${requirement?.title || "document"} has been approved`
+          : `Your ${requirement?.title || "document"} was rejected: ${feedback || "Please re-upload"}`,
+        icon: status === "verified" ? "✅" : "❌",
+        color: status === "verified" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
+      });
+    }
+
     res.json({ message: "Submission updated successfully." });
   } catch (err) {
     console.error("Error updating submission:", err);
@@ -598,6 +623,37 @@ router.patch("/endorsements/:id", async (req, res) => {
 
     if (result.matchedCount === 0) {
       return res.status(404).json({ error: "Endorsement request not found." });
+    }
+
+    // Log activity
+    const request = await db.collection("endorsement_requests").findOne({ _id: new ObjectId(id) });
+    if (request) {
+      let activityTitle = "";
+      let activityDesc = "";
+      let activityIcon = "";
+      let activityColor = "";
+
+      if (dbStatus === 'ready') {
+        activityTitle = "Endorsement Letter Ready";
+        activityDesc = `Your endorsement letter for ${request.companyName} is ready for pick-up/download`;
+        activityIcon = "📄";
+        activityColor = "bg-green-100 text-green-600";
+      } else if (dbStatus === 'rejected') {
+        activityTitle = "Endorsement Rejected";
+        activityDesc = `Your request for ${request.companyName} was rejected: ${rejectionReason || "Please contact admin"}`;
+        activityIcon = "❌";
+        activityColor = "bg-red-100 text-red-600";
+      }
+
+      if (activityTitle) {
+        await logActivity(request.studentId, {
+          type: `endorsement_${dbStatus}`,
+          title: activityTitle,
+          description: activityDesc,
+          icon: activityIcon,
+          color: activityColor
+        });
+      }
     }
 
     res.json({ message: "Endorsement request updated successfully." });
