@@ -18,6 +18,12 @@ export default function ForgotPasswordDialog({ isOpen, onClose, showGlobalToast 
 
   // Reset state when dialog opens/closes
   useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    
     if (!isOpen) {
       setStep('email')
       setEmail('')
@@ -27,6 +33,10 @@ export default function ForgotPasswordDialog({ isOpen, onClose, showGlobalToast 
       setError('')
       setFieldErrors({})
       clearInterval(timerRef.current)
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset'
     }
   }, [isOpen])
 
