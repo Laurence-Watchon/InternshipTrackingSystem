@@ -1,7 +1,69 @@
-function AdminEndorsementTable({ students, onReject, onEndorse, onComplete }) {
+import Skeleton from './Skeleton'
+
+function AdminEndorsementTable({ students, onReject, onEndorse, onComplete, isLoading }) {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      {students.length > 0 ? (
+      {isLoading ? (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Full Name
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Student Number
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Company Name
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Supervisor
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {[...Array(5)].map((_, i) => (
+                <tr key={i} className="hover:bg-gray-50">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center">
+                      <div>
+                        <Skeleton variant="text" width={120} className="bg-gray-200" />
+                        <Skeleton variant="text" width={80} className="bg-gray-200 mt-1" />
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <Skeleton variant="text" width={90} className="bg-gray-200" />
+                  </td>
+                  <td className="px-4 py-3">
+                    <Skeleton variant="text" width={150} className="bg-gray-200" />
+                    <Skeleton variant="text" width={100} className="bg-gray-200 mt-1" />
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <Skeleton variant="text" width={120} className="bg-gray-200" />
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <Skeleton variant="rectangular" width={60} height={24} className="rounded-full bg-gray-200" />
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-right">
+                    <div className="flex items-center justify-end space-x-2">
+                      <Skeleton variant="rectangular" width={50} height={24} className="rounded bg-gray-200" />
+                      <Skeleton variant="rectangular" width={60} height={24} className="rounded bg-gray-200" />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : students.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -62,27 +124,38 @@ function AdminEndorsementTable({ students, onReject, onEndorse, onComplete }) {
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-right text-sm">
                     {student.status === 'pending' ? (
-                      <div className="flex items-center justify-end space-x-2">
-                        <button
-                          onClick={() => onReject(student)}
-                          className="text-red-600 hover:text-red-900 font-medium focus:outline-none"
-                        >
-                          Reject
-                        </button>
+                      <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => onEndorse(student)}
-                          className="text-green-600 hover:text-green-900 font-medium focus:outline-none"
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-green-700 bg-green-100 rounded-lg focus:outline-none hover:bg-green-200 transition"
                         >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
                           Endorse
+                        </button>
+                        <button
+                          onClick={() => onReject(student)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-100 rounded-lg focus:outline-none hover:bg-red-200 transition"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          Reject
                         </button>
                       </div>
                     ) : student.status === 'ready' ? (
-                      <button
-                        onClick={() => onComplete(student)}
-                        className="text-blue-600 hover:text-blue-900 font-medium focus:outline-none"
-                      >
-                        Complete
-                      </button>
+                      <div className="flex items-center justify-end">
+                        <button
+                          onClick={() => onComplete(student)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-100 rounded-lg focus:outline-none hover:bg-blue-200 transition"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Complete
+                        </button>
+                      </div>
                     ) : (
                       <span className="text-gray-400 text-xs"></span>
                     )}

@@ -3,38 +3,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
 import PageTitle from '../../ui/PageTitle'
 import Dialog from '../../ui/Dialog'
-import { Bell } from 'lucide-react';
 
 function AppTopbar({ onMenuClick }) {
     const [showProfileMenu, setShowProfileMenu] = useState(false)
-    const [showNotifications, setShowNotifications] = useState(false)
     const [showLogoutDialog, setShowLogoutDialog] = useState(false)
     const { user, logout } = useAuth()
     const navigate = useNavigate()
-
-    const notifications = [
-        {
-            id: 1,
-            title: 'Document Approved',
-            message: 'Your resume has been approved',
-            time: '5 min ago',
-            unread: true
-        },
-        {
-            id: 2,
-            title: 'New Requirement',
-            message: 'Medical certificate is now required',
-            time: '1 hour ago',
-            unread: true
-        },
-        {
-            id: 3,
-            title: 'Time Log Reminder',
-            message: 'Don\'t forget to log your hours today',
-            time: '2 hours ago',
-            unread: false
-        }
-    ]
 
     const handleLogoutClick = () => {
         setShowLogoutDialog(true)
@@ -76,68 +50,11 @@ function AppTopbar({ onMenuClick }) {
                     {/* Right side - Notifications, Profile */}
                     <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
                         <>
-                            {/* Notifications */}
-                                <div className="relative">
-                                    <button
-                                        onClick={() => {
-                                            setShowNotifications(!showNotifications)
-                                            setShowProfileMenu(false)
-                                        }}
-                                        className="bg-white relative p-2 text-black-500 hover:text-green-600 hover:bg-green-50 focus:outline-none rounded-lg"
-                                        aria-label="Notifications"
-                                    >
-                                        <Bell />
-                                        {/* Notification badge */}
-                                        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                                    </button>
-
-                                    {/* Notifications Dropdown */}
-                                    {showNotifications && (
-                                        <>
-                                            <div
-                                                className="fixed inset-0 z-10"
-                                                onClick={() => setShowNotifications(false)}
-                                            />
-                                            <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20 max-h-[80vh] overflow-hidden">
-                                                <div className="px-4 py-2 border-b border-gray-200">
-                                                    <h3 className="font-semibold text-gray-900">Notifications</h3>
-                                                </div>
-                                                <div className="max-h-96 overflow-y-auto">
-                                                    {notifications.map((notif) => (
-                                                        <div
-                                                            key={notif.id}
-                                                            className={`px-4 py-3 hover:bg-gray-50 cursor-pointer ${notif.unread ? 'bg-green-50' : ''
-                                                                }`}
-                                                        >
-                                                            <div className="flex items-start space-x-3">
-                                                                {notif.unread && (
-                                                                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                                                                )}
-                                                                <div className="flex-1 min-w-0">
-                                                                    <p className="text-sm font-medium text-gray-900">{notif.title}</p>
-                                                                    <p className="text-sm text-gray-600 truncate">{notif.message}</p>
-                                                                    <p className="text-xs text-gray-500 mt-1">{notif.time}</p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                                <div className="px-4 py-2 border-t border-gray-200">
-                                                    <button className="bg-white text-sm text-green-600 hover:text-green-700 font-medium">
-                                                        View all notifications
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-
                                 {/* Profile Dropdown */}
                                 <div className="relative">
                                     <button
                                         onClick={() => {
                                             setShowProfileMenu(!showProfileMenu)
-                                            setShowNotifications(false)
                                         }}
                                         className="bg-white flex items-center space-x-2 sm:space-x-3 focus:outline-none p-2 rounded-lg hover:bg-green-50"
                                         aria-label="User menu"

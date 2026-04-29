@@ -55,9 +55,11 @@ export default function AdminPendingApprovals() {
 
   // Approve dialog state
   const [approveTarget, setApproveTarget] = useState(null)
+  const [isApproving, setIsApproving] = useState(false)
 
   // Reject dialog state
   const [rejectTarget, setRejectTarget] = useState(null)
+  const [isRejecting, setIsRejecting] = useState(false)
 
   // Toast notification state
   const [toast, setToast] = useState(null)
@@ -109,10 +111,14 @@ export default function AdminPendingApprovals() {
   })
 
   async function handleApproveConfirm() {
+    setIsApproving(true)
     try {
-      const res = await fetch(`http://localhost:3001/api/admin/approve/${approveTarget._id}`, {
+      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 800))
+      const resPromise = fetch(`http://localhost:3001/api/admin/approve/${approveTarget._id}`, {
         method: 'PUT'
       })
+      const [res] = await Promise.all([resPromise, minLoadingTime])
+      
       if (res.ok) {
         setStudents(prev => prev.filter(s => s._id !== approveTarget._id))
         showToast('Successfully approved', 'success')
@@ -126,18 +132,24 @@ export default function AdminPendingApprovals() {
     } catch (err) {
       console.error("Error approving student:", err)
       showToast('Error approving student', 'error')
+    } finally {
+      setIsApproving(false)
     }
   }
 
   async function handleRejectConfirm(reason) {
+    setIsRejecting(true)
     try {
-      const res = await fetch(`http://localhost:3001/api/admin/reject/${rejectTarget._id}`, {
+      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 800))
+      const resPromise = fetch(`http://localhost:3001/api/admin/reject/${rejectTarget._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ reason })
       })
+      const [res] = await Promise.all([resPromise, minLoadingTime])
+      
       if (res.ok) {
         console.log(`Softly Rejected ${rejectTarget.studentNumber}: ${reason}`)
         setStudents(prev => prev.filter(s => s._id !== rejectTarget._id))
@@ -152,6 +164,8 @@ export default function AdminPendingApprovals() {
     } catch (err) {
       console.error("Error rejecting student:", err)
       showToast('Error rejecting student', 'error')
+    } finally {
+      setIsRejecting(false)
     }
   }
 
@@ -379,6 +393,8 @@ export default function AdminPendingApprovals() {
           : ''}
         confirmLabel="Approve"
         cancelLabel="Cancel"
+        isLoading={isApproving}
+        loadingLabel="Approving..."
       />
 
       {/* Reject dialog — custom new component */}
@@ -387,6 +403,8 @@ export default function AdminPendingApprovals() {
         onClose={() => setRejectTarget(null)}
         onConfirm={handleRejectConfirm}
         student={rejectTarget}
+        isLoading={isRejecting}
+        loadingLabel="Rejecting..."
       />
 
       {/* Toast Notification */}
