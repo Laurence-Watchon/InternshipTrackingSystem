@@ -54,7 +54,7 @@ router.put("/approve/:id", async (req, res) => {
       type: "account_verified",
       title: "Account verified",
       description: "Your student account has been verified",
-      icon: "🎉",
+      icon: "UserCheck",
       color: "bg-green-100 text-green-600"
     });
 
@@ -360,7 +360,7 @@ router.patch("/submissions/:id", async (req, res) => {
         description: status === "verified" 
           ? `Your ${requirement?.title || "document"} has been approved`
           : `Your ${requirement?.title || "document"} was rejected: ${feedback || "Please re-upload"}`,
-        icon: status === "verified" ? "✅" : "❌",
+        icon: status === "verified" ? "CheckCircle" : "XCircle",
         color: status === "verified" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
       });
     }
@@ -676,12 +676,12 @@ router.patch("/endorsements/:id", async (req, res) => {
       if (dbStatus === 'ready') {
         activityTitle = "Endorsement Letter Ready";
         activityDesc = `Your endorsement letter for ${request.companyName} is ready for pick-up/download`;
-        activityIcon = "📄";
+        activityIcon = "FileText";
         activityColor = "bg-green-100 text-green-600";
       } else if (dbStatus === 'rejected') {
         activityTitle = "Endorsement Rejected";
         activityDesc = `Your request for ${request.companyName} was rejected: ${rejectionReason || "Please contact admin"}`;
-        activityIcon = "❌";
+        activityIcon = "XCircle";
         activityColor = "bg-red-100 text-red-600";
       }
 
