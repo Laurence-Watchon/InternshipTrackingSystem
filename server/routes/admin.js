@@ -625,8 +625,48 @@ router.patch("/endorsements/:id", async (req, res) => {
       return res.status(404).json({ error: "Endorsement request not found." });
     }
 
-    // Log activity
     const request = await db.collection("endorsement_requests").findOne({ _id: new ObjectId(id) });
+
+    // Insert into partner_companies if completed
+    if (dbStatus === 'completed' && request && request.companyName) {
+      let studentObjId;
+      if (typeof request.studentId === 'string') {
+        studentObjId = new ObjectId(request.studentId);
+      } else {
+        studentObjId = request.studentId;
+      }
+      
+      const student = await db.collection("users").findOne({ _id: studentObjId });
+      const college = student ? student.college : "Unknown";
+      const trimmedName = request.companyName.trim();
+
+      const existingCompany = await db.collection("partner_companies").findOne({
+        name: { $regex: new RegExp(`^${trimmedName}$`, "i") },
+        college: college
+      });
+
+      if (existingCompany) {
+        await db.collection("partner_companies").updateOne(
+          { _id: existingCompany._id },
+          { 
+            $inc: { studentsCount: 1 },
+            $set: { updatedAt: new Date() }
+          }
+        );
+      } else {
+        await db.collection("partner_companies").insertOne({
+          name: trimmedName,
+          address: request.companyAddress || "No address provided",
+          supervisor: request.supervisorFullName || request.supervisor || "No supervisor assigned",
+          college: college,
+          studentsCount: 1,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+      }
+    }
+
+    // Log activity
     if (request) {
       let activityTitle = "";
       let activityDesc = "";
@@ -660,6 +700,33 @@ router.patch("/endorsements/:id", async (req, res) => {
   } catch (err) {
     console.error("Error updating endorsement request:", err);
     res.status(500).json({ error: "Failed to update endorsement request." });
+  }
+});
+
+// -----------------------------------------------
+// GET /api/admin/partner-companies
+// Fetches all partner companies for a specific college
+// -----------------------------------------------
+router.get("/partner-companies", async (req, res) => {
+  try {
+    const { college } = req.query;
+    if (!college) return res.status(400).json({ error: "College is required." });
+
+    const db = await connectDB();
+    const companies = await db.collection("partner_companies")
+      .find({
+        $or: [
+          { college: college },
+          { college: { $regex: new RegExp(`^${college}$`, "i") } }
+        ]
+      })
+      .sort({ studentsCount: -1 })
+      .toArray();
+
+    res.json(companies.map(c => ({ ...c, id: c._id })));
+  } catch (err) {
+    console.error("Error fetching partner companies:", err);
+    res.status(500).json({ error: "Failed to fetch partner companies." });
   }
 });
 

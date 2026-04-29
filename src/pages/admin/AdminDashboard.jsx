@@ -14,6 +14,7 @@ function AdminDashboard() {
 
   const [monitoringData, setMonitoringData] = useState([])
   const [collegeSettings, setCollegeSettings] = useState(null)
+  const [companies, setCompanies] = useState([])
 
   useEffect(() => {
     const loadData = async () => {
@@ -23,14 +24,16 @@ function AdminDashboard() {
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 800))
 
       try {
-        const [monitoringRes, settingsRes] = await Promise.all([
+        const [monitoringRes, settingsRes, companiesRes] = await Promise.all([
           fetch(`http://localhost:3001/api/admin/students-monitoring?college=${encodeURIComponent(user.college)}`),
-          fetch(`http://localhost:3001/api/admin/college-settings?college=${encodeURIComponent(user.college)}`)
+          fetch(`http://localhost:3001/api/admin/college-settings?college=${encodeURIComponent(user.college)}`),
+          fetch(`http://localhost:3001/api/admin/partner-companies?college=${encodeURIComponent(user.college)}`)
         ])
         
-        const [monitoring, settings] = await Promise.all([
+        const [monitoring, settings, companiesData] = await Promise.all([
           monitoringRes.json(),
-          settingsRes.json()
+          settingsRes.json(),
+          companiesRes.json()
         ])
         
         if (monitoringRes.ok) {
@@ -38,6 +41,9 @@ function AdminDashboard() {
         }
         if (settingsRes.ok) {
           setCollegeSettings(settings)
+        }
+        if (companiesRes.ok) {
+          setCompanies(companiesData)
         }
         await minLoadingTime
       } catch (error) {
@@ -292,7 +298,7 @@ function AdminDashboard() {
         />
 
             {/* Companies List */}
-            <PartnerCompanies />
+            <PartnerCompanies companies={companies} />
           </>
         )}
       </div>

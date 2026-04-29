@@ -20,6 +20,9 @@ function RecentStudents({ students = [], activeCourse }) {
       : resolvedStudents.filter(
           student => student.course.toLowerCase() === activeCourse.toLowerCase()
         )
+        
+  // Only show the 10 latest students
+  const latestStudents = [...filteredStudents].reverse().slice(0, 10)
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -46,9 +49,9 @@ function RecentStudents({ students = [], activeCourse }) {
       </div>
 
       <div className="p-6 flex-1 overflow-y-auto">
-        {filteredStudents.length > 0 ? (
+        {latestStudents.length > 0 ? (
           <div className="space-y-4">
-            {filteredStudents.map((student) => (
+            {latestStudents.map((student) => (
               <div
                 key={student.id}
                 className="flex items-start justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"

@@ -6,6 +6,7 @@ import Pagination from '../../components/ui/Pagination'
 import Dialog from '../../components/ui/Dialog'
 import Toast from '../../components/ui/Toast'
 import RejectEndorsementModal from '../../components/custom/dialog/RejectEndorsementModal'
+import Skeleton from '../../components/ui/Skeleton'
 import { useAuth } from '../../context/AuthContext'
 
 function AdminEndorsements() {
@@ -80,8 +81,12 @@ function AdminEndorsements() {
     setIsLoading(true)
     try {
       const response = await fetch(`http://localhost:3001/api/admin/endorsements?college=${encodeURIComponent(user?.college || 'CCS')}`)
-      if (response.ok) {
-        const data = await response.json()
+      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 800))
+      
+      const [res] = await Promise.all([response, minLoadingTime])
+      
+      if (res.ok) {
+        const data = await res.json()
         setEndorsementRequests(data)
       }
     } catch (err) {
@@ -258,22 +263,35 @@ function AdminEndorsements() {
         onReject={handleRejectClick}
         onEndorse={handleViewEndorsement}
         onComplete={handleCompleteClick}
+        isLoading={isLoading}
       />
 
       {/* Pagination Info and Controls */}
-      {sortedStudents.length > 0 && (
+      {(sortedStudents.length > 0 || isLoading) && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 mt-4">
           <div className="px-6 py-4 flex items-center justify-between">
-            <div className="text-sm text-gray-700">
-              Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
-              <span className="font-medium">{Math.min(endIndex, sortedStudents.length)}</span> of{' '}
-              <span className="font-medium">{sortedStudents.length}</span> students
-            </div>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
+            {isLoading ? (
+              <Skeleton variant="text" width={250} height={20} />
+            ) : (
+              <div className="text-sm text-gray-700">
+                Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
+                <span className="font-medium">{Math.min(endIndex, sortedStudents.length)}</span> of{' '}
+                <span className="font-medium">{sortedStudents.length}</span> students
+              </div>
+            )}
+            {isLoading ? (
+              <div className="flex gap-2">
+                <Skeleton variant="rectangular" width={32} height={32} className="rounded" />
+                <Skeleton variant="rectangular" width={32} height={32} className="rounded" />
+                <Skeleton variant="rectangular" width={32} height={32} className="rounded" />
+              </div>
+            ) : (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            )}
           </div>
         </div>
       )}
