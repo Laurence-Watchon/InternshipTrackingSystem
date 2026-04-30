@@ -139,7 +139,7 @@ function OTPVerificationForm() {
 
     try {
       const [res] = await Promise.all([
-        fetch('http://localhost:3001/api/auth/verify-otp', {
+        fetch(`${import.meta.env.VITE_API_URL}/api/auth/verify-otp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, otp: otpValue })
@@ -182,7 +182,7 @@ function OTPVerificationForm() {
 
     try {
       const [res] = await Promise.all([
-        fetch('http://localhost:3001/api/auth/resend-otp', {
+        fetch(`${import.meta.env.VITE_API_URL}/api/auth/resend-otp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })

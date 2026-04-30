@@ -182,7 +182,7 @@ export default function UserJournal() {
       } else {
         // ADD MODE
         const [response] = await Promise.all([
-          fetch('http://localhost:3001/api/student/journals', {
+          fetch(`${import.meta.env.VITE_API_URL}/api/student/journals`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(entryData)
