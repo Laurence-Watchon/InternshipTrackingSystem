@@ -48,7 +48,7 @@ export default function EndorsementCard({
     formData.append('file', file)
 
     try {
-      const response = await fetch('http://localhost:3001/api/student/upload', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/student/upload`, {
         method: 'POST',
         body: formData,
       })

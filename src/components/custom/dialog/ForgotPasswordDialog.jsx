@@ -81,7 +81,7 @@ export default function ForgotPasswordDialog({ isOpen, onClose, showGlobalToast 
     setFieldErrors({})
 
     try {
-      const res = await fetch('http://localhost:3001/api/auth/forgot-password', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -148,7 +148,7 @@ export default function ForgotPasswordDialog({ isOpen, onClose, showGlobalToast 
     setFieldErrors({})
 
     try {
-      const res = await fetch('http://localhost:3001/api/auth/verify-reset-otp', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/verify-reset-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp: otpString })
@@ -194,7 +194,7 @@ export default function ForgotPasswordDialog({ isOpen, onClose, showGlobalToast 
     setFieldErrors({})
 
     try {
-      const res = await fetch('http://localhost:3001/api/auth/reset-password', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, newPassword })

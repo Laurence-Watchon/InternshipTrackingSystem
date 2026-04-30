@@ -140,7 +140,7 @@ function UserEndorsement() {
     const minWait = new Promise(resolve => setTimeout(resolve, 1000))
 
     try {
-      const response = await fetch('http://localhost:3001/api/student/endorsement-request', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/student/endorsement-request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -190,7 +190,7 @@ function UserEndorsement() {
     const minWait = new Promise(resolve => setTimeout(resolve, 1000))
 
     try {
-      const response = await fetch('http://localhost:3001/api/student/endorsement-scanned', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/student/endorsement-scanned`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

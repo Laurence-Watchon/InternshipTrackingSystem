@@ -177,7 +177,7 @@ function RequirementsManagement() {
 
     try {
       const url = modalMode === 'add'
-        ? 'http://localhost:3001/api/admin/requirements'
+        ? `${import.meta.env.VITE_API_URL}/api/admin/requirements`
         : `http://localhost:3001/api/admin/requirements/${currentRequirement._id}`
 
       const method = modalMode === 'add' ? 'POST' : 'PUT'
@@ -254,7 +254,7 @@ function RequirementsManagement() {
     const minDelay = new Promise(resolve => setTimeout(resolve, 1500))
 
     try {
-      const response = await fetch('http://localhost:3001/api/admin/college-settings', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/college-settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
