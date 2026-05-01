@@ -1,3 +1,4 @@
+import { apiFetch } from '../../../config/api.js';
 import { useState, useEffect, useRef } from 'react'
 import { KeyRound, Mail, Lock, ShieldCheck, ArrowRight, Loader2, X, AlertCircle, Clock } from 'lucide-react'
 
@@ -81,7 +82,7 @@ export default function ForgotPasswordDialog({ isOpen, onClose, showGlobalToast 
     setFieldErrors({})
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/forgot-password`, {
+      const res = await apiFetch(`/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -148,7 +149,7 @@ export default function ForgotPasswordDialog({ isOpen, onClose, showGlobalToast 
     setFieldErrors({})
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/verify-reset-otp`, {
+      const res = await apiFetch(`/api/auth/verify-reset-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp: otpString })
@@ -194,7 +195,7 @@ export default function ForgotPasswordDialog({ isOpen, onClose, showGlobalToast 
     setFieldErrors({})
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/reset-password`, {
+      const res = await apiFetch(`/api/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, newPassword })

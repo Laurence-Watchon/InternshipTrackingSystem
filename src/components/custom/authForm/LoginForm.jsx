@@ -1,3 +1,4 @@
+import { apiFetch } from '../../../config/api.js';
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
@@ -103,7 +104,7 @@ function LoginForm() {
 
     try {
       const [res] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+        apiFetch(`/api/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -142,7 +143,7 @@ function LoginForm() {
         email: data.email,
         college: data.college,
         course: data.course,
-        isVerified: data.isVerified
+        isVerified: data.isVerified, token: data.token
       })
 
       // Navigate based on role
@@ -178,7 +179,7 @@ function LoginForm() {
         <div className="flex flex-col items-center mb-6">
           <img
             src={SchoolLogo}
-            alt="Laguna University Logo"
+            alt="Mock University Logo"
             className="w-12 h-12 mb-3"
           />
           <h2 className="text-2xl font-bold text-gray-900 text-center">

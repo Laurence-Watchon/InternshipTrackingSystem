@@ -1,3 +1,4 @@
+import { apiFetch } from '../../../config/api.js';
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
@@ -63,7 +64,7 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
     if (role === 'admin' && user?.college) {
       const fetchAdminPendingCount = async () => {
         try {
-          const res = await fetch(`http://localhost:3001/api/admin/pending?college=${user.college}`)
+          const res = await apiFetch(`/api/admin/pending?college=${user.college}`)
           if (res.ok) {
             const data = await res.json()
             setPendingCount(data.length)
@@ -75,7 +76,7 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
 
       const fetchAdminPendingEndorsementsCount = async () => {
         try {
-          const res = await fetch(`http://localhost:3001/api/admin/endorsements?college=${user.college}`)
+          const res = await apiFetch(`/api/admin/endorsements?college=${user.college}`)
           if (res.ok) {
             const data = await res.json()
             // In the admin route, 'in_process' is mapped to 'pending'
@@ -89,7 +90,7 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
 
       const fetchAdminCollegeSettings = async () => {
         try {
-          const res = await fetch(`http://localhost:3001/api/admin/college-settings?college=${user.college}`)
+          const res = await apiFetch(`/api/admin/college-settings?college=${user.college}`)
           if (res.ok) {
             const data = await res.json()
             const resolvedCollegeName = getFullCollegeName(user.college)
@@ -130,7 +131,7 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
     if (role === 'user' && user?.id) {
       const fetchUserPendingCount = async () => {
         try {
-          const res = await fetch(`http://localhost:3001/api/student/pending-requirements-count?studentId=${user.id}&college=${user.college}&course=${user.course || ''}`)
+          const res = await apiFetch(`/api/student/pending-requirements-count?studentId=${user.id}&college=${user.college}&course=${user.course || ''}`)
           if (res.ok) {
             const data = await res.json()
             setRequirementStats({ count: data.count, total: data.total })
@@ -142,7 +143,7 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
 
       const fetchEndorsementStatus = async () => {
         try {
-          const res = await fetch(`http://localhost:3001/api/student/endorsement-status?studentId=${user.id}`)
+          const res = await apiFetch(`/api/student/endorsement-status?studentId=${user.id}`)
           if (res.ok) {
             const data = await res.json()
             setEndorsementStatus(data.status || 'unavailable')
@@ -302,10 +303,10 @@ function AppSidebar({ isOpen, onClose, role = 'user' }) {
           <div className="flex items-center space-x-3">
             <img
               src={SchoolLogo}
-              alt="Laguna University"
+              alt="Mock University"
               className="w-8 h-8"
             />
-            <span className="font-bold text-sm sm:text-base text-gray-900">LU Internship</span>
+            <span className="font-bold text-sm sm:text-base text-gray-900">MU Internship</span>
           </div>
           {/* Close button - only visible on mobile */}
           <button

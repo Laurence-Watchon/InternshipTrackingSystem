@@ -1,3 +1,4 @@
+import { apiFetch } from '../../config/api.js';
 import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import JournalEntry from '../../components/ui/JournalEntry'
@@ -63,7 +64,7 @@ export default function UserJournal() {
       if (!user?.id) return
       try {
         const [response] = await Promise.all([
-          fetch(`http://localhost:3001/api/student/journals?studentId=${user.id}`),
+          apiFetch(`/api/student/journals?studentId=${user.id}`),
           new Promise(resolve => setTimeout(resolve, 800)) // Min loading time
         ])
         if (response.ok) {
@@ -161,7 +162,7 @@ export default function UserJournal() {
       if (editingEntry) {
         // EDIT MODE
         const [response] = await Promise.all([
-          fetch(`http://localhost:3001/api/student/journals/${editingEntry.id}`, {
+          apiFetch(`/api/student/journals/${editingEntry.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(entryData)
@@ -182,7 +183,7 @@ export default function UserJournal() {
       } else {
         // ADD MODE
         const [response] = await Promise.all([
-          fetch(`${import.meta.env.VITE_API_URL}/api/student/journals`, {
+          apiFetch(`/api/student/journals`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(entryData)
@@ -236,7 +237,7 @@ export default function UserJournal() {
 
     try {
       const [response] = await Promise.all([
-        fetch(`http://localhost:3001/api/student/journals/${deletingId}`, { method: 'DELETE' }),
+        apiFetch(`/api/student/journals/${deletingId}`, { method: 'DELETE' }),
         minDelay
       ])
 

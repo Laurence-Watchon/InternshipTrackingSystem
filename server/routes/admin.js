@@ -2,8 +2,13 @@ import express from "express";
 import { connectDB } from "../db.js";
 import { ObjectId } from "mongodb";
 import { logActivity } from "../utils/activityLogger.js";
+import { authenticateToken, authorizeRole } from "../middleware/auth.js";
 
 const router = express.Router();
+
+// Apply security middleware to all routes in this file
+router.use(authenticateToken);
+router.use(authorizeRole(["admin"]));
 
 // -----------------------------------------------
 // GET /api/admin/pending

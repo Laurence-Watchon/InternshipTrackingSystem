@@ -1,3 +1,4 @@
+import { apiFetch } from '../../config/api.js';
 import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import EndorsementCard from '../../components/ui/EndorsementCard'
@@ -81,15 +82,15 @@ function UserEndorsement() {
     const minLoadingTime = isSilent ? Promise.resolve() : new Promise(resolve => setTimeout(resolve, 800))
     try {
       // 1. Fetch all requirements for the student's college and course
-      const reqResponse = await fetch(`http://localhost:3001/api/student/requirements?college=${encodeURIComponent(user.college)}${user.course ? `&course=${encodeURIComponent(user.course)}` : ''}`)
+      const reqResponse = await apiFetch(`/api/student/requirements?college=${encodeURIComponent(user.college)}${user.course ? `&course=${encodeURIComponent(user.course)}` : ''}`)
       const requirementsData = await reqResponse.json()
 
       // 2. Fetch the student's submissions
-      const subResponse = await fetch(`http://localhost:3001/api/student/my-submissions?studentId=${user._id || user.id}`)
+      const subResponse = await apiFetch(`/api/student/my-submissions?studentId=${user._id || user.id}`)
       const submissionsData = await subResponse.json()
 
       // 3. Fetch endorsement status
-      const endResponse = await fetch(`http://localhost:3001/api/student/endorsement-status?studentId=${user._id || user.id}`)
+      const endResponse = await apiFetch(`/api/student/endorsement-status?studentId=${user._id || user.id}`)
       const endData = await endResponse.json()
 
       if (reqResponse.ok && subResponse.ok && endResponse.ok) {
@@ -140,7 +141,7 @@ function UserEndorsement() {
     const minWait = new Promise(resolve => setTimeout(resolve, 1000))
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/student/endorsement-request`, {
+      const response = await apiFetch(`/api/student/endorsement-request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -190,7 +191,7 @@ function UserEndorsement() {
     const minWait = new Promise(resolve => setTimeout(resolve, 1000))
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/student/endorsement-scanned`, {
+      const response = await apiFetch(`/api/student/endorsement-scanned`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

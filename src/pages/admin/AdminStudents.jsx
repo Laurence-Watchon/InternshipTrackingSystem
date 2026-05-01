@@ -1,3 +1,4 @@
+import { apiFetch } from '../../config/api.js';
 import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import AdminHomeCourses from '../../components/ui/AdminHomeCourses'
@@ -34,7 +35,7 @@ function StudentManagement() {
 
       try {
         setIsLoading(true)
-        const fetchData = fetch(`http://localhost:3001/api/admin/students?college=${encodeURIComponent(authUser.college)}`)
+        const fetchData = apiFetch(`/api/admin/students?college=${encodeURIComponent(authUser.college)}`)
           .then(res => {
             if (!res.ok) throw new Error('Failed to fetch students')
             return res.json()

@@ -11,11 +11,11 @@ function Footer() {
               <div className="w-8 h-8 flex items-center justify-center">
                 <img 
                   src={SchoolLogo} 
-                  alt="Laguna University Logo" 
+                  alt="Mock University Logo" 
                   className="w-8 h-8 object-contain"
                 />
               </div>
-              <span className="font-bold">LAGUNA UNIVERSITY</span>
+              <span className="font-bold">MOCK UNIVERSITY</span>
             </div>
             <p className="text-gray-400 text-sm">
               Streamlining internship management for students, coordinators, and institutions.
@@ -48,9 +48,9 @@ function Footer() {
           <div>
             <h4 className="font-bold mb-4">Contact Us</h4>
             <ul className="space-y-2 text-gray-400 text-sm">
-              <li>📧 support@lagunauni.edu</li>
-              <li>📞 +63 123 456 7890</li>
-              <li>📍 Laguna, Philippines</li>
+              <li>📧 support@mockuni.edu</li>
+              <li>📞 +63 000 000 0000</li>
+              <li>📍 Digital World</li>
             </ul>
           </div>
         </div>

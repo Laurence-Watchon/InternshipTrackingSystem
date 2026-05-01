@@ -1,3 +1,4 @@
+import { apiFetch } from '../../config/api.js';
 import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import ClickableCard from '../../components/ui/ClickableCard'
@@ -37,11 +38,11 @@ function UserRequirements() {
     const minLoadingTime = new Promise(resolve => setTimeout(resolve, 800))
     try {
       // 1. Fetch requirements for the college
-      const reqRes = await fetch(`http://localhost:3001/api/student/requirements?college=${encodeURIComponent(user.college)}&course=${encodeURIComponent(user.course || '')}`)
+      const reqRes = await apiFetch(`/api/student/requirements?college=${encodeURIComponent(user.college)}&course=${encodeURIComponent(user.course || '')}`)
       const reqData = await reqRes.json()
 
       // 2. Fetch student's submissions
-      const subRes = await fetch(`http://localhost:3001/api/student/my-submissions?studentId=${user.id}`)
+      const subRes = await apiFetch(`/api/student/my-submissions?studentId=${user.id}`)
       const subData = await subRes.json()
 
       if (reqRes.ok && subRes.ok) {
@@ -87,7 +88,7 @@ function UserRequirements() {
           fileUrl: newState.fileUrl || newState.linkValue
         }
 
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/student/submissions`, {
+        const response = await apiFetch(`/api/student/submissions`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
@@ -123,7 +124,7 @@ function UserRequirements() {
 
   const handleDeleteSubmission = async (id) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/student/submissions?studentId=${user.id}&requirementId=${id}`, {
+      const response = await apiFetch(`/api/student/submissions?studentId=${user.id}&requirementId=${id}`, {
         method: 'DELETE'
       })
 
