@@ -1,4 +1,4 @@
-import { apiFetch } from '../../config/api.js';
+﻿import { apiFetch } from '../../config/api.js';
 import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import EndorsementCard from '../../components/ui/EndorsementCard'
@@ -227,7 +227,6 @@ function UserEndorsement() {
 
   function handleDownload() {
     // TODO: trigger actual file download
-    console.log('Downloading endorsement letter...')
   }
 
   return (

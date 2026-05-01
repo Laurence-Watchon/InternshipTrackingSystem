@@ -5,8 +5,13 @@ import multer from "multer";
 import cloudinary from "../config/cloudinary.js";
 import streamifier from "streamifier";
 import { logActivity } from "../utils/activityLogger.js";
+import { authenticateToken, authorizeRole } from "../middleware/auth.js";
 
 const router = express.Router();
+
+// Apply security middleware to all routes in this file
+router.use(authenticateToken);
+router.use(authorizeRole(["student"]));
 
 // Multer setup for memory storage (direct to Cloudinary)
 const storage = multer.memoryStorage();

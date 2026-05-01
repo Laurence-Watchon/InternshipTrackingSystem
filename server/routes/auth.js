@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import { connectDB } from "../db.js";
 import { ObjectId } from "mongodb";
+import { authenticateToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -543,7 +544,7 @@ router.post("/reset-password", async (req, res) => {
 // GET /api/auth/profile/:id
 // Fetches user profile by ID
 // -----------------------------------------------
-router.get("/profile/:id", async (req, res) => {
+router.get("/profile/:id", authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -567,7 +568,7 @@ router.get("/profile/:id", async (req, res) => {
 // PUT /api/auth/profile/:id
 // Updates user profile by ID
 // -----------------------------------------------
-router.put("/profile/:id", async (req, res) => {
+router.put("/profile/:id", authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
