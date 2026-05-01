@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+﻿import jwt from "jsonwebtoken";
 
 export const authenticateToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
@@ -7,7 +7,7 @@ export const authenticateToken = (req, res, next) => {
   if (!token) return res.status(401).json({ error: "Access denied. Token missing." });
 
   try {
-    const verified = jwt.verify(token, process.env.JWT_SECRET || "fallback_secret_key");
+    const verified = jwt.verify(token, process.env.JWT_SECRET);
     req.user = verified;
     next();
   } catch (err) {

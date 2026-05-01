@@ -1,4 +1,4 @@
-import express from "express";
+﻿import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
@@ -329,7 +329,7 @@ router.post("/verify-otp", async (req, res) => {
       college: userData.college,
       token: jwt.sign(
         { id: result.insertedId, role: userData.role },
-        process.env.JWT_SECRET || "fallback_secret_key",
+        process.env.JWT_SECRET,
         { expiresIn: "7d" }
       ),
     });
@@ -420,7 +420,7 @@ router.post("/login", async (req, res) => {
       isVerified: user.isVerified,
       token: jwt.sign(
         { id: user._id, role: user.role },
-        process.env.JWT_SECRET || "fallback_secret_key",
+        process.env.JWT_SECRET,
         { expiresIn: "7d" }
       ),
     });
