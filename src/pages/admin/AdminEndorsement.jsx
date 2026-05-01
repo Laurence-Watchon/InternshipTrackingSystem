@@ -1,3 +1,4 @@
+import { apiFetch } from '../../config/api.js';
 import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import AdminHomeCourses from '../../components/ui/AdminHomeCourses'
@@ -80,7 +81,7 @@ function AdminEndorsements() {
   const fetchEndorsements = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch(`http://localhost:3001/api/admin/endorsements?college=${encodeURIComponent(user?.college || 'CCS')}`)
+      const response = await apiFetch(`/api/admin/endorsements?college=${encodeURIComponent(user?.college || 'CCS')}`)
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 800))
       
       const [res] = await Promise.all([response, minLoadingTime])
@@ -149,7 +150,7 @@ function AdminEndorsements() {
     const minWait = new Promise(resolve => setTimeout(resolve, 1000))
     
     try {
-      const response = await fetch(`http://localhost:3001/api/admin/endorsements/${selectedStudent.id}`, {
+      const response = await apiFetch(`/api/admin/endorsements/${selectedStudent.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'ready' })
@@ -182,7 +183,7 @@ function AdminEndorsements() {
     const minWait = new Promise(resolve => setTimeout(resolve, 1000))
 
     try {
-      const response = await fetch(`http://localhost:3001/api/admin/endorsements/${selectedStudent.id}`, {
+      const response = await apiFetch(`/api/admin/endorsements/${selectedStudent.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'rejected', rejectionReason: reason })
@@ -215,7 +216,7 @@ function AdminEndorsements() {
     const minWait = new Promise(resolve => setTimeout(resolve, 1000))
 
     try {
-      const response = await fetch(`http://localhost:3001/api/admin/endorsements/${selectedStudent.id}`, {
+      const response = await apiFetch(`/api/admin/endorsements/${selectedStudent.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'completed' })

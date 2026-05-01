@@ -1,3 +1,4 @@
+import { apiFetch } from '../../../config/api.js';
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
@@ -139,7 +140,7 @@ function OTPVerificationForm() {
 
     try {
       const [res] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL}/api/auth/verify-otp`, {
+        apiFetch(`/api/auth/verify-otp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, otp: otpValue })
@@ -182,7 +183,7 @@ function OTPVerificationForm() {
 
     try {
       const [res] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL}/api/auth/resend-otp`, {
+        apiFetch(`/api/auth/resend-otp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })

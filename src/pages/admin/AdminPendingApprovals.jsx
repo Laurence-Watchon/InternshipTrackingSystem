@@ -1,3 +1,4 @@
+import { apiFetch } from '../../config/api.js';
 import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import Dialog from '../../components/ui/Dialog'
@@ -80,7 +81,7 @@ export default function AdminPendingApprovals() {
 
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 1000))
 
-      const resPromise = fetch(`http://localhost:3001/api/admin/pending?college=${user.college}`)
+      const resPromise = apiFetch(`/api/admin/pending?college=${user.college}`)
 
       const [res] = await Promise.all([resPromise, minLoadingTime])
 
@@ -114,7 +115,7 @@ export default function AdminPendingApprovals() {
     setIsApproving(true)
     try {
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 800))
-      const resPromise = fetch(`http://localhost:3001/api/admin/approve/${approveTarget._id}`, {
+      const resPromise = apiFetch(`/api/admin/approve/${approveTarget._id}`, {
         method: 'PUT'
       })
       const [res] = await Promise.all([resPromise, minLoadingTime])
@@ -141,7 +142,7 @@ export default function AdminPendingApprovals() {
     setIsRejecting(true)
     try {
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 800))
-      const resPromise = fetch(`http://localhost:3001/api/admin/reject/${rejectTarget._id}`, {
+      const resPromise = apiFetch(`/api/admin/reject/${rejectTarget._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

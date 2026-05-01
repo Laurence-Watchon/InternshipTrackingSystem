@@ -51,7 +51,7 @@ function PrivacyPolicy({ isOpen, onClose }) {
             <section>
               <h3 className="text-lg font-bold text-gray-900 mb-2">1. Introduction</h3>
               <p>
-                Laguna University ("we," "our," or "us") is committed to protecting your privacy. This 
+                Mock University ("we," "our," or "us") is committed to protecting your privacy. This 
                 Privacy Policy explains how we collect, use, disclose, and safeguard your information when 
                 you use our Internship Tracking System ("the System").
               </p>
@@ -280,10 +280,10 @@ function PrivacyPolicy({ isOpen, onClose }) {
               </p>
               <div className="mt-2 pl-4">
                 <p><strong>Data Protection Officer</strong></p>
-                <p>Laguna University</p>
-                <p>Email: privacy@lagunauni.edu</p>
-                <p>Phone: +63 123 456 7890</p>
-                <p>Address: Laguna, Philippines</p>
+                <p>Mock University</p>
+                <p>Email: privacy@mockuni.edu</p>
+                <p>Phone: +63 000 000 0000</p>
+                <p>Address: Digital World</p>
               </div>
             </section>
 

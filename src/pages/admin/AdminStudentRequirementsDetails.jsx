@@ -1,3 +1,4 @@
+import { apiFetch } from '../../config/api.js';
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import AppLayout from '../../components/custom/global/AppLayout'
@@ -50,7 +51,7 @@ function AdminStudentRequirementsDetail() {
     const minLoadingTime = new Promise(resolve => setTimeout(resolve, 800))
     try {
       // Get all monitoring data for this college to find this specific student
-      const response = await fetch(`http://localhost:3001/api/admin/students-monitoring?college=${encodeURIComponent(user.college)}`)
+      const response = await apiFetch(`/api/admin/students-monitoring?college=${encodeURIComponent(user.college)}`)
       const data = await response.json()
 
       if (response.ok) {
@@ -105,7 +106,7 @@ function AdminStudentRequirementsDetail() {
   const updateSubmissionStatus = async (submissionId, status, feedback = '') => {
     const minLoadingTime = new Promise(resolve => setTimeout(resolve, 1000))
     try {
-      const fetchData = fetch(`http://localhost:3001/api/admin/submissions/${submissionId}`, {
+      const fetchData = apiFetch(`/api/admin/submissions/${submissionId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status, feedback })

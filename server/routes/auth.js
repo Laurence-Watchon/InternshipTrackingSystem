@@ -1,5 +1,6 @@
 import express from "express";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import { connectDB } from "../db.js";
 import { ObjectId } from "mongodb";
@@ -52,7 +53,7 @@ async function sendOTPEmail(email, otp, firstName) {
                         Internship Tracking System
                       </h1>
                       <p style="color:rgba(255,255,255,0.85); margin:6px 0 0; font-size:14px;">
-                        Laguna University
+                        Mock University
                       </p>
                     </td>
                   </tr>
@@ -100,7 +101,7 @@ async function sendOTPEmail(email, otp, firstName) {
                   <tr>
                     <td style="background:#f9fafb; border-top:1px solid #e5e7eb; padding:20px 40px; text-align:center;">
                       <p style="color:#9ca3af; font-size:12px; margin:0;">
-                        © ${new Date().getFullYear()} Internship Tracking System · Laguna University
+                        © ${new Date().getFullYear()} Internship Tracking System · Mock University
                       </p>
                     </td>
                   </tr>
@@ -192,7 +193,7 @@ async function sendResetOTPEmail(email, otp, firstName) {
                   <tr>
                     <td style="background:#f9fafb; border-top:1px solid #e5e7eb; padding:20px 40px; text-align:center;">
                       <p style="color:#9ca3af; font-size:12px; margin:0;">
-                        © ${new Date().getFullYear()} Internship Tracking System · Laguna University
+                        © ${new Date().getFullYear()} Internship Tracking System · Mock University
                       </p>
                     </td>
                   </tr>
@@ -325,6 +326,11 @@ router.post("/verify-otp", async (req, res) => {
       lastName: userData.lastName,
       email: userData.email,
       college: userData.college,
+      token: jwt.sign(
+        { id: result.insertedId, role: userData.role },
+        process.env.JWT_SECRET || "fallback_secret_key",
+        { expiresIn: "7d" }
+      ),
     });
   } catch (err) {
     console.error("Verify OTP error:", err);
@@ -411,6 +417,11 @@ router.post("/login", async (req, res) => {
       college: user.college,
       course: user.course,
       isVerified: user.isVerified,
+      token: jwt.sign(
+        { id: user._id, role: user.role },
+        process.env.JWT_SECRET || "fallback_secret_key",
+        { expiresIn: "7d" }
+      ),
     });
   } catch (err) {
     console.error("Login error:", err);

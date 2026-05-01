@@ -1,3 +1,4 @@
+import { apiFetch } from '../../../config/api.js';
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import SchoolLogo from '../../../assets/Schoollogo.png'
@@ -293,7 +294,7 @@ function SignupForm() {
 
     setIsLoading(true)
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/signup`, {
+      const res = await apiFetch(`/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -369,7 +370,7 @@ function SignupForm() {
         <div className="flex flex-col items-center mb-6">
           <img
             src={SchoolLogo}
-            alt="Laguna University Logo"
+            alt="Mock University Logo"
             className="w-12 h-12 mb-3"
           />
           <h2 className="text-2xl font-bold text-gray-900 text-center">

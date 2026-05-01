@@ -1,3 +1,4 @@
+import { apiFetch } from '../../config/api.js';
 import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import AdminHomeCourses from '../../components/ui/AdminHomeCourses'
@@ -25,9 +26,9 @@ function AdminDashboard() {
 
       try {
         const [monitoringRes, settingsRes, companiesRes] = await Promise.all([
-          fetch(`http://localhost:3001/api/admin/students-monitoring?college=${encodeURIComponent(user.college)}`),
-          fetch(`http://localhost:3001/api/admin/college-settings?college=${encodeURIComponent(user.college)}`),
-          fetch(`http://localhost:3001/api/admin/partner-companies?college=${encodeURIComponent(user.college)}`)
+          apiFetch(`/api/admin/students-monitoring?college=${encodeURIComponent(user.college)}`),
+          apiFetch(`/api/admin/college-settings?college=${encodeURIComponent(user.college)}`),
+          apiFetch(`/api/admin/partner-companies?college=${encodeURIComponent(user.college)}`)
         ])
         
         const [monitoring, settings, companiesData] = await Promise.all([

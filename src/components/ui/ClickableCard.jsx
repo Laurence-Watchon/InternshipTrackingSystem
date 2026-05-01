@@ -1,3 +1,4 @@
+import { apiFetch } from '../../config/api.js';
 import { useRef, useState, useEffect } from 'react'
 import { FileText, Image, Paperclip, FileStack, ExternalLink, X, UploadCloud, CheckCircle, ChevronDown } from 'lucide-react'
 import Dialog from './Dialog'
@@ -109,7 +110,7 @@ export default function ClickableCard({ req, state, isOpen, onToggle, onChange, 
     formData.append('file', file)
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/student/upload`, {
+      const response = await apiFetch(`/api/student/upload`, {
         method: 'POST',
         body: formData,
       })

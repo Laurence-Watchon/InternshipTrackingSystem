@@ -1,3 +1,4 @@
+import { apiFetch } from '../../config/api.js';
 import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import WeeklyHours from '../../components/ui/WeeklyHours'
@@ -60,13 +61,13 @@ function UserHome() {
       try {
         // Fetch all needed data in parallel
         const [reqRes, subRes, settingsRes, logsRes, journalsRes, endRes, activitiesRes] = await Promise.all([
-          fetch(`http://localhost:3001/api/student/requirements?college=${encodeURIComponent(user.college)}`),
-          fetch(`http://localhost:3001/api/student/my-submissions?studentId=${studentId}`),
-          fetch(`http://localhost:3001/api/student/college-settings?college=${encodeURIComponent(user.college)}`),
-          fetch(`http://localhost:3001/api/student/time-logs?studentId=${studentId}`),
-          fetch(`http://localhost:3001/api/student/journals?studentId=${studentId}`),
-          fetch(`http://localhost:3001/api/student/endorsement-status?studentId=${studentId}`),
-          fetch(`http://localhost:3001/api/student/activities?studentId=${studentId}`)
+          apiFetch(`/api/student/requirements?college=${encodeURIComponent(user.college)}`),
+          apiFetch(`/api/student/my-submissions?studentId=${studentId}`),
+          apiFetch(`/api/student/college-settings?college=${encodeURIComponent(user.college)}`),
+          apiFetch(`/api/student/time-logs?studentId=${studentId}`),
+          apiFetch(`/api/student/journals?studentId=${studentId}`),
+          apiFetch(`/api/student/endorsement-status?studentId=${studentId}`),
+          apiFetch(`/api/student/activities?studentId=${studentId}`)
         ])
 
         const [reqs, subs, settings, logs, journals, endData, activitiesData] = await Promise.all([

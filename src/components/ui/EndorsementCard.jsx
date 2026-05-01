@@ -1,3 +1,4 @@
+import { apiFetch } from '../../config/api.js';
 import { useState, useEffect, useRef } from 'react'
 import { FileText, Clock, CheckCircle, Building2, Send, Loader2, AlertCircle, Info, FileQuestion, UploadCloud, ExternalLink, X, Paperclip, Image as ImageIcon } from 'lucide-react'
 import Loading from './Loading'
@@ -48,7 +49,7 @@ export default function EndorsementCard({
     formData.append('file', file)
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/student/upload`, {
+      const response = await apiFetch(`/api/student/upload`, {
         method: 'POST',
         body: formData,
       })

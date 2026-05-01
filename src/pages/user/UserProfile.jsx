@@ -1,3 +1,4 @@
+import { apiFetch } from '../../config/api.js';
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppLayout from '../../components/custom/global/AppLayout'
@@ -28,8 +29,8 @@ function Profile() {
 
       try {
         const [profileRes, endorsementRes] = await Promise.all([
-          fetch(`http://localhost:3001/api/auth/profile/${authUser.id}`),
-          fetch(`http://localhost:3001/api/student/endorsement-status?studentId=${authUser.id}`)
+          apiFetch(`/api/auth/profile/${authUser.id}`),
+          apiFetch(`/api/student/endorsement-status?studentId=${authUser.id}`)
         ])
 
         if (!profileRes.ok) {
@@ -143,7 +144,7 @@ function Profile() {
 
     try {
       const [response] = await Promise.all([
-        fetch(`http://localhost:3001/api/auth/profile/${authUser.id}`, {
+        apiFetch(`/api/auth/profile/${authUser.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

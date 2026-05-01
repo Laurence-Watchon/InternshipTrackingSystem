@@ -1,3 +1,4 @@
+import { apiFetch } from '../../config/api.js';
 import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import Dialog from '../../components/ui/Dialog'
@@ -61,7 +62,7 @@ function RequirementsManagement() {
 
   const fetchCollegeSettings = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/api/admin/college-settings?college=${encodeURIComponent(user.college)}`)
+      const response = await apiFetch(`/api/admin/college-settings?college=${encodeURIComponent(user.college)}`)
       const data = await response.json()
       if (response.ok && data.requiredHours) {
         const defaultHours = {}
@@ -79,7 +80,7 @@ function RequirementsManagement() {
 
   const fetchRequirements = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/api/admin/requirements?college=${encodeURIComponent(user.college)}`)
+      const response = await apiFetch(`/api/admin/requirements?college=${encodeURIComponent(user.college)}`)
       const data = await response.json()
       if (response.ok) {
         setRequirements(data)
@@ -220,7 +221,7 @@ function RequirementsManagement() {
     const minDelay = new Promise(resolve => setTimeout(resolve, 1500))
 
     try {
-      const response = await fetch(`http://localhost:3001/api/admin/requirements/${currentRequirement._id}`, {
+      const response = await apiFetch(`/api/admin/requirements/${currentRequirement._id}`, {
         method: 'DELETE'
       })
 
@@ -254,7 +255,7 @@ function RequirementsManagement() {
     const minDelay = new Promise(resolve => setTimeout(resolve, 1500))
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/college-settings`, {
+      const response = await apiFetch(`/api/admin/college-settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

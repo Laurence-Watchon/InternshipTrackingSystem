@@ -51,7 +51,7 @@ function TermsAndConditions({ isOpen, onClose }) {
             <section>
               <h3 className="text-lg font-bold text-gray-900 mb-2">1. Acceptance of Terms</h3>
               <p>
-                By accessing and using the Laguna University Internship Tracking System ("the System"), 
+                By accessing and using the Mock University Internship Tracking System ("the System"), 
                 you accept and agree to be bound by the terms and provision of this agreement. If you do 
                 not agree to abide by these terms, please do not use this System.
               </p>
@@ -63,7 +63,7 @@ function TermsAndConditions({ isOpen, onClose }) {
                 To access the System, you must:
               </p>
               <ul className="list-disc ml-6 space-y-1">
-                <li>Be a currently enrolled student at Laguna University</li>
+                <li>Be a currently enrolled student at Mock University</li>
                 <li>Provide accurate, current, and complete information during registration</li>
                 <li>Maintain the security of your password and account</li>
                 <li>Verify your email address before accessing full System features</li>
@@ -153,7 +153,7 @@ function TermsAndConditions({ isOpen, onClose }) {
             <section>
               <h3 className="text-lg font-bold text-gray-900 mb-2">9. Intellectual Property</h3>
               <p>
-                All content, features, and functionality of the System are owned by Laguna University and 
+                All content, features, and functionality of the System are owned by Mock University and 
                 are protected by copyright, trademark, and other intellectual property laws.
               </p>
             </section>
@@ -183,7 +183,7 @@ function TermsAndConditions({ isOpen, onClose }) {
             <section>
               <h3 className="text-lg font-bold text-gray-900 mb-2">12. Modifications to Terms</h3>
               <p>
-                Laguna University reserves the right to modify these Terms and Conditions at any time. 
+                Mock University reserves the right to modify these Terms and Conditions at any time. 
                 Continued use of the System after changes constitutes acceptance of the modified terms. 
                 Users will be notified of significant changes via email or System notifications.
               </p>
@@ -201,7 +201,7 @@ function TermsAndConditions({ isOpen, onClose }) {
             <section>
               <h3 className="text-lg font-bold text-gray-900 mb-2">14. Limitation of Liability</h3>
               <p>
-                Laguna University shall not be liable for any indirect, incidental, special, consequential, 
+                Mock University shall not be liable for any indirect, incidental, special, consequential, 
                 or punitive damages resulting from your use or inability to use the System.
               </p>
             </section>
@@ -212,9 +212,9 @@ function TermsAndConditions({ isOpen, onClose }) {
                 For questions regarding these Terms and Conditions, please contact:
               </p>
               <div className="mt-2 pl-4">
-                <p>Laguna University</p>
-                <p>Email: support@lagunauni.edu</p>
-                <p>Phone: +63 123 456 7890</p>
+                <p>Mock University</p>
+                <p>Email: support@mockuni.edu</p>
+                <p>Phone: +63 000 000 0000</p>
               </div>
             </section>
 

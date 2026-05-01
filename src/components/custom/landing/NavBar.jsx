@@ -168,11 +168,11 @@ function Navbar() {
             <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center">
               <img 
                 src={SchoolLogo} 
-                alt="Laguna University Logo" 
+                alt="Mock University Logo" 
                 className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
               />
             </div>
-            <span className="font-bold text-sm sm:text-base lg:text-lg">LAGUNA UNIVERSITY</span>
+            <span className="font-bold text-sm sm:text-base lg:text-lg">MOCK UNIVERSITY</span>
           </div>
 
           {/* Desktop Navigation Links */}

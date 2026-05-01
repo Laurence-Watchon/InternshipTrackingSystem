@@ -1,3 +1,4 @@
+import { apiFetch } from '../../config/api.js';
 import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import Card from '../../components/ui/Card'
@@ -42,8 +43,8 @@ export default function UserTimeTracking() {
 
       try {
         const [logsRes, settingsRes] = await Promise.all([
-          fetch(`http://localhost:3001/api/student/time-logs?studentId=${user.id}`),
-          fetch(`http://localhost:3001/api/student/college-settings?college=${encodeURIComponent(user.college)}`),
+          apiFetch(`/api/student/time-logs?studentId=${user.id}`),
+          apiFetch(`/api/student/college-settings?college=${encodeURIComponent(user.college)}`),
           new Promise(resolve => setTimeout(resolve, 800)) // Min loading time for smoother transition
         ])
 
@@ -78,7 +79,7 @@ export default function UserTimeTracking() {
   // ── Add new log
   async function handleAddLog(entry) {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/student/time-logs`, {
+      const response = await apiFetch(`/api/student/time-logs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...entry, studentId: user.id })
@@ -100,7 +101,7 @@ export default function UserTimeTracking() {
   // ── Save edited log
   async function handleSaveEdit(updatedEntry) {
     try {
-      const response = await fetch(`http://localhost:3001/api/student/time-logs/${updatedEntry.id}`, {
+      const response = await apiFetch(`/api/student/time-logs/${updatedEntry.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedEntry)
@@ -120,7 +121,7 @@ export default function UserTimeTracking() {
   // ── Delete log
   async function handleDelete(id) {
     try {
-      const response = await fetch(`http://localhost:3001/api/student/time-logs/${id}`, {
+      const response = await apiFetch(`/api/student/time-logs/${id}`, {
         method: 'DELETE'
       })
 

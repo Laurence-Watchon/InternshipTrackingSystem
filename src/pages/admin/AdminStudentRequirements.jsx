@@ -1,3 +1,4 @@
+import { apiFetch } from '../../config/api.js';
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppLayout from '../../components/custom/global/AppLayout'
@@ -81,7 +82,7 @@ function AdminStudentRequirements() {
     setIsLoading(true)
     const minLoadingTime = new Promise(resolve => setTimeout(resolve, 800))
     try {
-      const response = await fetch(`http://localhost:3001/api/admin/students-monitoring?college=${encodeURIComponent(user.college)}`)
+      const response = await apiFetch(`/api/admin/students-monitoring?college=${encodeURIComponent(user.college)}`)
       const data = await response.json()
       if (response.ok) {
         // Format names and sort alphabetically by last name
