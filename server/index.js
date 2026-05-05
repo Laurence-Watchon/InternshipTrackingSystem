@@ -5,24 +5,19 @@ import authRoutes from "./routes/auth.js";
 import adminRoutes from "./routes/admin.js";
 import studentRoutes from "./routes/student.js";
 
+import cors from "cors";
+
 dotenv.config();
 const app = express();
 
-// Manual CORS middleware — works reliably with Express 5
-app.use((req, res, next) => {
-  const allowedOrigin = process.env.FRONTEND_URL || "http://localhost:5173";
-  res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
+// Use the standard CORS package
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
 
-  // Immediately respond to preflight OPTIONS requests
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(204);
-  }
-
-  next();
-});
 
 app.use(express.json());
 
