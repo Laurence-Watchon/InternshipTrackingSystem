@@ -1,4 +1,4 @@
-import { apiFetch } from '../../config/api.js';
+﻿import { apiFetch } from '../../config/api.js';
 import { useState, useEffect } from 'react'
 import AppLayout from '../../components/custom/global/AppLayout'
 import Dialog from '../../components/ui/Dialog'
@@ -177,9 +177,9 @@ function RequirementsManagement() {
     const minDelay = new Promise(resolve => setTimeout(resolve, 1500))
 
     try {
-      const url = modalMode === 'add'
-        ? `${import.meta.env.VITE_API_URL}/api/admin/requirements`
-        : `http://localhost:3001/api/admin/requirements/${currentRequirement._id}`
+      const endpoint = modalMode === 'add'
+        ? '/api/admin/requirements'
+        : '/api/admin/requirements/' + currentRequirement._id
 
       const method = modalMode === 'add' ? 'POST' : 'PUT'
 
@@ -189,7 +189,7 @@ function RequirementsManagement() {
         adminId: user.id
       }
 
-      const response = await fetch(url, {
+      const response = await apiFetch(endpoint, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)

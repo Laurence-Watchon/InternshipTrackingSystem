@@ -152,7 +152,6 @@ export default function AdminPendingApprovals() {
       const [res] = await Promise.all([resPromise, minLoadingTime])
       
       if (res.ok) {
-        console.log(`Softly Rejected ${rejectTarget.studentNumber}: ${reason}`)
         setStudents(prev => prev.filter(s => s._id !== rejectTarget._id))
         showToast(`Registration for ${rejectTarget.studentNumber} rejected due to ${reason}`, 'error')
         setRejectTarget(null)
