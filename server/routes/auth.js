@@ -33,7 +33,7 @@ function generateOTP() {
 // --- Send OTP Email ---
 async function sendOTPEmail(email, otp, firstName) {
   const mailOptions = {
-    from: `"Internship Tracking System" <${process.env.EMAIL_USER}>`,
+    from: `"Internship Tracking System" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
     to: email,
     subject: "Email Verification - Your OTP Code",
     html: `
@@ -127,7 +127,7 @@ async function sendOTPEmail(email, otp, firstName) {
 // --- Send Reset Password OTP Email ---
 async function sendResetOTPEmail(email, otp, firstName) {
   const mailOptions = {
-    from: `"Internship Tracking System" <${process.env.EMAIL_USER}>`,
+    from: `"Internship Tracking System" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
     to: email,
     subject: "Password Reset - Your OTP Code",
     html: `
