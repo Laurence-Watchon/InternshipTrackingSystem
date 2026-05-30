@@ -1,4 +1,4 @@
-﻿import express from "express";
+import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
@@ -13,11 +13,16 @@ const otpStore = new Map();
 
 // --- Email transporter setup ---
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: process.env.EMAIL_HOST || "smtp.gmail.com",
+  port: parseInt(process.env.EMAIL_PORT, 10) || 587,
+  secure: process.env.EMAIL_SECURE === "true", // true for port 465, false for port 587
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS, // Gmail App Password (not your real password)
+    pass: process.env.EMAIL_PASS,
   },
+  tls: {
+    rejectUnauthorized: false
+  }
 });
 
 // --- Generate 6-digit OTP ---
